@@ -1,0 +1,21 @@
+{
+  "spec_version": "1.0",
+  "description": "Спецификация сервиса TokenService, который является основной точкой входа для управления жизненным циклом токенов.",
+  "service": {
+    "enabled": true,
+    "class": "src.application.services.token_service.TokenService",
+    "status": "planned"
+  },
+  "responsibilities": [
+    "Оркестрация создания, обновления и удаления токенов.",
+    "Взаимодействие с TokenFactory для инстанцирования токенов.",
+    "Взаимодействие с репозиториями для сохранения и загрузки токенов.",
+    "Координация с GraphEngine для управления связями токенов."
+  ],
+  "operations": [
+    { "name": "create_token", "description": "Создает новый токен на основе предоставленных данных." },
+    { "name": "get_token_by_id", "description": "Находит и возвращает токен по его уникальному идентификатору." },
+    { "name": "update_token_data", "description": "Обновляет данные или метаданные существующего токена." },
+    { "name": "delete_token", "description": "Удаляет токен и все связанные с ним данные." }
+  ]
+}

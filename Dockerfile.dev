@@ -1,0 +1,39 @@
+# ./Dockerfile.dev
+FROM python:3.11-bookworm
+
+WORKDIR /app
+
+# Установка системных зависимостей включая инструменты разработки
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копирование всех requirements
+COPY requirements/ .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r dev.txt && \
+    pip cache purge
+
+# Копирование исходного кода
+COPY src/ ./src/
+COPY config/ ./config/
+COPY tests/ ./tests/
+COPY pyproject.toml .
+
+# Устанавливаем переменные окружения для разработки
+ENV PYTHONPATH=/app/src
+ENV ENVIRONMENT=development
+ENV PYTHONUNBUFFERED=1
+
+# Точка входа для разработки
+CMD ["python", "-m", "src.main", "--reload"]
+
+# Установка всех зависимостей для разработки
+COPY requirements/ .
+RUN pip install --no-cache-dir -r core.txt && \
+    pip install --no-cache-dir -r api.txt && \
+    pip install --no-cache-dir -r dev.txt && \

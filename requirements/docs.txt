@@ -1,0 +1,5 @@
+pdoc>=13.0.0
+mkdocs>=1.4.0
+mkdocs-material>=9.1.0
+mkdocstrings[python]>=0.21.0
+markdown-include>=0.8.0

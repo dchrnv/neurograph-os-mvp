@@ -1,0 +1,21 @@
+{
+  "spec_version": "1.0",
+  "description": "Спецификация компонента TokenFactory, отвечающего за создание и парсинг токенов.",
+  "responsibilities": [
+    "Создание пустых токенов с базовыми параметрами (ID, timestamp).",
+    "Инкапсуляция логики сборки сложных токенов из различных данных.",
+    "Специализированное создание 'токенов опыта' для задач Reinforcement Learning.",
+    "Парсинг 'токенов опыта' обратно в структурированные данные."
+  ],
+  "configuration_source": "config/core/token.yaml",
+  "configurable_parameters": {
+    "defaults": {
+      "description": "Значения по умолчанию для всех создаваемых токенов.",
+      "fields": ["weight", "flags", "auto_timestamp"]
+    },
+    "experience_format": {
+      "description": "Определяет, как данные опыта (RL) упаковываются в уровни и флаги токена.",
+      "fields": ["state_level", "action_level", "next_state_level", "done_flag_bit"]
+    }
+  }
+}
