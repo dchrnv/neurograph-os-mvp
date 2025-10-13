@@ -1,0 +1,19 @@
+# config/application/orchestration.yaml
+
+# Конфигурация оркестрации рабочих процессов и планировщика задач.
+orchestration:
+  scheduler:
+    enabled: true
+    type: "celery"           # celery | rq | builtin
+    concurrency: 4
+    retry_policy:
+      max_retries: 3
+      backoff_seconds: 5
+
+  workflows:
+    default_timeout_seconds: 300
+    max_parallel_tasks: 8
+
+  monitoring:
+    enabled: true
+    metrics_prefix: "orchestration"

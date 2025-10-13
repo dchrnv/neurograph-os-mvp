@@ -1,0 +1,15 @@
+# config/core/grid.yaml
+
+# Конфигурация для пространственных индексов и структур (SparseGrid, SpatialHash и т.д.)
+grid:
+  sparse_grid:
+    precision: 2
+    default_resolution: 0.01
+    max_cells: 100000
+
+  spatial_hash:
+    cell_size: 0.1
+    load_factor: 0.75
+
+# Note: coordinate_system may contain enable_auto_reindex flag which controls
+# whether indexes attempt an automatic reindex after CDNA scale changes.

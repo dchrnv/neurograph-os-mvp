@@ -1,0 +1,10 @@
+# Настройки для графовой подсистемы (NeuroGraph)
+
+graph:
+  engine: "networkx"   # networkx | custom
+  default_weight: 0.5
+  max_neighbors: 256
+  persistence:
+    backend: "redis"
+    redis:
+      url: "redis://localhost:6379/2"

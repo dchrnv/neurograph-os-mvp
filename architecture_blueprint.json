@@ -1,0 +1,243 @@
+{
+  "neurograph_os": {
+  "version": "1.2.0",
+  "architecture_style": "clean-architecture-with-hexagonal",
+  "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
+  "last_updated": "2025-10-12",
+    
+    "core_principles": {
+      "token_based_computing": "Токен-ориентированные вычисления",
+      "spatial_intelligence": "Пространственное представление данных и знаний",
+      "modular_design": "Модульная и расширяемая архитектура",
+      "configuration_driven": "Гибкая настройка через YAML-конфигурацию"
+    },
+
+    "architecture_layers": {
+      "core": {
+        "purpose": "Ядро системы с бизнес-логикой",
+        "modules": {
+          "token": {
+            "responsibility": "Основная сущность для представления данных",
+            "components": [
+              "Token (реализован, спецификация завершена) — src/core/token/token.py",
+              "TokenFactory (реализована, управляется через TokenFactoryConfig) — src/core/token/factory.py",
+              "TokenService (реализован, orchestration) — src/core/token/token_service.py",
+              "TokenRegistry (планируется)"
+            ],
+            "characteristics": [
+              "Бинарный формат", 
+              "Многомерные координаты", 
+              "Метаданные",
+              "Регистрация типов токенов"
+            ]
+          },
+          "spatial": {
+            "responsibility": "Пространственные операции и вычисления",
+            "components": [
+              "Coordinates (реализован) — src/core/spatial/coordinates.py",
+              "SparseGrid / SpatialIndex (реализованы) — src/core/spatial/spatial_index.py",
+              "CoordinateSystem (реализован) — src/core/spatial/coordinate_system.py",
+              "(другие реализации индексов: SpatialHashIndex)"
+            ],
+            "characteristics": [
+              "3D координаты", 
+              "Масштабирование", 
+              "Нормализация",
+              "Пространственная индексация",
+              "Управление разреженной сеткой"
+            ]
+          },
+          "graph": {
+            "responsibility": "Графовая система связей между токенами",
+            "components": [
+              "TokenGraph (реализован) — src/core/graph/graph_engine.py (основные структуры и операции)",
+              "GraphManager (частично) — src/core/graph/graph_manager.py (API экспонируется через пакет) (план/реализация)",
+              "ShortTermMemory (планируется)",
+              "LongTermMemory (планируется)"
+            ],
+            "characteristics": [
+              "Управление графом",
+              "Операции с графом",
+              "Кратковременная память",
+              "Долговременная память",
+              "Индекс связей"
+            ]
+          },
+          "utils": {
+            "responsibility": "Вспомогательные утилиты",
+            "components": [
+              "Logger (реализован)",
+              "ExceptionHandler (планируется)",
+              "BinaryUtils (планируется)",
+              "Validators (планируется)"
+            ],
+            "characteristics": [
+              "Логирование",
+              "Обработка ошибок",
+              "Утилитарные функции",
+              "Работа с бинарными данными",
+              "Валидация"
+            ]
+          },
+          "memory": {
+            "responsibility": "Управление памятью и кэшированием",
+            "components": [
+              "MemoryManager (планируется)",
+              "CacheStrategies (планируется)"
+            ],
+            "characteristics": [
+              "Кэширование данных",
+              "Управление памятью",
+              "Стратегии вытеснения"
+            ]
+          }
+          ,
+          "dna": {
+            "responsibility": "Управление структурой 'ДНК' проекта: схемы, парсинг и шаблоны поведения",
+            "components": [
+              "DNASpec (создан, спецификации в config/specs/dna_config.json)",
+              "DNAGuardian (реализован) — src/core/dna/guardian/guardian.py",
+              "GenomeParser (планируется)"
+            ],
+            "characteristics": [
+              "Версионируемая спецификация",
+              "Валидация конфигураций",
+              "Интеграция с runtime-параметрами"
+            ]
+          },
+          "experience": {
+            "responsibility": "Сбор, хранение и передача событий опыта (Experience) для обучения и анализа",
+            "components": [
+              "ExperienceEvent (Pydantic model) — src/core/experience/event.py (реализован)",
+              "ExperienceStream (реализован в виде концепта) — src/core/experience/stream.py (интеграция с TokenFactory и CoordinateSystem)",
+              "ExperienceSampler / storage (планируется)",
+              "DNAExperienceIntegration (частично) — интеграция с DNAGuardian в TokenFactory / CoordinateSystem"
+            ],
+            "characteristics": [
+              "Асинхронная буферизация и батчинг",
+              "Поддержка backend-ов: консоль, file (JSONL), HTTP",
+              "Политики сэмплинга: uniform, prioritized, recent, diverse",
+              "Интеграция с DNAGuardian для записи ADNA/CDNA-событий",
+              "Config-driven: параметры storage/sampling/causality в YAML",
+              "Fail-safe поведение: ошибки не ломают основной поток"
+            ]
+          }
+        }
+      },
+
+      "application": {
+        "purpose": "Сценарии использования и бизнес-правила",
+        "services": {
+          "token_service": {
+            "description": "Сервис для управления жизненным циклом токенов (реализован частично).",
+            "operations": [
+              "create_token", 
+              "update_token", 
+              "find_token",
+              "delete_token"
+            ]
+          },
+          "spatial_service": {
+            "description": "Сервис для выполнения пространственных запросов и управления сеткой (в разработке).",
+            "operations": [
+              "find_in_region", 
+              "get_density_map", 
+              "manage_grid_levels"
+            ]
+          },
+          "orchestration_service": {
+            "description": "Управление сложными рабочими процессами и задачами (планируется).",
+            "components": [
+              "WorkflowManager", 
+              "TaskScheduler"
+            ],
+            "characteristics": [
+              "Планирование задач",
+              "Управление рабочими процессами",
+              "Оркестрация сервисов"
+            ]
+          }
+        }
+      },
+
+      "infrastructure": {
+        "purpose": "Техническая реализация и внешние интеграции",
+        "components": {
+      "configuration": {
+        "description": "Управление конфигурацией (YAML, Env Vars)",
+        "components": ["ConfigLoader (реализован) — src/infrastructure/config", "ConfigManager (реализован)"]
+          },
+          "persistence": {
+            "description": "Слой для хранения данных",
+            "technologies": ["PostgreSQL (интегрируется)", "Redis (интегрируется)"]
+          },
+          "api": {
+            "description": "Реализация внешних API",
+            "technologies": ["FastAPI (в разработке)"]
+          },
+          "messaging": {
+            "description": "Асинхронный обмен сообщениями",
+            "technologies": ["RabbitMQ (планируется)"]
+          },
+          "monitoring": {
+            "description": "Сбор метрик и отслеживание ошибок",
+            "technologies": ["Prometheus (планируется)"]
+          },
+          "dependency_management": {
+            "description": "Управление зависимостями проекта",
+            "components": ["RequirementsManager", "requirements_cli.py"]
+          }
+        }
+      },
+
+      "interfaces": {
+        "purpose": "Точки входа в систему",
+        "entry_points": {
+          "http": {
+            "description": "HTTP API для внешних систем",
+            "endpoints": ["/api/v1/* (в разработке)"]
+          },
+          "cli": {
+            "description": "Командная строка для администрирования",
+            "commands": ["neuro-cli (планируется)"]
+          },
+          "websocket": {
+            "description": "Веб-сокеты для реального времени",
+            "channels": ["/ws/updates (планируется)"]
+          }
+        }
+      }
+    },
+
+    "deployment": {
+      "containerization": {
+        "docker": "Контейнеризация приложения и его зависимостей (реализовано)",
+        "kubernetes": "Оркестрация контейнеров для production-окружения (планируется)"
+      }
+    },
+
+    "development_workflow": {
+      "version_control": "Git",
+      "branch_strategy": "GitFlow (рекомендуется)",
+      "ci_cd": ["GitHub Actions", "ArgoCD"],
+      "code_review": "Pull Requests с обязательным ревью кода",
+      "documentation": {
+        "architecture": "MkDocs, архитектурные манифесты (JSON)",
+        "api": "OpenAPI/Swagger",
+        "code": "pdoc с Google-style docstrings",
+        "entities": "Подробные спецификации в Markdown (.md)",
+        "configuration": "Единый документ по структуре конфигурации",
+        "site": "MkDocs с Material for MkDocs",
+        "setup": "Подробное руководство по настройке",
+        "development": "Руководство для разработчиков",
+        "testing_docs": "Руководство по тестированию"
+      },
+      "testing": {
+        "unit_tests": "pytest",
+        "integration_tests": "pytest с Docker-контейнерами",
+        "e2e_tests": "Playwright"
+      }
+      
+    }
+  }
+}

@@ -1,0 +1,30 @@
+experience:
+  enabled: true
+  stream:
+    batch_size: 256
+    flush_interval: 1.0
+    backend: "console"
+    file_path: "./data/experience_events.jsonl"
+    http_endpoint: null
+    retain_in_memory: true
+    max_buffer_size: 10000
+
+  storage:
+    circular_buffer_size: 100000
+    sliding_window_size: 1000000
+    sliding_window_duration_hours: 24
+
+  sampling:
+    default_strategy: "uniform"
+    prioritized_alpha: 0.6
+    prioritized_beta: 0.4
+    recent_window_size: 10000
+
+  causality_tracking:
+    enabled: true
+    auto_link_threshold_ms: 100
+    max_chain_depth: 10
+
+  integration:
+    dna_guardian_integration: true
+    auto_record_token_events: true

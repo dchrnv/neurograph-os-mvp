@@ -1,0 +1,18 @@
+# config/application/processing.yaml
+
+# Настройки обработчиков данных, pipeline'ов и параметров препроцессинга.
+processing:
+  encoder:
+    enabled: true
+    batch_size: 32
+    max_workers: 4
+    input_normalization: true
+
+  decoder:
+    enabled: true
+    beam_width: 4
+
+  intuition_engine:
+    enabled: false
+    model_path: "models/intuition_model.pt"
+    cache_size: 1024

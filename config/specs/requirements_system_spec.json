@@ -1,0 +1,392 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Спецификация системы управления зависимостями",
+  "description": "Детальное описание системы управления зависимостями проекта",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Версия спецификации",
+      "example": "1.0.0"
+    },
+    "components": {
+      "type": "object",
+      "description": "Основные компоненты системы",
+      "properties": {
+        "requirements_manager": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Менеджер зависимостей проекта, отвечающий за разрешение и установку пакетов"
+            },
+            "responsibilities": {
+              "type": "array",
+              "description": "Список ответственностей",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Управление зависимостями",
+                  "Разрешение конфликтов версий",
+                  "Установка пакетов",
+                  "Обновление зависимостей"
+                ]
+              }
+            }
+          }
+        },
+        "cli_interface": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Командный интерфейс для управления зависимостями"
+            },
+            "commands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": ["install", "update", "remove", "list", "check"]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {"type": "string"},
+                        "description": {"type": "string"},
+                        "required": {"type": "boolean"},
+                        "default": {}
+                      }
+                    }
+                  }
+                },
+                "required": ["name", "description"]
+              }
+            }
+          },
+          "required": ["description", "commands"]
+        }
+      },
+      "required": ["requirements_manager", "cli_interface"]
+    },
+    "file_structure": {
+      "type": "object",
+      "description": "Структура файлов и директорий с зависимостями",
+      "properties": {
+        "requirements_dir": {
+          "type": "string",
+          "description": "Директория с файлами зависимостей",
+          "default": "requirements/"
+        },
+        "files": {
+          "type": "object",
+          "description": "Конфигурация файлов с зависимостями",
+          "properties": {
+            "all": {
+              "type": "string",
+              "description": "Файл со всеми зависимостями",
+              "default": "all.txt"
+            },
+            "api": {
+              "type": "string",
+              "description": "API зависимости",
+              "default": "api.txt"
+            },
+            "core": {
+              "type": "string",
+              "description": "Основные зависимости ядра",
+              "default": "core.txt"
+            },
+            "dev": {
+              "type": "string",
+              "description": "Зависимости для разработки",
+              "default": "dev.txt"
+            },
+            "docs": {
+              "type": "string",
+              "description": "Зависимости для документации",
+              "default": "docs.txt"
+            },
+            "test": {
+              "type": "string",
+              "description": "Зависимости для тестирования",
+              "default": "test.txt"
+            },
+            "ui": {
+              "type": "string",
+              "description": "UI зависимости",
+              "default": "ui.txt"
+            }
+          },
+          "required": ["all", "api", "core", "dev", "docs", "test", "ui"]
+        },
+        "lock_file": {
+          "type": "string",
+          "description": "Файл для фиксации версий зависимостей",
+          "default": "requirements.lock"
+        }
+      },
+      "required": ["requirements_dir", "files"]
+    },
+    "version_resolution": {
+      "type": "object",
+      "description": "Правила разрешения версий зависимостей",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Включено ли автоматическое разрешение версий",
+          "default": true
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["strictest", "newest", "oldest", "highest"],
+          "default": "strictest",
+          "description": "Стратегия разрешения конфликтов версий"
+        },
+        "constraint_operators": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["==", "<=", ">=", "<", ">", "!=", "~=", "==="]
+          },
+          "description": "Поддерживаемые операторы ограничений версий",
+          "default": ["==", "<=", ">=", "<", ">", "!=", "~="]
+        },
+        "python_version": {
+          "type": "string",
+          "description": "Версия Python, для которой разрешаются зависимости",
+          "pattern": "^\\d+\\.\\d+$",
+          "default": "3.9"
+        },
+        "allow_prereleases": {
+          "type": "boolean",
+          "description": "Разрешать ли предварительные версии пакетов",
+          "default": false
+        }
+      },
+      "required": ["strategy", "constraint_operators"]
+    },
+    "error_handling": {
+      "type": "object",
+      "description": "Обработка ошибок",
+      "properties": {
+        "file_not_found": {
+          "type": "string",
+          "description": "Действие при отсутствии файла требований",
+          "enum": ["warn", "error", "ignore"],
+          "default": "error"
+        },
+        "version_conflict": {
+          "type": "string",
+          "description": "Действие при конфликте версий",
+          "enum": ["warn", "error", "use_strictest", "use_newest"],
+          "default": "error"
+        },
+        "missing_dependency": {
+          "type": "string",
+          "description": "Действие при отсутствующей зависимости",
+          "enum": ["warn", "error", "ignore"],
+          "default": "error"
+        }
+      },
+      "required": ["file_not_found", "version_conflict", "missing_dependency"]
+    },
+    "monitoring": {
+      "type": "object",
+      "description": "Настройки мониторинга производительности и сбора статистики",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Включен ли сбор метрик производительности",
+          "default": true
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Настройки сбора метрик",
+          "properties": {
+            "query_performance": {
+              "type": "object",
+              "description": "Метрики производительности запросов",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "threshold_ms": {
+                  "type": "number",
+                  "description": "Порог для логирования медленных запросов (мс)",
+                  "default": 100
+                }
+              }
+            },
+            "memory_usage": {
+              "type": "object",
+              "description": "Метрики использования памяти",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "interval_seconds": {
+                  "type": "number",
+                  "description": "Интервал сбора метрик (секунды)",
+                  "default": 60
+                }
+              }
+            },
+            "index_efficiency": {
+              "type": "object",
+              "description": "Метрики эффективности индексов",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "efficiency_threshold": {
+                  "type": "number",
+                  "description": "Порог эффективности индекса (0-1)",
+                  "default": 0.7
+                }
+              }
+            }
+          }
+        },
+        "alerting": {
+          "type": "object",
+          "description": "Настройки оповещений",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["log", "email", "slack", "webhook"]
+              },
+              "default": ["log"]
+            },
+            "thresholds": {
+              "type": "object",
+              "properties": {
+                "memory_usage_percent": {
+                  "type": "number",
+                  "description": "Порог использования памяти в процентах для срабатывания алерта",
+                  "default": 80
+                },
+                "query_time_ms": {
+                  "type": "number",
+                  "description": "Порог времени выполнения запроса в мс для срабатывания алерта",
+                  "default": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": ["enabled"]
+    },
+    "logging": {
+      "type": "object",
+      "description": "Настройки логирования",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+          "default": "INFO"
+        },
+        "format": {
+          "type": "string",
+          "default": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+        "file": {
+          "type": "string",
+          "description": "Файл для записи логов (если не указан, используется stderr)",
+          "default": ""
+        }
+      },
+      "required": ["level", "format"]
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Возможности расширения системы",
+      "properties": {
+        "custom_parsers": {
+          "type": "boolean",
+          "default": false,
+          "description": "Поддержка пользовательских парсеров файлов зависимостей"
+        },
+        "hooks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pre_install",
+              "post_install",
+              "pre_update",
+              "post_update",
+              "pre_resolve",
+              "post_resolve"
+            ]
+          },
+          "description": "Доступные точки расширения"
+        },
+        "plugins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "enabled": {"type": "boolean", "default": true}
+            },
+            "required": ["name"]
+          },
+          "description": "Подключенные плагины"
+        }
+      },
+      "required": ["custom_parsers", "hooks"]
+    },
+    "security": {
+      "type": "object",
+      "description": "Настройки безопасности",
+      "properties": {
+        "verify_ssl": {
+          "type": "boolean",
+          "default": true,
+          "description": "Проверять SSL сертификаты при загрузке пакетов"
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Разрешенные хосты для загрузки пакетов"
+        },
+        "vulnerability_scan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Проверять уязвимости в зависимостях"
+        }
+      },
+      "required": ["verify_ssl", "vulnerability_scan"]
+    }
+  },
+  "required": [
+    "version",
+    "components",
+    "file_structure",
+    "version_resolution",
+    "error_handling",
+    "monitoring",
+    "logging",
+    "extensions",
+    "security"
+  ],
+  "additionalProperties": false
+}

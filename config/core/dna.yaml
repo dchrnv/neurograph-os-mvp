@@ -1,0 +1,23 @@
+# config/core/dna.yaml
+
+# Конфигурация подсистемы DNA (CDNA / ADNA / Guardian)
+dna:
+  enabled: true
+  guardian:
+    hot_slice_size_bytes: 128
+    slice_registry_ttl: 300
+    persistence:
+      backend: "memory"  # memory | redis | s3
+      redis:
+        url: "redis://localhost:6379/1"
+  cdna_parsing:
+    grid_physics_layout: "<8H8B8f"
+    max_dimensions: 8
+
+  profiles:
+    explorer:
+      description: "Default explorer profile with medium spatial resolution"
+      initial_adna:
+        spatial_resolution: 0.01
+        learning_rate: 0.001
+      targets: ["coordinate_system", "token", "graph"]

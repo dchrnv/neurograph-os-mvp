@@ -1,0 +1,25 @@
+# config/environments/development.yaml
+
+# Настройки, специфичные для окружения разработки
+app:
+  env: "development"
+  debug: true
+  log_level: "DEBUG"
+  project_name: "NeuroGraph OS"
+  secret_key: "your-secret-key" # Рекомендуется переопределить через переменную окружения SECRET_KEY
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true # Включаем горячую перезагрузку для удобства разработки
+
+cors:
+  enabled: true
+  allow_origins: ["*"]
+  allow_methods: ["GET", "POST", "PUT", "DELETE"]
+  allow_headers: ["*"]
+
+database:
+  echo: true # Включаем логирование SQL-запросов для отладки
+  pool_size: 5
+  max_overflow: 10

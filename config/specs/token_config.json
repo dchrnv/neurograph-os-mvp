@@ -1,0 +1,18 @@
+{
+  "token_version": "1.0",
+  "binary_format": {
+    "size_bytes": 64,
+    "absent_value": 127,
+    "coordinate_scale": 100
+  },
+  "levels": {
+    "L1": "physical",  
+    "L2": "sensory",   
+    "L3": "motor",     
+    "L4": "emotional", 
+    "L5": "cognitive", 
+    "L6": "social",    
+    "L7": "temporal",  
+    "L8": "abstract"  
+  }
+}

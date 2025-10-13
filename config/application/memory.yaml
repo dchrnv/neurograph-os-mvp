@@ -1,0 +1,17 @@
+
+memory:
+  short_term:
+    enabled: true
+    capacity: 10000            # максимальное количество элементов в краткосрочной памяти
+    eviction_policy: "lru"    # политика вытеснения: lru | fifo | random
+
+  long_term:
+    enabled: true
+    persistence: true
+    backend: "postgres"       # backend: postgres | s3 | filesystem
+    postgres:
+      dsn: "postgresql://user:pass@localhost:5432/neurograph"
+
+  rehearsal:
+    enabled: false
+    fraction_to_rehearse: 0.01

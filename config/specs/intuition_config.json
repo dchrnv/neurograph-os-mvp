@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntuitionEngine",
+  "description": "Модуль анализа опыта и адаптации ADNA на основе RL",
+  "version": "2.0",
+  
+  "interfaces": {
+    "experience_stream": {
+      "type": "ExperienceStream",
+      "description": "Источник опыта для анализа",
+      "methods": {
+        "sample_batch": "Получение батчей для обучения",
+        "get_trajectory": "Получение траекторий",
+        "calculate_statistics": "Статистика опыта"
+      }
+    },
+    "dna_guardian": {
+      "type": "DNAGuardian",
+      "description": "Применение предложений к ADNA",
+      "methods": {
+        "update_adna": "Обновление адаптивных параметров",
+        "get_cdna_slice": "Получение ограничений CDNA"
+      }
+    },
+    "consensus_manager": {
+      "type": "ConsensusManager",
+      "description": "Валидация и применение предложений",
+      "methods": {
+        "apply_proposal": "Безопасное применение",
+        "validate_proposal": "Проверка через CDNA"
+      }
+    }
+  },
+  
+  "algorithms": {
+    "active_algorithm": {
+      "type": "string",
+      "enum": ["PPO", "TD3", "SAC", "A3C", "Custom"],
+      "default": "PPO",
+      "description": "Активный RL алгоритм"
+    },
+    "parameters": {
+      "learning_rate": {
+        "type": "number",
+        "default": 0.001,
+        "range": [0.00001, 0.1]
+      },
+      "gamma": {
+        "type": "number",
+        "default": 0.99,
+        "description": "Коэффициент дисконтирования"
+      },
+      "batch_size": {
+        "type": "integer",
+        "default": 256,
+        "range": [32, 2048]
+      },
+      "buffer_capacity": {
+        "type": "integer",
+        "default": 100000,
+        "description": "Размер replay buffer"
+      },
+      "update_frequency": {
+        "type": "integer",
+        "default": 1000,
+        "description": "Частота обновления ADNA (в событиях)"
+      },
+      "target_update_interval": {
+        "type": "integer",
+        "default": 10000,
+        "description": "Интервал обновления target network"
+      }
+    }
+  },
+  
+  "analysis_modes": {
+    "pattern_recognition": {
+      "enabled": true,
+      "min_pattern_length": 3,
+      "min_confidence": 0.7,
+      "pattern_types": ["sequential", "causal", "temporal", "spatial"]
+    },
+    "anomaly_detection": {
+      "enabled": true,
+      "sensitivity": 0.8,
+      "window_size": 1000
+    },
+    "reward_modeling": {
+      "enabled": true,
+      "model_type": "learned",
+      "update_interval": 5000
+    }
+  },
+  
+  "proposal_generation": {
+    "strategies": [
+      "gradient_based",
+      "evolutionary",
+      "rule_based",
+      "hybrid"
+    ],
+    "active_strategy": "hybrid",
+    "max_proposals_per_cycle": 10,
+    "min_confidence_threshold": 0.6,
+    "validation_required": true
+  },
+  
+  "cdna_constraints": {
+    "respect_cdna": true,
+    "max_gradient_norm": 1.0,
+    "allowed_parameter_changes": [
+      "learning_rate",
+      "exploration_rate",
+      "connection_weights",
+      "mutation_rates"
+    ],
+    "forbidden_parameters": [
+      "grid_physics",
+      "topology_rules"
+    ]
+  },
+  
+  "monitoring": {
+    "log_level": "INFO",
+    "metrics_collection": true,
+    "performance_tracking": true,
+    "checkpoint_interval": 10000,
+    "metrics": {
+      "avg_reward": "track",
+      "loss": "track",
+      "proposals_generated": "track",
+      "proposals_accepted": "track",
+      "adna_updates": "track"
+    }
+  },
+  
+  "sleep_cycle": {
+    "enabled": true,
+    "interval_seconds": 3600,
+    "deep_analysis": true,
+    "consolidation": true,
+    "description": "Периодический глубокий анализ накопленного опыта"
+  }
+}
