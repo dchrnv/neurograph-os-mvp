@@ -1,26 +1,92 @@
-# config/application/token_service.yaml
-# Настройки для сервиса управления токенами (TokenService)
+# config/core/token_service.yaml
 
-# Общие настройки сервиса
-service:
-  # Включен ли сервис. Если false, вызовы к нему могут быть заблокированы.
-  enabled: true
-  # Имя класса для DI-контейнера или фабрики сервисов.
-  class: "TokenService"
+# Конфигурация сервиса управления токенами
+token_service:
+  # Основные настройки
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  enabled: true              # Включение/отключение сервиса
+  class: "TokenService"      # Класс сервиса для DI-контейнера
 
-# Параметры по умолчанию для создания токенов через сервис.
-# Эти значения могут быть переопределены при вызове метода.
-creation_defaults:
-  # Уровень в пространственной сетке, на котором токен создается по умолчанию.
-  level: 0
-  # Вес, присваиваемый новому токену, если не указан другой.
-  weight: 0.5
-  # Начальные флаги для нового токена.
-  flags: 0
+  # Параметры по умолчанию для создания токенов
+  defaults:
+    level: 0                 # Уровень в пространственной сетке по умолчанию
+    weight: 0.5              # Вес по умолчанию
+    flags: 0                 # Начальные флаги
+    ttl: 0                   # Время жизни токена (0 - бессрочно)
+    priority: "normal"       # normal | high | low
+    visibility: "public"     # public | private | protected
 
-# Настройки поведения, связанные с другими компонентами ядра.
-behavior:
-  # Следует ли автоматически создавать пространственные связи при добавлении токена.
-  auto_connect_spatial: true
-  # Следует ли автоматически создавать временные связи.
-  auto_connect_temporal: true
+  # Настройки поведения
+  behavior:
+    # Пространственные связи
+    auto_connect_spatial: true  # Автоматическое создание пространственных связей
+    spatial_connection_radius: 1.0  # Радиус для автоматического соединения
+    spatial_connection_weight: 0.1  # Вес автоматических пространственных связей
+
+    # Временные связи
+    auto_connect_temporal: true  # Автоматическое создание временных связей
+    temporal_window_seconds: 60  # Окно для временных связей (сек)
+    temporal_connection_weight: 0.05  # Вес временных связей
+
+    # Семантические связи
+    auto_connect_semantic: true  # Автоматическое создание семантических связей
+    semantic_similarity_threshold: 0.7  # Порог семантического сходства
+
+  # Настройки производительности
+  performance:
+    batch_size: 100           # Размер пакета для пакетных операций
+    cache_enabled: true       # Включение кэширования
+    cache_ttl: 300            # Время жизни кэша (сек)
+    cache_size: 10000         # Максимальный размер кэша
+    max_concurrent_operations: 100  # Максимальное количество одновременных операций
+
+  # Валидация токенов
+  validation:
+    enabled: true
+    check_duplicates: true    # Проверка на дубликаты
+    validate_coordinates: true  # Валидация координат
+    max_tokens_per_request: 1000  # Максимальное количество токенов в одном запросе
+
+  # Интеграция с другими сервисами
+  integration:
+    # Интеграция с пространственной подсистемой
+    spatial:
+      auto_index: true        # Автоматическая индексация в пространственных структурах
+      index_update_delay: 0.1  # Задержка перед обновлением индекса (сек)
+    
+    # Интеграция с графовой подсистемой
+    graph:
+      auto_create_nodes: true  # Автоматическое создание узлов графа
+      auto_create_edges: true  # Автоматическое создание рёбер
+    
+    # Интеграция с DNA
+    dna:
+      auto_embed: true        # Автоматическое создание эмбеддингов
+      embedding_model: "default"  # Модель для создания эмбеддингов
+
+  # Мониторинг и метрики
+  monitoring:
+    enabled: true
+    metrics_prefix: "token_service"
+    collect_interval: 60     # Интервал сбора метрик (сек)
+    track:
+      create_operations: true  # Статистика создания токенов
+      update_operations: true  # Статистика обновлений
+      query_performance: true  # Производительность запросов
+      cache_efficiency: true   # Эффективность кэширования
+
+  # Настройки отладки
+  debug:
+    log_operations: false    # Подробное логирование операций
+    validate_state: true     # Валидация состояния после операций
+    dump_on_error: true      # Сохранять дамп при ошибке
+    trace_queries: false     # Трассировка запросов
+
+  # Резервное копирование и восстановление
+  backup:
+    enabled: true
+    auto_backup: true        # Автоматическое резервное копирование
+    backup_interval: 86400   # Интервал между резервными копиями (сек)
+    max_backups: 30          # Максимальное количество хранимых резервных копий
+    backup_path: "/var/backups/tokens"  # Путь для хранения резервных копий

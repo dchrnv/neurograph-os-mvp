@@ -2,22 +2,110 @@
 
 # Конфигурация подсистемы DNA (CDNA / ADNA / Guardian)
 dna:
+  # Общие настройки
   enabled: true
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  
+  # Настройки CDNA (Compact DNA)
+  cdna:
+    # Формат сетки и физическое представление
+    grid_physics_layout: "<8H8B8f"  # Формат упаковки: 8 uint16, 8 uint8, 8 float32
+    max_dimensions: 8               # Максимальное количество измерений
+    compression_level: 6            # Уровень сжатия (0-9)
+    checksum_validation: true       # Проверка контрольной суммы
+  
+  # Настройки ADNA (Adaptive DNA)
+  adna:
+    spatial_resolution: 0.01        # Разрешение по умолчанию
+    learning_rate: 0.001            # Скорость обучения по умолчанию
+    max_mutation_rate: 0.1          # Максимальная скорость мутаций
+    min_mutation_rate: 0.0001       # Минимальная скорость мутаций
+    adaptation_window: 1000         # Окно адаптации (количество итераций)
+  
+  # DNA Guardian - защита и валидация
   guardian:
-    hot_slice_size_bytes: 128
-    slice_registry_ttl: 300
+    enabled: true
+    hot_slice_size_bytes: 128       # Размер горячего среза
+    slice_registry_ttl: 300         # Время жизни в реестре (сек)
+    max_slices_per_second: 1000     # Ограничение скорости обработки
+    validation_strictness: "medium" # strict | medium | permissive
+    
+    # Настройки персистентности
     persistence:
-      backend: "memory"  # memory | redis | s3
+      backend: "memory"             # memory | redis | s3 | postgres
+      ttl_days: 30                  # Время хранения (для persistent backends)
+      
+      # Настройки Redis
       redis:
         url: "redis://localhost:6379/1"
-  cdna_parsing:
-    grid_physics_layout: "<8H8B8f"
-    max_dimensions: 8
-
+        key_prefix: "dna:guardian:"
+        connection_pool: 10
+        
+      # Настройки S3
+      s3:
+        bucket: "neurograph-dna"
+        region: "us-east-1"
+        prefix: "guardian/"
+        
+      # Настройки PostgreSQL
+      postgres:
+        dsn: "postgresql://user:pass@localhost:5432/neurograph"
+        table_name: "dna_guardian"
+  
+  # Профили работы с DNA
   profiles:
+    # Профиль для исследования
     explorer:
-      description: "Default explorer profile with medium spatial resolution"
+      description: "Профиль исследователя со средним разрешением"
       initial_adna:
         spatial_resolution: 0.01
         learning_rate: 0.001
       targets: ["coordinate_system", "token", "graph"]
+      mutation_rate: 0.05
+      
+    # Профиль для продакшена
+    production:
+      description: "Продакшн профиль с высокой стабильностью"
+      initial_adna:
+        spatial_resolution: 0.005
+        learning_rate: 0.0005
+      targets: ["coordinate_system", "token", "graph", "security"]
+      mutation_rate: 0.01
+      validation_strictness: "strict"
+    
+    # Профиль для отладки
+    debug:
+      description: "Профиль для отладки с подробным логированием"
+      initial_adna:
+        spatial_resolution: 0.1
+        learning_rate: 0.01
+      targets: ["debug", "validation"]
+      mutation_rate: 0.1
+      log_level: "DEBUG"
+  
+  # Настройки производительности
+  performance:
+    max_concurrent_operations: 100  # Максимум параллельных операций
+    batch_size: 32                  # Размер пакета для пакетной обработки
+    cache_size: 10000               # Размер кэша в памяти
+    cache_ttl: 3600                 # Время жизни кэша (сек)
+  
+  # Мониторинг и метрики
+  monitoring:
+    enabled: true
+    metrics_prefix: "dna"
+    export_interval: 60             # Интервал экспорта метрик (сек)
+    
+    # Кастомные метрики
+    track:
+      mutations: true               # Отслеживать мутации
+      validations: true             # Отслеживать валидации
+      performance: true             # Отслеживать производительность
+  
+  # Настройки отладки
+  debug:
+    log_dna_operations: false       # Логировать операции с DNA
+    trace_guardian_checks: false    # Трассировать проверки Guardian
+    validate_checksums: true        # Проверять контрольные суммы
+    dump_on_error: true             # Сохранять дамп при ошибке

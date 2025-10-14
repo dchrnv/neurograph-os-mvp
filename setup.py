@@ -20,7 +20,7 @@ extras_require = {
 
 setup(
     # Основные настройки пакета
-    name="model-requirements",
+    name="neurograph-os",
     version="0.1.0",
     
     # Поиск и включение всех пакетов в директории src
@@ -37,14 +37,14 @@ setup(
     # Регистрация консольных команд
     entry_points={
         "console_scripts": [
-            "model-reqs=model_requirements:main",
+            "neuro-reqs=infrastructure.requirements.requirements_cli:main",
         ],
     },
     
     # Метаданные пакета
     author="Chernov Denys",
     author_email="dreeftwood@gmail.com",
-    description="Управление зависимостями для проекта Model",
+    description="Когнитивная архитектура NeuroGraph OS (версия для разработки)",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/dchrnv/neurograph-os.git",

@@ -1,19 +1,103 @@
 # config/application/orchestration.yaml
 
-# Конфигурация оркестрации рабочих процессов и планировщика задач.
+# Конфигурация модуля оркестрации рабочих процессов
 orchestration:
+  # Общие настройки
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  
+  # Настройки планировщика задач
   scheduler:
     enabled: true
-    type: "celery"           # celery | rq | builtin
-    concurrency: 4
+    type: "celery"            # celery | rq | builtin | kubernetes
+    
+    # Параметры производительности
+    concurrency: 4            # Количество воркеров
+    prefetch_multiplier: 4    # Множитель предзагрузки задач
+    max_tasks_per_child: 1000 # Максимальное количество задач на процесс
+    task_time_limit: 1800     # Максимальное время выполнения задачи (сек)
+    
+    # Политика повторов
     retry_policy:
-      max_retries: 3
-      backoff_seconds: 5
-
+      max_retries: 3          # Максимальное количество попыток
+      backoff_seconds: 5      # Начальная задержка перед повтором (сек)
+      backoff_factor: 2       # Множитель экспоненциальной задержки
+      max_retry_delay: 300    # Максимальная задержка между попытками (сек)
+      jitter: true            # Добавлять случайность к задержкам
+    
+    # Очереди приоритетов
+    queues:
+      high_priority:
+        concurrency: 2        # Выделенные воркеры для высокоприоритетных задач
+        weight: 3
+      default:
+        concurrency: 1
+        weight: 1
+      low_priority:
+        concurrency: 1
+        weight: 1
+  
+  # Управление рабочими процессами
   workflows:
-    default_timeout_seconds: 300
-    max_parallel_tasks: 8
-
+    default_timeout_seconds: 300  # Таймаут по умолчанию
+    max_parallel_tasks: 8         # Максимальное параллельных задач
+    task_ttl: 86400               # Время жизни задачи в брокере (сек)
+    
+    # Политики выполнения
+    execution_policies:
+      max_concurrent_workflows: 100  # Максимум одновременно выполняемых workflow
+      task_priority_strategy: "fifo" # fifo | priority | fair
+      
+    # Настройки восстановления
+    recovery:
+      enabled: true
+      max_attempts: 3
+      checkpoint_interval: 60  # Интервал создания контрольных точек (сек)
+  
+  # Мониторинг и метрики
   monitoring:
     enabled: true
     metrics_prefix: "orchestration"
+    
+    # Экспорт метрик
+    metrics_export:
+      enabled: true
+      interval: 60            # Интервал сбора метрик (сек)
+      backend: "prometheus"   # prometheus | statsd | datadog
+      
+    # Слежение за задачами
+    task_tracking:
+      enabled: true
+      history_size: 1000      # Количество хранимых в памяти завершенных задач
+      detailed_logging: false # Подробное логирование выполнения задач
+  
+    # Алертинг
+    alerting:
+      enabled: true
+      long_running_task_threshold: 300  # Порог для уведомлений о долгих задачах (сек)
+      failed_task_alert_threshold: 5    # Количество ошибок для срабатывания алерта
+  
+  # Интеграции
+  integrations:
+    # Хранилище результатов
+    result_backend: "redis"   # redis | database | s3
+    
+    # Брокер сообщений
+    broker: "redis"           # redis | rabbitmq | sqs
+    broker_url: "redis://localhost:6379/0"
+    
+    # Хранилище состояний
+    state_backend: "redis"    # redis | database | memory
+    
+    # Внешние сервисы
+    external_services:
+      - name: "model_service"
+        endpoint: "http://localhost:8000"
+        timeout: 30
+        retry_attempts: 3
+  
+  # Настройки отладки
+  debug:
+    log_task_payload: false   # Логировать содержимое задач
+    trace_workflow: false     # Включить трассировку workflow
+    simulate_failures: false  # Имитировать сбои для тестирования

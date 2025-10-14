@@ -11,8 +11,12 @@ from .graph_engine import (
     ConnectionType,
     Directionality, 
     PersistenceLevel,
+    MutationType,
     ConnectionMetadata,
+    Connection,
+    Subgraph,
     GraphStats,
+    GraphCDNAValidator,
     TokenFlags,
     TokenWeightEncoder,
     TokenIDExtractor,
@@ -56,10 +60,16 @@ __all__ = [
     "ConnectionType",
     "Directionality",
     "PersistenceLevel",
+    "MutationType",
     
     # Структуры данных
     "ConnectionMetadata",
+    "Connection",
+    "Subgraph",
     "GraphStats",
+    
+    # Валидация
+    "GraphCDNAValidator",
     
     # Утилиты
     "TokenFlags",

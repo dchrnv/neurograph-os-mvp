@@ -56,7 +56,8 @@
         },
         "path": {
           "type": "string",
-          "description": "Относительный путь к файлу конфигурации от корня проекта"
+          "pattern": "^config/.+\\.(ya?ml|json)$",
+          "description": "Относительный путь к файлу конфигурации от корня проекта (например, config/core/token_graph.yaml)"
         },
         "format": {
           "$ref": "#/definitions/ConfigFormat",
@@ -64,8 +65,8 @@
         },
         "scope": {
           "type": "string",
-          "enum": ["core", "infrastructure", "interface", "environment"],
-          "description": "Область применения конфигурации"
+          "enum": ["core", "application", "infrastructure", "interfaces", "environment", "specs"],
+          "description": "Область применения конфигурации (соответствует каталогам в config/*)"
         },
         "required": {
           "type": "boolean",
@@ -83,7 +84,8 @@
         },
         "validation_schema": {
           "type": "string",
-          "description": "Путь к JSON-схеме для валидации конфигурации"
+          "pattern": "^config/specs/.+\\.json$",
+          "description": "Путь к JSON-схеме для валидации конфигурации (например, config/specs/graph_cdna_spec.json)"
         },
         "metadata": {
           "$ref": "#/definitions/ConfigMetadata"

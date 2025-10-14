@@ -2,11 +2,11 @@
   "projectName": "NeuroGraph OS",
   "summary": "Единый файл, содержащий полный контекст проекта NeuroGraph OS для взаимодействия с ИИ-ассистентом. Включает статус проекта, исходный код, архитектуру, спецификации и другие артефакты.",
   "projectStatus": {
-  "projectName": "NeuroGraph OS",
-  "version": "1.2.0",
-  "description": "Проект по созданию когнитивной архитектуры, основанной на токен-ориентированных вычислениях и пространственном интеллекте.",
-  "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
-  "last_updated": "2025-10-12",
+    "projectName": "NeuroGraph OS",
+    "version": "0.3.0",
+    "description": "Проект по созданию когнитивной архитектуры, основанной на токен-ориентированных вычислениях и пространственном интеллекте.",
+    "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
+    "last_updated": "2025-10-13",
     "projectStructure": {
       "src/core/token/token.py": {
         "status": "Реализован",
@@ -68,6 +68,22 @@
         "status": "Актуализирован",
         "summary": "Обновленный архитектурный манифест, отражающий текущее состояние реализованных и планируемых компонентов."
       },
+      "src/core/graph/graph_engine.py": {
+        "status": "Реализован (v1.0.0, production)",
+        "summary": "TokenGraph: узлы‑токены, типизированные связи, авто‑пространственные/временные связи, CDNA‑валидация, генетические операторы (мутация/кроссовер/селекция), расширенные метаданные связей, статистика и кэширование."
+      },
+      "src/core/graph/graph_manager.py": {
+        "status": "Реализован",
+        "summary": "Высокоуровневый GraphManager: операции add/remove/connect, поиск путей/кластеров, метрики и управление кэшами; проксирует настройки графа."
+      },
+      "config/core/token_graph.yaml": {
+        "status": "Добавлен",
+        "summary": "Runtime‑конфигурация графа: topology, evolution, weights, cdna_integration, experience_integration, statistics, maintenance, persistence, performance, logging, advanced."
+      },
+      "config/specs/graph_cdna_spec.json": {
+        "status": "Добавлен",
+        "summary": "CDNA‑спецификация правил для операций графа: ограничения топологии, типов связей, весов, пространственные/временные правила, эволюция, валидация и обслуживание."
+      },
       "docker-compose.yaml": {
         "status": "Реализован",
         "summary": "Конфигурация для запуска проекта и его зависимостей (Postgres, Redis) в Docker."
@@ -83,6 +99,30 @@
       "docs/configuration_module.md": {
         "status": "Актуализирован",
         "summary": "Вспомогательный документ с техническими деталями, ссылающийся на основной."
+      },
+      "src/core/websocket": {
+        "status": "Реализован",
+        "summary": "Модуль для двусторонней асинхронной связи с клиентами через WebSocket."
+      },
+      "src/core/websocket/server.py": {
+        "status": "Реализован",
+        "summary": "Реализация WebSocket сервера с поддержкой переподключений и маршрутизацией сообщений."
+      },
+      "src/core/websocket/client.py": {
+        "status": "Реализован",
+        "summary": "Клиентская библиотека для работы с WebSocket API."
+      },
+      "src/core/monitoring": {
+        "status": "В разработке",
+        "summary": "Система мониторинга и логирования работы приложения."
+      },
+      "src/core/monitoring/logger.py": {
+        "status": "Реализован",
+        "summary": "Настройка и конфигурация системы логирования."
+      },
+      "src/core/monitoring/metrics.py": {
+        "status": "В разработке",
+        "summary": "Сбор и агрегация метрик производительности."
       }
     },
     "implementedFeatures": [
@@ -102,6 +142,16 @@
         "files": ["src/core/spatial/coordinate_system.py"]
       },
       {
+        "feature": "WebSocket API",
+        "description": "Реализован модуль для двусторонней асинхронной связи между клиентами и сервером. Поддерживает переподключение, буферизацию сообщений и маршрутизацию.",
+        "files": ["src/core/websocket/server.py", "src/core/websocket/client.py"]
+      },
+      {
+        "feature": "Система логирования",
+        "description": "Настроена система централизованного логирования с поддержкой различных обработчиков и форматов вывода.",
+        "files": ["src/core/monitoring/logger.py"]
+      },
+      {
         "feature": "Загрузка конфигурации",
         "description": "Реализована система для загрузки и объединения YAML-конфигураций с поддержкой сред и переменных окружения.",
         "files": ["src/infrastructure/config/config_loader.py", "src/infrastructure/config/config_manager.py", "docs/configuration_structure.md"]
@@ -110,11 +160,23 @@
         "feature": "Контейнеризация (Docker)",
         "description": "Подготовлена конфигурация docker-compose для развертывания приложения и его зависимостей (PostgreSQL, Redis) в изолированном окружении. Это упрощает запуск и обеспечивает консистентность сред.",
         "files": ["docker-compose.yaml"]
+      },
+      {
+        "feature": "Мониторинг метрик (в разработке)",
+        "description": "Ведется разработка системы сбора и агрегации метрик производительности приложения.",
+        "files": ["src/core/monitoring/metrics.py"]
+      },
+      {
+        "feature": "Графовый движок TokenGraph v1.0.0",
+        "description": "Реализованы: узлы‑токены, типовые связи, авто‑связывание (spatial/temporal), расширенные связи с метаданными, кэш путей/расстояний, статистика графа; CDNA‑валидация; генетические операторы (мутация, кроссовер, селекция) и расчет fitness.",
+        "files": ["src/core/graph/graph_engine.py", "src/core/graph/graph_manager.py", "config/core/token_graph.yaml", "config/specs/graph_cdna_spec.json"]
       }
     ],
     "moduleConfigurations": {
       "dna": "config/specs/dna_config.json",
-      "experience": "config/specs/experience_config.json"
+      "experience": "config/specs/experience_config.json",
+      "graph": "config/core/token_graph.yaml",
+      "graph_cdna": "config/specs/graph_cdna_spec.json"
     },
     "nextStepsBasedOnArchitecture": [
       "Разработка сервисов прикладного уровня: `TokenService` и `SpatialService`.",
@@ -218,6 +280,8 @@
   ,
   "specs": {
     "dna_config": "config/specs/dna_config.json",
-    "experience_config": "config/specs/experience_config.json"
+    "experience_config": "config/specs/experience_config.json",
+    "graph_cdna_spec": "config/specs/graph_cdna_spec.json",
+    "token_graph_config": "config/core/token_graph.yaml"
   }
 }
