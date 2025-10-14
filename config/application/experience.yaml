@@ -1,30 +1,92 @@
+# config/application/experience.yaml
 experience:
+  # Основные настройки
   enabled: true
+  environment: "development"      # Окружение: development/staging/production
+
+  # Настройки потока событий
   stream:
-    batch_size: 256
-    flush_interval: 1.0
-    backend: "console"
-    file_path: "./data/experience_events.jsonl"
-    http_endpoint: null
-    retain_in_memory: true
-    max_buffer_size: 10000
+    batch_size: 256               # Размер батча для обработки
+    flush_interval: 1.0           # Интервал сброса буфера (сек)
+    max_buffer_size: 10000        # Максимальный размер буфера в памяти
+    backpressure_threshold: 0.8   # Порог срабатывания backpressure (0.0-1.0)
 
+    # Настройки бэкендов
+    backends:
+      - name: "console"           # Вывод в консоль (для отладки)
+        enabled: true
+        level: "INFO"             # Уровень логирования
+
+      - name: "file"              # Сохранение в файл
+        enabled: true
+        path: "./data/experience_events.jsonl"
+        rotation: "100 MB"        # Ротация файлов при достижении размера
+        compression: "gzip"       # Сжатие старых файлов
+
+      - name: "http"              # Отправка на HTTP эндпоинт
+        enabled: false
+        endpoint: "http://localhost:8000/api/v1/experience"
+        timeout: 5.0              # Таймаут запроса (сек)
+        retry_attempts: 3         # Количество попыток повтора
+        retry_delay: 1.0          # Задержка между попытками (сек)
+
+  # Хранилище данных
   storage:
-    circular_buffer_size: 100000
-    sliding_window_size: 1000000
-    sliding_window_duration_hours: 24
+    type: "circular_buffer"       # Тип хранилища: circular_buffer или sliding_window
+    circular_buffer_size: 100000  # Размер циклического буфера
+    sliding_window_size: 1000000  # Размер скользящего окна (элементы)
+    sliding_window_duration: "24h" # Длительность хранения в скользящем окне
 
+  # Стратегии выборки
   sampling:
-    default_strategy: "uniform"
-    prioritized_alpha: 0.6
-    prioritized_beta: 0.4
-    recent_window_size: 10000
+    default_strategy: "uniform"   # uniform/prioritized/recent/diverse
+    strategies:
+      uniform:                    # Равномерная выборка
+        enabled: true
+      prioritized:                # Приоритетная выборка
+        enabled: true
+        alpha: 0.6                # Степень приоритизации (0-1)
+        beta: 0.4                 # Степень компенсации смещения (0-1)
+        epsilon: 1e-6             # Малое значение для избежания нулевых вероятностей
+      recent:                     # Выборка последних событий
+        enabled: true
+        window_size: 10000        # Размер окна последних событий
+      diverse:                    # Разнообразная выборка
+        enabled: true
+        similarity_threshold: 0.7 # Порог схожести для отбора
+        max_similar: 10           # Максимальное количество похожих элементов
 
-  causality_tracking:
+  # Отслеживание причинно-следственных связей
+  causality:
     enabled: true
-    auto_link_threshold_ms: 100
-    max_chain_depth: 10
+    auto_link_events: true        # Автоматическое связывание событий
+    link_threshold_ms: 100        # Максимальный интервал для связи (мс)
+    max_causal_chain: 10          # Максимальная глубина цепочки причинности
+    store_full_trajectories: true # Хранить полные траектории
 
+  # Интеграция с другими модулями
   integration:
-    dna_guardian_integration: true
-    auto_record_token_events: true
+    dna_guardian:
+      enabled: true               # Интеграция с DNAGuardian
+      auto_record_events: true    # Автоматическая запись событий
+      event_types:                # Типы событий для записи
+        - "token_created"
+        - "token_updated"
+        - "experience_stored"
+
+    monitoring:
+      enabled: true
+      metrics_prefix: "neurograph.experience"
+      collect_interval: 60        # Интервал сбора метрик (сек)
+
+  # Настройки производительности
+  performance:
+    max_workers: 4                # Максимальное количество рабочих потоков
+    queue_size: 1000              # Размер очереди задач
+    batch_processing_timeout: 30  # Таймаут обработки батча (сек)
+
+  # Настройки отладки
+  debug:
+    log_raw_events: false         # Логировать сырые события
+    validate_schema: true         # Валидировать схему событий
+    trace_sampling: 0.01          # Процент событий для детального логирования (0-1)

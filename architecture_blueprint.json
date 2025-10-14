@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-  "version": "1.2.0",
+  "version": "0.3.0",
   "architecture_style": "clean-architecture-with-hexagonal",
   "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
-  "last_updated": "2025-10-12",
+  "last_updated": "2025-10-13",
     
     "core_principles": {
       "token_based_computing": "Токен-ориентированные вычисления",
@@ -20,15 +20,17 @@
             "responsibility": "Основная сущность для представления данных",
             "components": [
               "Token (реализован, спецификация завершена) — src/core/token/token.py",
-              "TokenFactory (реализована, управляется через TokenFactoryConfig) — src/core/token/factory.py",
+              "TokenFactory (реализована) — src/core/token/factory.py",
               "TokenService (реализован, orchestration) — src/core/token/token_service.py",
-              "TokenRegistry (планируется)"
+              "TokenRegistry (планируется)",
+              "TokenFactoryConfig (реализован) — конфигурация фабрики токенов"
             ],
             "characteristics": [
-              "Бинарный формат", 
-              "Многомерные координаты", 
-              "Метаданные",
-              "Регистрация типов токенов"
+              "Бинарный формат (64 байта)",
+              "Многомерные координаты (8 уровней по 3 оси)",
+              "Метаданные (ID, флаги, вес, временная метка)",
+              "Поддержка создания токенов опыта (experience tokens)",
+              "Конфигурируемые параметры по умолчанию"
             ]
           },
           "spatial": {
@@ -50,17 +52,26 @@
           "graph": {
             "responsibility": "Графовая система связей между токенами",
             "components": [
-              "TokenGraph (реализован) — src/core/graph/graph_engine.py (основные структуры и операции)",
-              "GraphManager (частично) — src/core/graph/graph_manager.py (API экспонируется через пакет) (план/реализация)",
+              "TokenGraph (реализован, v1.0.0, production) — src/core/graph/graph_engine.py",
+              "GraphManager (реализован) — src/core/graph/graph_manager.py",
+              "GraphCDNAValidator (реализован) — валидация операций по CDNA",
+              "Enhanced Connections (реализовано) — расширенное хранение и метаданные связей",
+              "Subgraph / GraphStats / TokenFlags / Encoders (реализованы)",
+              "Конфигурация графа — config/core/token_graph.yaml",
+              "Спецификация CDNA для графа — config/specs/graph_cdna_spec.json",
               "ShortTermMemory (планируется)",
               "LongTermMemory (планируется)"
             ],
             "characteristics": [
-              "Управление графом",
-              "Операции с графом",
-              "Кратковременная память",
-              "Долговременная память",
-              "Индекс связей"
+              "Управление графом и индекс связей",
+              "Автоматические связи: пространственные и временные",
+              "Статистика графа (степень, кластеризация, компоненты) и центральность",
+              "Генетические операторы: мутации, кроссовер, селекция",
+              "Фитнес-графа и поколения (generation tracking)",
+              "Расширенные связи: идентификаторы, метаданные, направление, вес/затухание",
+              "CDNA-валидация операций и ограничений (на основе graph_cdna_spec.json)",
+              "Интеграция Experience Stream (запись событий)",
+              "Кэши путей и расстояний"
             ]
           },
           "utils": {
@@ -109,17 +120,40 @@
             "responsibility": "Сбор, хранение и передача событий опыта (Experience) для обучения и анализа",
             "components": [
               "ExperienceEvent (Pydantic model) — src/core/experience/event.py (реализован)",
-              "ExperienceStream (реализован в виде концепта) — src/core/experience/stream.py (интеграция с TokenFactory и CoordinateSystem)",
-              "ExperienceSampler / storage (планируется)",
-              "DNAExperienceIntegration (частично) — интеграция с DNAGuardian в TokenFactory / CoordinateSystem"
+              "ExperienceStream — src/core/experience/stream.py (реализован)",
+              "ExperienceTrajectory — хранение последовательностей событий",
+              "ExperienceBatch — пакетная обработка событий",
+              "CircularBuffer / SlidingWindow — потокобезопасные структуры хранения",
+              "Samplers (uniform, prioritized, recent, diverse) — src/core/experience/samplers.py",
+              "Storage backends (console, file, HTTP) — поддержка различных хранилищ",
+              "DNAExperienceIntegration — интеграция с DNAGuardian"
             ],
             "characteristics": [
-              "Асинхронная буферизация и батчинг",
-              "Поддержка backend-ов: консоль, file (JSONL), HTTP",
-              "Политики сэмплинга: uniform, prioritized, recent, diverse",
-              "Интеграция с DNAGuardian для записи ADNA/CDNA-событий",
-              "Config-driven: параметры storage/sampling/causality в YAML",
-              "Fail-safe поведение: ошибки не ломают основной поток"
+              "Асинхронная буферизация и батчинг событий",
+              "Потокобезопасные структуры данных",
+              "Гибкая система плагинов для сэмплеров и хранилищ",
+              "Поддержка различных форматов сериализации (JSON, MessagePack)",
+              "Метрики и мониторинг производительности",
+              "Конфигурация через YAML/JSON",
+              "Интеграция с системой логирования",
+              "Поддержка распределенного трейсинга"
+            ]
+          },
+          "websocket": {
+            "responsibility": "Двусторонняя асинхронная связь с клиентами",
+            "components": [
+              "NeuroGraphWebSocket — ui/web/src/services/websocket/neurograph-websocket.ts",
+              "WebSocketServer — серверная часть WebSocket API",
+              "MessageBroker — маршрутизация сообщений",
+              "ConnectionManager — управление подключениями"
+            ],
+            "characteristics": [
+              "Поддержка переподключения при обрыве связи",
+              "Буферизация сообщений при потере соединения",
+              "Типизированные сообщения (TypeScript)",
+              "Масштабируемая архитектура",
+              "Аутентификация и авторизация подключений",
+              "Мониторинг состояния соединений"
             ]
           }
         }

@@ -1,10 +1,106 @@
-# Настройки для графовой подсистемы (NeuroGraph)
+# config/core/graph.yaml
 
+# Конфигурация графовой подсистемы NeuroGraph
 graph:
-  engine: "networkx"   # networkx | custom
-  default_weight: 0.5
-  max_neighbors: 256
+  # Основные настройки
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  enabled: true              # Включение/отключение подсистемы
+  
+  # Движок графа
+  engine: "networkx"         # networkx | dgl | custom
+  directed: true             # Ориентированный граф
+  multigraph: false          # Мультиграф (разрешить несколько рёбер между узлами)
+  
+  # Параметры графа по умолчанию
+  defaults:
+    node_weight: 0.5         # Вес узла по умолчанию
+    edge_weight: 0.5         # Вес ребра по умолчанию
+    max_neighbors: 256       # Максимальное количество соседей
+    max_degree: 512          # Максимальная степень узла
+  
+  # Настройки производительности
+  performance:
+    cache_enabled: true      # Кэширование часто используемых подграфов
+    cache_size: 10000        # Максимальное количество кэшируемых элементов
+    batch_size: 64           # Размер пакета для пакетных операций
+    max_workers: 4           # Максимальное количество рабочих потоков
+    preload_cache: true      # Предзагрузка часто используемых данных
+  
+  # Настройки персистентности
   persistence:
-    backend: "redis"
+    enabled: true
+    backend: "redis"         # redis | postgres | arangodb | neo4j
+    auto_save: true          # Автосохранение изменений
+    save_interval: 60        # Интервал автосохранения (сек)
+    
+    # Настройки Redis
     redis:
       url: "redis://localhost:6379/2"
+      key_prefix: "graph:"
+      connection_pool: 10
+      read_timeout: 5.0
+      write_timeout: 5.0
+      
+    # Настройки PostgreSQL (альтернативный бэкенд)
+    postgres:
+      dsn: "postgresql://user:pass@localhost:5432/neurograph"
+      nodes_table: "graph_nodes"
+      edges_table: "graph_edges"
+      batch_size: 1000
+      
+    # Настройки ArangoDB (альтернативный бэкенд)
+    arangodb:
+      url: "http://localhost:8529"
+      database: "neurograph"
+      graph_name: "main_graph"
+      username: "root"
+      password: ""
+
+  # Индексация и поиск
+  indexing:
+    enabled: true
+    auto_reindex: true       # Автоматическая переиндексация при изменениях
+    index_types:             # Типы индексов
+      - "spatial"            # Пространственный индекс
+      - "semantic"           # Семантический индекс
+      - "temporal"           # Временной индекс
+    spatial:
+      resolution: 0.01       # Разрешение пространственного индекса
+      dimensions: 3          # Количество пространственных измерений
+    semantic:
+      model: "all-MiniLM-L6-v2"  # Модель для эмбеддингов
+      vector_size: 384       # Размерность вектора эмбеддинга
+
+  # Алгоритмы анализа графа
+  algorithms:
+    pagerank:
+      damping: 0.85
+      max_iter: 100
+      tol: 1.0e-6
+    community_detection:
+      method: "louvain"      # louvain | leiden | label_propagation
+      resolution: 1.0
+      randomize: true
+    shortest_path:
+      algorithm: "dijkstra"  # dijkstra | bellman-ford | a*
+      weight: "weight"       # Поле веса для расчёта путей
+
+  # Мониторинг и метрики
+  monitoring:
+    enabled: true
+    metrics_prefix: "graph"
+    collect_interval: 60     # Интервал сбора метрик (сек)
+    track:
+      nodes_count: true      # Количество узлов
+      edges_count: true      # Количество рёбер
+      degree_distribution: true
+      component_sizes: true  # Размеры компонент связности
+      algorithm_timings: true
+
+  # Настройки отладки
+  debug:
+    log_graph_operations: false  # Логировать операции с графом
+    validate_on_update: true     # Валидация графа после изменений
+    dump_on_error: true          # Сохранять дамп при ошибке
+    profile_performance: false   # Профилирование производительности

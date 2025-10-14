@@ -1,17 +1,101 @@
+# config/application/memory.yaml
 
+# Конфигурация системы памяти
 memory:
+  # Общие настройки памяти
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  
+  # Кратковременная память (рабочая память)
   short_term:
     enabled: true
-    capacity: 10000            # максимальное количество элементов в краткосрочной памяти
-    eviction_policy: "lru"    # политика вытеснения: lru | fifo | random
-
+    capacity: 10000            # Максимальное количество элементов
+    max_memory_mb: 1024        # Максимальный объем памяти в МБ
+    eviction_policy: "lru"     # lru | lfu | fifo | random
+    ttl_seconds: 3600          # Время жизни элемента по умолчанию (0 = бессрочно)
+    
+    # Настройки производительности
+    concurrency: 4             # Количество потоков для обработки
+    batch_size: 32             # Размер пакета для пакетных операций
+    
+    # Мониторинг
+    metrics_enabled: true
+    metrics_prefix: "memory.short_term"
+  
+  # Долговременная память
   long_term:
     enabled: true
     persistence: true
-    backend: "postgres"       # backend: postgres | s3 | filesystem
+    backend: "postgres"        # postgres | s3 | filesystem | redis
+    
+    # Настройки PostgreSQL
     postgres:
       dsn: "postgresql://user:pass@localhost:5432/neurograph"
-
+      table_name: "long_term_memory"
+      connection_pool_size: 10
+      connection_timeout: 30    # Таймаут подключения (сек)
+      
+      # Индексация
+      indexes:
+        - "timestamp"
+        - "type"
+        - "priority"
+    
+    # Настройки S3 (альтернативный бэкенд)
+    s3:
+      bucket: "neurograph-memory"
+      region: "us-east-1"
+      prefix: "long_term/"
+      
+    # Настройки файловой системы (альтернативный бэкенд)
+    filesystem:
+      path: "/var/lib/neurograph/memory"
+      max_file_size_mb: 100
+      
+    # Настройки Redis (альтернативный бэкенд)
+    redis:
+      dsn: "redis://localhost:6379/1"
+      ttl_days: 30
+  
+  # Механизм репетиции (повторения)
   rehearsal:
     enabled: false
-    fraction_to_rehearse: 0.01
+    strategy: "random"         # random | importance | uncertainty
+    fraction_to_rehearse: 0.01  # Доля данных для репетиции (0-1)
+    batch_size: 64             # Размер батча для репетиции
+    
+    # Планировщик репетиции
+    schedule:
+      enabled: true
+      interval_minutes: 60      # Интервал между сессиями репетиции
+      max_duration_minutes: 15  # Максимальная длительность сессии
+    
+    # Взвешивание по важности
+    importance_weighting:
+      enabled: true
+      decay_factor: 0.9         # Скорость затухания важности
+      max_importance: 100.0     # Максимальный вес важности
+  
+  # Кэширование запросов
+  query_cache:
+    enabled: true
+    ttl_seconds: 300           # Время жизни кэша
+    max_entries: 1000          # Максимальное количество записей
+    
+  # Сжатие данных
+  compression:
+    enabled: true
+    algorithm: "lz4"           # lz4 | zstd | gzip
+    level: 3                   # Уровень сжатия (1-9)
+  
+  # Шифрование
+  encryption:
+    enabled: false
+    algorithm: "AES-256-GCM"   # Алгоритм шифрования
+    key_rotation_days: 30      # Период смены ключей
+  
+  # Настройки отладки
+  debug:
+    log_queries: false         # Логировать все запросы
+    trace_memory_usage: false  # Трассировка использования памяти
+    validate_schema: true      # Валидация схемы данных

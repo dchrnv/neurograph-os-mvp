@@ -1,15 +1,84 @@
 # config/core/grid.yaml
 
-# Конфигурация для пространственных индексов и структур (SparseGrid, SpatialHash и т.д.)
+# Конфигурация пространственных индексов и структур
 grid:
+  # Общие настройки
+  environment: "development"  # development/staging/production
+  log_level: "INFO"           # Уровень логирования
+  enabled: true              # Включение/отключение подсистемы
+  
+  # SparseGrid - разреженная сетка
   sparse_grid:
-    precision: 2
-    default_resolution: 0.01
-    max_cells: 100000
-
+    enabled: true
+    precision: 2             # Количество знаков после запятой
+    default_resolution: 0.01 # Разрешение по умолчанию
+    max_cells: 100000        # Максимальное количество ячеек
+    auto_scale: true         # Автоматическое масштабирование
+    dimensions: 3            # Количество измерений (2D/3D)
+    boundary_check: true     # Проверка границ
+    default_value: 0.0       # Значение по умолчанию для пустых ячеек
+    
+    # Оптимизация памяти
+    compression:
+      enabled: true
+      algorithm: "zstd"      # zstd | lz4 | gzip
+      level: 3               # Уровень сжатия (1-9)
+      
+    # Кэширование
+    cache:
+      enabled: true
+      size: 10000            # Размер кэша в количестве ячеек
+      ttl: 3600              # Время жизни в секундах
+  
+  # Spatial Hash - пространственный хеш
   spatial_hash:
-    cell_size: 0.1
-    load_factor: 0.75
-
-# Note: coordinate_system may contain enable_auto_reindex flag which controls
-# whether indexes attempt an automatic reindex after CDNA scale changes.
+    enabled: true
+    cell_size: 0.1           # Размер ячейки
+    load_factor: 0.75        # Коэффициент заполнения перед рехешированием
+    initial_capacity: 1024   # Начальная емкость
+    max_load_factor: 0.9     # Максимальный коэффициент заполнения
+    min_load_factor: 0.25    # Минимальный коэффициент заполнения
+    auto_resize: true        # Автоматическое изменение размера
+    
+    # Производительность
+    concurrency: 4           # Количество потоков для параллельной обработки
+    batch_size: 1000         # Размер пакета для пакетных операций
+  
+  # Octree - октодерево
+  octree:
+    enabled: false
+    max_depth: 10            # Максимальная глубина дерева
+    min_cell_size: 0.001     # Минимальный размер ячейки
+    max_items_per_node: 32   # Максимальное количество элементов на узел
+    auto_balance: true       # Автоматическая балансировка
+    
+  # R-Tree - R-дерево
+  rtree:
+    enabled: false
+    max_entries: 50          # Максимальное количество записей в узле
+    min_entries: 20          # Минимальное количество записей в узле
+    fill_factor: 0.4         # Фактор заполнения при разделении
+  
+  # Настройки координатной системы
+  coordinate_system:
+    enable_auto_reindex: true  # Автоматическая переиндексация при изменении масштаба
+    default_scale: 1.0       # Масштаб по умолчанию
+    auto_scale_threshold: 0.1 # Порог для автоматического масштабирования
+    
+  # Мониторинг и метрики
+  monitoring:
+    enabled: true
+    metrics_prefix: "grid"
+    collect_interval: 60     # Интервал сбора метрик (сек)
+    track:
+      cell_count: true       # Количество занятых ячеек
+      memory_usage: true     # Использование памяти
+      query_performance: true # Производительность запросов
+      update_timings: true   # Время обновления
+  
+  # Настройки отладки
+  debug:
+    log_operations: false    # Логировать операции
+    validate_structure: true # Валидация структуры после изменений
+    dump_on_error: true      # Сохранять дамп при ошибке
+    profile_queries: false   # Профилирование запросов
