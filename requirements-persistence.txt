@@ -1,0 +1,24 @@
+# NeuroGraph OS - Persistence Layer Dependencies
+
+# Database Core
+sqlalchemy>=2.0.0,<3.0.0
+alembic>=1.12.0,<2.0.0
+
+# PostgreSQL
+asyncpg>=0.29.0,<1.0.0  # Async PostgreSQL driver
+psycopg2-binary>=2.9.0,<3.0.0  # Sync PostgreSQL driver (for migrations)
+
+# Redis
+redis>=5.0.0,<6.0.0
+hiredis>=2.2.0,<3.0.0  # C parser for performance
+
+# Connection pooling
+aiopg>=1.4.0,<2.0.0  # Additional async pool support
+
+# Serialization
+msgpack>=1.0.0,<2.0.0  # Fast binary serialization
+orjson>=3.9.0,<4.0.0  # Fast JSON serialization
+
+# Utilities
+python-dotenv>=1.0.0,<2.0.0  # Environment variables
+pydantic>=2.0.0,<3.0.0  # Data validation

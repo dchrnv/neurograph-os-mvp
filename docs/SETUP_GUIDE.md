@@ -117,8 +117,8 @@ docker-compose exec web bash
 # sudo apt install python3-venv
 
 # Создайте виртуальное окружение
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
 # ИЛИ
 .\venv\Scripts\activate  # Windows
 

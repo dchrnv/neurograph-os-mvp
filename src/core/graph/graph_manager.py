@@ -4,6 +4,7 @@ Graph Manager - высокоуровневый интерфейс для раб�
 """
 
 import time
+import asyncio
 from typing import Dict, List, Optional, Set, Tuple, Any, Iterator
 from dataclasses import dataclass
 from enum import Enum
@@ -14,6 +15,8 @@ from .graph_engine import (
 )
 from ..token.token import Token
 from ..spatial import SparseGrid, create_demo_sparse_grid
+from ..events import Event, EventType, EventCategory
+from ..events.global_bus import GlobalEventBus
 
 # === КОНФИГУРАЦИЯ ГРАФА ===
 
@@ -91,6 +94,25 @@ class GraphManager:
             
             # Обновляем счетчики
             self._operation_counts['add_token'] += 1
+
+            # Публикуем событие (неинвазивно), если шина активна
+            try:
+                if GlobalEventBus.is_initialized() and GlobalEventBus.is_running():
+                    bus = GlobalEventBus.get()
+                    event = Event(
+                        type=EventType.GRAPH_STRUCTURE_CHANGED,
+                        category=EventCategory.GRAPH,
+                        source="graph_manager",
+                        payload={
+                            "action": "token_added",
+                            "token_id": token.id,
+                            "total_nodes": len(self.graph.tokens),
+                            "total_edges": self.graph._stats.total_edges,
+                        },
+                    )
+                    bus.publish_nowait(event)
+            except Exception:
+                pass
             
             # Автоматическая очистка
             if self.config.enable_auto_cleanup:
@@ -154,6 +176,27 @@ class GraphManager:
             if success:
                 self._operation_counts['connect'] += 1
                 self._clear_caches_for_edge(token1_id, token2_id)
+
+                # Событие о добавлении связи
+                try:
+                    if GlobalEventBus.is_initialized() and GlobalEventBus.is_running():
+                        bus = GlobalEventBus.get()
+                        event = Event(
+                            type=EventType.GRAPH_CONNECTION_ADDED,
+                            category=EventCategory.GRAPH,
+                            source="graph_manager",
+                            payload={
+                                "source": token1_id,
+                                "target": token2_id,
+                                "connection_type": connection_type.name if hasattr(connection_type, 'name') else str(connection_type),
+                                "weight": weight,
+                                "confidence": confidence,
+                                "total_edges": self.graph._stats.total_edges,
+                            },
+                        )
+                        bus.publish_nowait(event)
+                except Exception:
+                    pass
             
             return success
             
@@ -178,6 +221,24 @@ class GraphManager:
             if success:
                 self._operation_counts['disconnect'] += 1
                 self._clear_caches_for_edge(token1_id, token2_id)
+
+                # Событие об удалении связи
+                try:
+                    if GlobalEventBus.is_initialized() and GlobalEventBus.is_running():
+                        bus = GlobalEventBus.get()
+                        event = Event(
+                            type=EventType.GRAPH_CONNECTION_REMOVED,
+                            category=EventCategory.GRAPH,
+                            source="graph_manager",
+                            payload={
+                                "source": token1_id,
+                                "target": token2_id,
+                                "total_edges": self.graph._stats.total_edges,
+                            },
+                        )
+                        bus.publish_nowait(event)
+                except Exception:
+                    pass
             
             return success
             
@@ -471,4 +532,3 @@ class GraphManager:
     
     def __repr__(self) -> str:
         return f"GraphManager(nodes={len(self.graph.tokens)}, edges={self.graph._stats.total_edges})"
-

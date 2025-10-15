@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-  "version": "0.3.0",
+  "version": "0.6.0",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
-  "last_updated": "2025-10-13",
+  "status": "В разработке (v0.6 - Персистенс реализован, добавлены адаптеры и миграции; обновлены модули)",
+  "last_updated": "2025-10-15",
     
     "core_principles": {
       "token_based_computing": "Токен-ориентированные вычисления",
@@ -137,7 +137,27 @@
               "Конфигурация через YAML/JSON",
               "Интеграция с системой логирования",
               "Поддержка распределенного трейсинга"
-            ]
+            ],
+            "events": {
+              "responsibility": "Централизованная система событий для асинхронной коммуникации между модулями",
+              "components": [
+                "Event (базовая модель) — src/core/events/event.py",
+                "EventBus (реализован) — src/core/events/event_bus.py",
+                "GlobalEventBus (реализован) — src/core/events/global_bus.py (синглтон)",
+                "EventSystem (утилиты) — src/core/events/utils.py",
+                "Декораторы (реализованы) — src/core/events/decorators.py"
+              ],
+              "characteristics": [
+                "Асинхронная публикация и подписка на события",
+                "Поддержка фильтрации событий",
+                "Метрики производительности",
+                "Гибкая система приоритетов",
+                "Потокобезопасная реализация",
+                "Поддержка контекстных менеджеров",
+                "Интеграция с системой логирования",
+                "Гибкая настройка через конфигурационный файл"
+              ]
+            }  
           },
           "websocket": {
             "responsibility": "Двусторонняя асинхронная связь с клиентами",
@@ -202,8 +222,20 @@
         "components": ["ConfigLoader (реализован) — src/infrastructure/config", "ConfigManager (реализован)"]
           },
           "persistence": {
-            "description": "Слой для хранения данных",
-            "technologies": ["PostgreSQL (интегрируется)", "Redis (интегрируется)"]
+            "description": "Слой для хранения данных (реализован)",
+            "technologies": ["PostgreSQL (реализовано)", "Redis (реализовано)", "Alembic (миграции)", "SQLAlchemy (адаптеры)"],
+            "components": [
+              "DBAdapters — src/infrastructure/persistence/adapters (реализованы)",
+              "Repositories — src/infrastructure/persistence/repositories (реализованы)",
+              "Alembic миграции — alembic/ (реализованы)",
+              "ConnectionPool / SessionManager — src/infrastructure/persistence/connection.py",
+              "PersistenceConfig — config/infrastructure/persistence.yaml"
+            ],
+            "notes": [
+              "Миграции управляются через alembic (alembic.ini присутствует)",
+              "Docker-compose конфигурация для БД доступна в deployments/docker/docker-compose.yaml",
+              "Тестовые фикстуры и integration tests находятся в tests/integration/"
+            ]
           },
           "api": {
             "description": "Реализация внешних API",

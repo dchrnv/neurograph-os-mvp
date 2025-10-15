@@ -1,0 +1,112 @@
+# NeuroGraph OS - Database Configuration
+# config/infrastructure/database.yaml
+
+database:
+  # PostgreSQL Configuration
+  postgres:
+    enabled: true
+    host: ${POSTGRES_HOST:localhost}
+    port: ${POSTGRES_PORT:5432}
+    database: ${POSTGRES_DB:neurograph}
+    user: ${POSTGRES_USER:neurograph_user}
+    password: ${POSTGRES_PASSWORD:changeme}
+    
+    # Connection Pool Settings
+    pool:
+      min_size: 5
+      max_size: 20
+      max_overflow: 10
+      pool_timeout: 30
+      pool_recycle: 3600
+      echo: false  # SQL query logging
+      echo_pool: false
+    
+    # Schema Settings
+    schema:
+      default: public
+      tokens: tokens
+      graph: graph
+      experience: experience
+    
+    # Migration Settings
+    alembic:
+      script_location: "src/infrastructure/persistence/migrations"
+      version_locations: "src/infrastructure/persistence/migrations/versions"
+      
+  # Redis Configuration
+  redis:
+    enabled: true
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    db: ${REDIS_DB:0}
+    password: ${REDIS_PASSWORD:}
+    
+    # Connection Settings
+    connection:
+      max_connections: 50
+      socket_timeout: 5
+      socket_connect_timeout: 5
+      socket_keepalive: true
+      health_check_interval: 30
+    
+    # Cache Settings
+    cache:
+      default_ttl: 3600  # 1 hour
+      max_memory: "256mb"
+      eviction_policy: "allkeys-lru"
+      
+      # Cache Prefixes
+      prefixes:
+        token: "token:"
+        graph: "graph:"
+        spatial: "spatial:"
+        experience: "exp:"
+        session: "session:"
+    
+    # Key Patterns
+    keys:
+      token_by_id: "token:{token_id}"
+      token_by_coords: "token:coords:{x}:{y}:{z}"
+      graph_neighbors: "graph:neighbors:{token_id}"
+      graph_stats: "graph:stats:{graph_id}"
+      spatial_region: "spatial:region:{x1}:{y1}:{z1}:{x2}:{y2}:{z2}"
+      experience_recent: "exp:recent:{count}"
+
+# Repository Settings
+repositories:
+  # Token Repository
+  token:
+    cache_enabled: true
+    cache_ttl: 3600
+    batch_size: 1000
+    
+  # Graph Repository
+  graph:
+    cache_enabled: true
+    cache_ttl: 1800
+    max_depth: 10
+    batch_size: 500
+    
+  # Experience Repository
+  experience:
+    cache_enabled: true
+    cache_ttl: 300
+    batch_size: 2000
+    retention_days: 30
+
+# Performance Settings
+performance:
+  query_timeout: 30000  # milliseconds
+  bulk_insert_size: 1000
+  index_maintenance:
+    enabled: true
+    schedule: "0 2 * * *"  # 2 AM daily
+    
+# Backup Settings
+backup:
+  enabled: true
+  schedule: "0 3 * * *"  # 3 AM daily
+  retention_days: 7
+  path: "/var/backups/neurograph"
+  s3_bucket: ${BACKUP_S3_BUCKET:}
+  encryption_key: ${BACKUP_ENCRYPTION_KEY:}
