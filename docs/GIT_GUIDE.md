@@ -31,7 +31,7 @@ git config --global pull.rebase false      # по умолчанию испол�
 ## Основные команды (шпаргалка)
 - Клонирование:
 ```bash
-git clone git@github.com:yourusername/neurograph-os.git
+git clone git@github.com:dchrnv/neurograph-os-dev.git
 ```
 - Создать ветку и переключиться:
 ```bash
