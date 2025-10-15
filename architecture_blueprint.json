@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-  "version": "0.6.0",
+  "version": "0.7.0",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.6 - Персистенс реализован, добавлены адаптеры и миграции; обновлены модули)",
+  "status": "В разработке (v0.7 - Персистенс реализован; начата реализация CLI, добавлены адаптеры и миграции)",
   "last_updated": "2025-10-15",
     
     "core_principles": {
@@ -264,8 +264,14 @@
             "endpoints": ["/api/v1/* (в разработке)"]
           },
           "cli": {
-            "description": "Командная строка для администрирования",
-            "commands": ["neuro-cli (планируется)"]
+            "description": "Командная строка для администрирования (частично реализована)",
+            "components": [
+              "CLI entrypoint — src/cli/ (частично реализован)",
+              "Команды — src/cli/commands/ (частично реализованы)"
+            ],
+            "commands": [
+              "neuro-cli (частично реализован) — базовая команда `config` реализована в src/cli/commands/config.py"
+            ]
           },
           "websocket": {
             "description": "Веб-сокеты для реального времени",
