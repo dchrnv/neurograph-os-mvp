@@ -1,10 +1,13 @@
 from typing import List, Optional
+import asyncio
 
 from src.core.token.token import Token
 from src.core.token.factory import TokenFactory
 from src.core.graph.graph_engine import TokenGraph
 from src.core.spatial.sparse_grid import SparseGrid
 from src.core.spatial.coordinates import MultiCoordinate, Point3D
+from src.core.events import Event, EventType, EventCategory
+from src.core.events.global_bus import GlobalEventBus
 
 
 class TokenService:
@@ -47,5 +50,32 @@ class TokenService:
 
         # 3. Добавляем токен в граф (который уже знает о сетке)
         self.token_graph.add_token(token)
+
+        # 4. Неинвазивная публикация события (если EventBus запущен)
+        try:
+            if GlobalEventBus.is_initialized() and GlobalEventBus.is_running():
+                bus = GlobalEventBus.get()
+                event = Event(
+                    type=EventType.TOKEN_CREATED,
+                    category=EventCategory.TOKEN,
+                    source="token_service",
+                    payload={
+                        "token_id": token.id,
+                        "level": level,
+                        "position": {"x": x, "y": y, "z": z},
+                        "weight": token.weight,
+                        "flags": token.flags,
+                    },
+                )
+                # fire-and-forget, не блокируем синхронный API
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(bus.publish(event))
+                except RuntimeError:
+                    # нет активного цикла — игнорируем
+                    pass
+        except Exception:
+            # никогда не прерываем основной поток из-за ошибок событий
+            pass
 
         return token

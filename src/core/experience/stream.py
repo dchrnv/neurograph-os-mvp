@@ -14,6 +14,8 @@ from .storage import CircularBuffer, SlidingWindow
 from .samplers import ExperienceSampler, SamplingStrategy
 import httpx
 from .config import load_experience_config
+from src.core.events import Event as CoreEvent, EventCategory as CoreEventCategory
+from src.core.events.global_bus import GlobalEventBus
 
 
 @dataclass
@@ -130,6 +132,35 @@ class ExperienceStream:
             self._sliding_window.append(rec)
             # keep staging buffer for flush/backends (store original for payload)
             self._buffer.append(event)
+            # Если это CoreEvent и интеграция разрешена — зеркалим в ExperienceStream
+            try:
+                if isinstance(event, CoreEvent):
+                    # respect config: only record selected categories when configured
+                    record_allowed = True
+                    try:
+                        cfg = getattr(self, '_sampling_cfg', {})
+                        # fallback to environment-configured categories if present in YAML
+                        record_categories = cfg.get('record_categories', None)
+                        if record_categories:
+                            record_allowed = event.category.value in record_categories
+                    except Exception:
+                        pass
+                    if record_allowed:
+                        mirrored = {
+                            'event_id': event.id,
+                            'event_type': f"event.{event.type.value}",
+                            'timestamp': event.timestamp,
+                            'source_component': event.source,
+                            'data': event.payload,
+                            'state': {
+                                'category': event.category.value,
+                                'priority': event.priority.name,
+                            },
+                            'reward': 1.0 if event.category == CoreEventCategory.EVOLUTION else ( -1.0 if event.priority.value >= 7 else 0.0 ),
+                        }
+                        self._buffer.append(mirrored)
+            except Exception:
+                pass
             if len(self._buffer) >= self.config.batch_size:
                 # Best-effort scheduling of flush: if an event loop is running, schedule an async task;
                 # otherwise run flush synchronously. Avoid calling asyncio.run when already inside an event loop.

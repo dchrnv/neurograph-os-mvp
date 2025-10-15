@@ -4,7 +4,7 @@
   "projectStatus": {
     "projectName": "NeuroGraph OS",
     "version": "0.3.0",
-    "description": "Проект по созданию когнитивной архитектуры, основанной на токен-ориентированных вычислениях и пространственном интеллекте.",
+    "description": "Проект по созданию когнитивной архитектуры, основанной на токен-ориентированных вычислениях, пространственном интеллекте и событийно-ориентированном взаимодействии.",
     "status": "В разработке (v0.3 - Добавлены подсистемы dna и experience; интеграция потоков опыта)",
     "last_updated": "2025-10-13",
     "projectStructure": {
@@ -55,6 +55,22 @@
       "config/application/experience.yaml": {
         "status": "Добавлен",
         "summary": "РUNTIME конфигурация подсистемы Experience: размеры буферов, параметры сэмплинга, batch_size."
+      },
+      "src/core/events": {
+        "status": "Реализован (v1.0.0, production)",
+        "summary": "Система событий (Event System): асинхронная шина событий (EventBus), модели (Event), декораторы (@EventHandler) и миксины (EventEmitter) для слабосвязанной коммуникации."
+      },
+      "src/core/events/event.py": {
+        "status": "Реализован",
+        "summary": "Pydantic-модель Event и перечисления (EventType, EventCategory, EventPriority)."
+      },
+      "src/core/events/event_bus.py": {
+        "status": "Реализован",
+        "summary": "Основная реализация асинхронной шины событий EventBus (pub/sub)."
+      },
+      "config/core/event_bus.yaml": {
+        "status": "Добавлен",
+        "summary": "Конфигурация для EventBus (размер очереди, метрики, логирование)."
       },
       "docs/EXPERIENCE_STREAM.md": {
         "status": "Добавлен",
@@ -170,12 +186,18 @@
         "feature": "Графовый движок TokenGraph v1.0.0",
         "description": "Реализованы: узлы‑токены, типовые связи, авто‑связывание (spatial/temporal), расширенные связи с метаданными, кэш путей/расстояний, статистика графа; CDNA‑валидация; генетические операторы (мутация, кроссовер, селекция) и расчет fitness.",
         "files": ["src/core/graph/graph_engine.py", "src/core/graph/graph_manager.py", "config/core/token_graph.yaml", "config/specs/graph_cdna_spec.json"]
+      },
+      {
+        "feature": "Система событий (Event System)",
+        "description": "Реализована асинхронная система событий для слабосвязанного взаимодействия компонентов. Включает EventBus, модели событий, декораторы и миксины для удобной интеграции.",
+        "files": ["src/core/events/event.py", "src/core/events/event_bus.py", "src/core/events/decorators.py", "config/core/event_bus.yaml"]
       }
     ],
     "moduleConfigurations": {
       "dna": "config/specs/dna_config.json",
       "experience": "config/specs/experience_config.json",
       "graph": "config/core/token_graph.yaml",
+      "events": "config/core/event_bus.yaml",
       "graph_cdna": "config/specs/graph_cdna_spec.json"
     },
     "nextStepsBasedOnArchitecture": [
@@ -185,7 +207,7 @@
       "Создание первых эндпоинтов HTTP API на FastAPI для взаимодействия с ядром системы.",
       "Написание юнит-тестов для реализованных компонентов ядра."
     ],
-  "summary": "Проект находится на стадии активной разработки. Реализованы ключевые сущности доменного слоя (Token, CoordinateSystem). Добавлены подсистемы DNA и Experience; интегрирована запись событий опыта в CoordinateSystem. Заложена надежная основа для системы конфигурации и контейнеризации (Docker). Следующие шаги — сервисы прикладного уровня и API."
+  "summary": "Проект находится на стадии активной разработки. Реализованы ключевые сущности доменного слоя (Token, CoordinateSystem). Добавлены подсистемы DNA, Experience и Events. Интегрирована запись событий опыта в CoordinateSystem. Заложена надежная основа для системы конфигурации и контейнеризации (Docker). Следующие шаги — сервисы прикладного уровня и API."
   },
   "sourceFiles": [
     {
