@@ -1,15 +1,14 @@
 # Руководство по настройке
 
 ## Оглавление
+
 1. [Требования](#требования)
-2. [Быстрый старт](#быстрый-старт)
-3. [Настройка окружения](#настройка-окружения)
-4. [Запуск в Docker](#запуск-в-docker)
-5. [Ручная установка](#ручная-установка)
-6. [Настройка IDE](#настройка-ide)
-7. [Проверка установки](#проверка-установки)
-8. [Устранение неполадок](#устранение-неполадок)
-9. [Дополнительные настройки](#дополнительные-настройки)
+2. [Быстрый старт с Docker (рекомендуемый способ)](#быстрый-старт-с-docker-рекомендуемый-способ)
+3. [Ручная установка (для разработки)](#ручная-установка-для-разработки)
+4. [Настройка IDE](#настройка-ide)
+5. [Проверка установки](#проверка-установки)
+6. [Устранение неполадок](#устранение-неполадок)
+7. [Обновление проекта](#обновление-проекта)
 
 ## Требования
 
@@ -26,81 +25,35 @@
 - 4+ ядра процессора
 - 10 ГБ свободного места на диске
 
-## Быстрый старт
+## Быстрый старт с Docker (рекомендуемый способ)
 
-### Клонирование репозитория
-```bash
-git clone https://github.com/yourusername/neurograph-os.git
-cd neurograph-os
-```
+Этот метод автоматически настраивает все необходимые сервисы (PostgreSQL, Redis) и само приложение.
 
-### Запуск с Docker (рекомендуемый способ)
-```bash
-# Создайте и запустите контейнеры
-docker-compose up -d
+1.  **Клонируйте репозиторий:**
+    ```bash
+    git clone https://github.com/dchrnv/neurograph-os-dev.git
+    cd neurograph-os-dev
+    ```
 
-# Примените миграции
-docker-compose exec web alembic upgrade head
+2.  **Создайте файл `.env`:**
+    Скопируйте файл с примером переменных окружения. Для локального запуска его изменять не нужно.
+    ```bash
+    cp .env.example .env
+    ```
 
-# Проверьте логи
-docker-compose logs -f
-```
+3.  **Соберите и запустите контейнеры:**
+    Эта команда соберет образы и запустит все сервисы в фоновом режиме.
+    ```bash
+    docker-compose up -d --build
+    ```
 
-Приложение будет доступно по адресу: http://localhost:8000
+4.  **Примените миграции базы данных:**
+    ```bash
+    docker-compose exec web alembic upgrade head
+    ```
 
-## Настройка окружения
-
-### 1. Создайте файл .env
-```bash
-cp .env.example .env
-```
-
-### 2. Настройте переменные окружения
-Отредактируйте файл `.env`:
-
-```env
-# Основные настройки
-DEBUG=True
-ENVIRONMENT=development
-SECRET_KEY=your-secret-key
-
-# База данных
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=neurograph
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_URL=redis://${REDIS_HOST}:${REDIS_PORT}/0
-
-# Настройки API
-API_V1_STR=/api/v1
-PROJECT_NAME=Neurograph OS
-```
-
-## Запуск в Docker
-
-### Сборка и запуск
-```bash
-# Сборка образов
-docker-compose build
-
-# Запуск сервисов
-docker-compose up -d
-
-# Остановка сервисов
-docker-compose down
-
-# Просмотр логов
-docker-compose logs -f
-
-# Выполнение команд в контейнере
-docker-compose exec web bash
-```
+5.  **Проверьте, что все работает:**
+    Приложение будет доступно по адресу `http://localhost:8000`.
 
 ### Доступные сервисы
 - Веб-приложение: http://localhost:8000
@@ -108,9 +61,23 @@ docker-compose exec web bash
 - Redis Commander: http://localhost:8081
 - API документация: http://localhost:8000/docs
 
-## Ручная установка
+## Ручная установка (для разработки)
 
-### 1. Установите зависимости
+Этот способ подходит, если вы хотите запускать компоненты системы напрямую на вашей машине.
+
+### 1. Настройте переменные окружения
+
+Скопируйте файл с примером. Для ручной установки убедитесь, что `POSTGRES_HOST` и `REDIS_HOST` установлены в `localhost`.
+
+```bash
+cp .env.example .env
+# Отредактируйте .env, если необходимо
+```
+
+### 1. Создайте и активируйте виртуальное окружение
+
+> **Важно:** Этот шаг обязателен для изоляции зависимостей и предотвращения ошибок `externally-managed-environment` в современных ОС.
+
 ```bash
 # На системах Debian/Ubuntu может потребоваться установить пакет для создания виртуальных окружений:
 # sudo apt update
@@ -120,16 +87,27 @@ docker-compose exec web bash
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # ИЛИ
-.\venv\Scripts\activate  # Windows
+.\.venv\Scripts\activate  # Windows
 
-# Установите зависимости
-pip install -r requirements/dev.txt
+# После активации вы увидите (.venv) в начале командной строки.
+```
+
+### 2. Установите зависимости
+```bash
+pip install -e .[all]
 ```
 
 ### 2. Настройте базу данных
 ```bash
 # Создайте базу данных
 createdb neurograph
+
+> **Ошибка подключения?** Если вы видите ошибку `could not connect to server` или `подключиться... не удалось`, это означает, что `createdb` не может найти запущенный сервер PostgreSQL.
+> 1.  **Убедитесь, что PostgreSQL запущен.** На Linux: `sudo systemctl status postgresql`. На macOS (Homebrew): `brew services list`.
+> 2.  **Попробуйте подключиться через TCP/IP**, указав хост. Это самый надежный способ:
+>     ```bash
+>     createdb -h localhost -p 5432 neurograph
+>     ```
 
 # Примените миграции
 alembic upgrade head

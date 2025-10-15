@@ -21,7 +21,7 @@ extras_require = {
 setup(
     # Основные настройки пакета
     name="neurograph-os",
-    version="0.1.0",
+    version="0.7.0",
     
     # Поиск и включение всех пакетов в директории src
     packages=find_packages(where="src"),
@@ -38,16 +38,17 @@ setup(
     entry_points={
         "console_scripts": [
             "neuro-reqs=infrastructure.requirements.requirements_cli:main",
+            "neurograph=src.cli.main:cli",
         ],
     },
     
     # Метаданные пакета
     author="Chernov Denys",
     author_email="dreeftwood@gmail.com",
-    description="Когнитивная архитектура NeuroGraph OS (версия для разработки)",
+    description="Когнитивная архитектура NeuroGraph OS (dev)",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/dchrnv/neurograph-os.git",
+    url="https://github.com/dchrnv/neurograph-os-dev.git",
     
     # Классификаторы для PyPI
     classifiers=[
