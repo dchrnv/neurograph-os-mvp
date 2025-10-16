@@ -106,22 +106,48 @@
 
 ## ⚙️ Использование
 
-### Интерфейс командной строки (CLI)
+**Интерфейс командной строки (CLI)**
 
 CLI `neurograph` — основной инструмент для администрирования системы.
+# 1. Установить зависимости
+pip install -r requirements-cli.txt
 
-```bash
-# Получить общую справку
+# 2. Установить CLI
+pip install -e .
+
+# 3. Проверить установку
+neurograph --version
 neurograph --help
 
-# Посмотреть доступные конфигурации
-neurograph config
+# 4. Быстрый старт
+neurograph quickstart
 
-# Показать содержимое конфигурации графа в формате YAML
-neurograph config show core/token_graph -f yaml
-```
+# 5. Запустить демо
+chmod +x examples/cli_demo.sh
+./examples/cli_demo.sh
 
-### API
+# Системный статус
+neurograph system status
+
+# Создать токен
+neurograph token create --type test --x 1.0 --y 0.0 --z 0.0
+
+# Список токенов
+neurograph token list --limit 20
+
+# Создать связь
+neurograph graph connect <ID1> <ID2> --type spatial
+
+# Статистика графа
+neurograph graph stats
+
+# Проверка БД
+neurograph db status
+
+# Показать конфигурацию
+neurograph config show infrastructure/database
+
+**API**
 
 После запуска сервера, интерактивная документация API (Swagger UI) доступна по адресу http://localhost:8000/docs.
 

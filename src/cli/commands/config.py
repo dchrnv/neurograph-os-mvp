@@ -151,4 +151,154 @@ def get_config_value(ctx, config_name, key_path):
     config_loader = ConfigLoader()
     
     try:
-        config_data = config
+        config_data = config_loader.load(config_name)
+        
+        # Navigate through key path (e.g., "database.postgres.host")
+        keys = key_path.split('.')
+        value = config_data
+        
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
+            else:
+                console.print(f"[red]Key not found: {key_path}[/red]")
+                return
+        
+        console.print(f"\n[cyan]{key_path}[/cyan]:")
+        
+        if isinstance(value, (dict, list)):
+            console.print(yaml.dump(value, default_flow_style=False))
+        else:
+            console.print(f"[yellow]{value}[/yellow]\n")
+    
+    except FileNotFoundError:
+        console.print(f"[red]Configuration not found: {config_name}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@config_group.command(name='list')
+@click.pass_context
+def list_configs(ctx):
+    """List all available configuration files."""
+    
+    import os
+    from pathlib import Path
+    
+    config_dir = Path("config")
+    
+    if not config_dir.exists():
+        console.print("[red]Config directory not found[/red]")
+        return
+    
+    console.print("\n[bold cyan]Available Configuration Files:[/bold cyan]\n")
+    
+    tree = Tree("[bold]config/[/bold]")
+    
+    def add_files(path, parent_tree):
+        for item in sorted(path.iterdir()):
+            if item.is_file() and item.suffix in ['.yaml', '.yml', '.json']:
+                size = item.stat().st_size
+                parent_tree.add(f"[green]{item.name}[/green] [dim]({size} bytes)[/dim]")
+            elif item.is_dir() and not item.name.startswith('.'):
+                branch = parent_tree.add(f"[cyan]{item.name}/[/cyan]")
+                add_files(item, branch)
+    
+    add_files(config_dir, tree)
+    console.print(tree)
+    console.print()
+
+
+@config_group.command(name='env')
+@click.pass_context
+def show_env_vars(ctx):
+    """Show environment variables used by configuration."""
+    
+    import os
+    
+    env_vars = {
+        'Database': [
+            'POSTGRES_HOST', 'POSTGRES_PORT', 'POSTGRES_DB',
+            'POSTGRES_USER', 'POSTGRES_PASSWORD'
+        ],
+        'Redis': [
+            'REDIS_HOST', 'REDIS_PORT', 'REDIS_DB', 'REDIS_PASSWORD'
+        ],
+        'Application': [
+            'LOG_LEVEL', 'ENVIRONMENT'
+        ]
+    }
+    
+    console.print("\n[bold cyan]Environment Variables:[/bold cyan]\n")
+    
+    for category, vars in env_vars.items():
+        console.print(f"[bold]{category}:[/bold]")
+        for var in vars:
+            value = os.getenv(var)
+            if value:
+                # Mask passwords
+                if 'PASSWORD' in var or 'SECRET' in var:
+                    value = '***' + value[-4:] if len(value) > 4 else '***'
+                console.print(f"  {var}: [green]{value}[/green]")
+            else:
+                console.print(f"  {var}: [dim]not set[/dim]")
+        console.print()
+
+
+@config_group.command(name='template')
+@click.argument('config_type', type=click.Choice(['database', 'env']))
+@click.option('--output', '-o', help='Output file path')
+@click.pass_context
+def create_template(ctx, config_type, output):
+    """Create configuration template."""
+    
+    templates = {
+        'database': """# NeuroGraph OS - Database Configuration Template
+database:
+  postgres:
+    host: localhost
+    port: 5432
+    database: neurograph
+    user: neurograph_user
+    password: changeme
+    pool:
+      min_size: 5
+      max_size: 20
+      
+  redis:
+    host: localhost
+    port: 6379
+    db: 0
+    password: ""
+    cache:
+      default_ttl: 3600
+""",
+        'env': """# NeuroGraph OS - Environment Variables Template
+
+# PostgreSQL
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=neurograph
+POSTGRES_USER=neurograph_user
+POSTGRES_PASSWORD=changeme
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+
+# Application
+LOG_LEVEL=INFO
+ENVIRONMENT=development
+"""
+    }
+    
+    template = templates[config_type]
+    
+    if output:
+        with open(output, 'w') as f:
+            f.write(template)
+        console.print(f"[green]✓[/green] Template created: {output}")
+    else:
+        console.print(template)
