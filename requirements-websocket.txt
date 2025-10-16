@@ -1,0 +1,23 @@
+# NeuroGraph OS - WebSocket & API Dependencies
+
+# FastAPI framework
+fastapi>=0.109.0,<1.0.0
+uvicorn[standard]>=0.27.0,<1.0.0
+
+# WebSocket support
+websockets>=12.0,<13.0
+python-socketio>=5.11.0,<6.0.0
+
+# Async support
+asyncio>=3.4.3
+aiofiles>=23.2.0,<24.0.0
+
+# Data validation
+pydantic>=2.5.0,<3.0.0
+pydantic-settings>=2.1.0,<3.0.0
+
+# HTTP client (for testing)
+httpx>=0.26.0,<1.0.0
+
+# CORS support (included in FastAPI)
+# starlette>=0.35.0,<1.0.0

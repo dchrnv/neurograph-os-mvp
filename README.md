@@ -147,6 +147,47 @@ neurograph db status
 # Показать конфигурацию
 neurograph config show infrastructure/database
 
+**WebSocket**
+
+```bash
+#1. Запустить сервер
+python src/infrastructure/api/main.py
+
+# 2. В другом терминале - demo клиент
+python examples/websocket_client_example.py demo
+
+# 3. Проверить статус
+curl http://localhost:8000/ws/stats
+
+# 4. Broadcast тест
+curl -X POST http://localhost:8000/ws/broadcast \
+  -H "Content-Type: application/json" \
+  -d '{"type":"test","payload":{"message":"hello"}}'
+```
+
+# 1. Установить зависимости
+pip install -r requirements-websocket.txt
+
+# 2. Запустить FastAPI сервер
+cd src/infrastructure/api
+python main.py
+
+# Или через uvicorn
+uvicorn src.infrastructure.api.main:app --reload --host 0.0.0.0 --port 8000
+
+# 3. Тест Python клиента (demo)
+python examples/websocket_client_example.py demo
+
+# 4. Тест Python клиента (interactive)
+python examples/websocket_client_example.py interactive
+
+# 5. React приложение (если есть)
+cd ui/web
+npm install
+npm run dev
+
+
+
 **API**
 
 После запуска сервера, интерактивная документация API (Swagger UI) доступна по адресу http://localhost:8000/docs.
