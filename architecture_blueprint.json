@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-  "version": "0.9.0",
+  "version": "0.10.0",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.9 - Реализован WebSocket-сервер, интеграция с EventBus, подписки на каналы)",
+  "status": "В разработке (v0.10 - Реализован HTTP API (FastAPI), добавлены эндпоинты для токенов и системы)",
   "last_updated": "2025-10-15",
     
     "core_principles": {
@@ -242,7 +242,13 @@
           },
           "api": {
             "description": "Реализация внешних API",
-            "technologies": ["FastAPI (в разработке)"]
+            "technologies": ["FastAPI (реализован)"],
+            "components": [
+              "Main application entrypoint — src/main.py",
+              "API Routers — src/api/routes/",
+              "Request/Response Schemas (Pydantic) — src/api/schemas/",
+              "Dependencies and Security — src/api/dependencies.py"
+            ]
           },
           "messaging": {
             "description": "Асинхронный обмен сообщениями",
@@ -263,8 +269,35 @@
         "purpose": "Точки входа в систему",
         "entry_points": {
           "http": {
-            "description": "HTTP API для внешних систем",
-            "endpoints": ["/api/v1/* (в разработке)"]
+            "description": "HTTP API для внешних систем (реализован на FastAPI)",
+            "base_path": "/api/v1",
+            "endpoints": [
+              {
+                "path": "/system/health",
+                "method": "GET",
+                "description": "Проверка состояния сервиса (реализован)"
+              },
+              {
+                "path": "/tokens/",
+                "method": "POST",
+                "description": "Создание нового токена (реализован)"
+              },
+              {
+                "path": "/tokens/{token_id}",
+                "method": "GET",
+                "description": "Получение информации о токене (реализован)"
+              },
+              {
+                "path": "/tokens/",
+                "method": "GET",
+                "description": "Получение списка токенов с пагинацией (реализован)"
+              },
+              {
+                "path": "/graph/stats",
+                "method": "GET",
+                "description": "Получение статистики графа (планируется)"
+              }
+            ]
           },
           "cli": {
             "description": "Командная строка для администрирования, отладки и управления системой (расширена в v0.8)",

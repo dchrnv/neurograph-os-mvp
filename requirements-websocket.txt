@@ -21,3 +21,6 @@ httpx>=0.26.0,<1.0.0
 
 # CORS support (included in FastAPI)
 # starlette>=0.35.0,<1.0.0
+
+# Email validation (optional)
+email-validator>=2.1.0,<3.0.0
