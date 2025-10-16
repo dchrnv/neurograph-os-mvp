@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-  "version": "0.8.0",
+  "version": "0.9.0",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.8 - Расширен CLI, добавлено управление БД, сервисами и сущностями)",
+  "status": "В разработке (v0.9 - Реализован WebSocket-сервер, интеграция с EventBus, подписки на каналы)",
   "last_updated": "2025-10-15",
     
     "core_principles": {
@@ -162,18 +162,21 @@
           "websocket": {
             "responsibility": "Двусторонняя асинхронная связь с клиентами",
             "components": [
-              "NeuroGraphWebSocket — ui/web/src/services/websocket/neurograph-websocket.ts",
-              "WebSocketServer — серверная часть WebSocket API",
-              "MessageBroker — маршрутизация сообщений",
-              "ConnectionManager — управление подключениями"
+              "WebSocketServer (реализован) — src/infrastructure/websocket/server.py",
+              "ConnectionManager (реализован) — src/infrastructure/websocket/manager.py",
+              "EventBusGateway (реализован) — шлюз для трансляции событий из EventBus в WebSocket",
+              "TopicRouter (реализован) — маршрутизация сообщений по каналам (топикам)",
+              "AuthMiddleware (реализован) — аутентификация подключений по JWT"
             ],
             "characteristics": [
               "Поддержка переподключения при обрыве связи",
               "Буферизация сообщений при потере соединения",
-              "Типизированные сообщения (TypeScript)",
+              "Типизированные сообщения (Pydantic на бэкенде, TypeScript на фронтенде)",
               "Масштабируемая архитектура",
-              "Аутентификация и авторизация подключений",
-              "Мониторинг состояния соединений"
+              "Аутентификация и авторизация подключений (реализовано)",
+              "Мониторинг состояния соединений",
+              "Подписка на каналы (topics) для гранулярного получения данных",
+              "Прямая интеграция с `core.events.EventBus` для трансляции системных событий"
             ]
           }
         }
@@ -299,7 +302,11 @@
           },
           "websocket": {
             "description": "Веб-сокеты для реального времени",
-            "channels": ["/ws/updates (планируется)"]
+            "channels": [
+              "/ws/v1/updates (реализован)",
+              "Поддерживаемые топики: 'tokens', 'graph', 'system.metrics', 'dna.violations'",
+              "Клиент отправляет JSON-RPC для подписки: `{\"jsonrpc\": \"2.0\", \"method\": \"subscribe\", \"params\": {\"topic\": \"tokens\"}}`"
+            ]
           }
         }
       }
