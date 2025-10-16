@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-  "version": "0.7.0",
+  "version": "0.8.0",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.7 - Персистенс реализован; начата реализация CLI, добавлены адаптеры и миграции)",
+  "status": "В разработке (v0.8 - Расширен CLI, добавлено управление БД, сервисами и сущностями)",
   "last_updated": "2025-10-15",
     
     "core_principles": {
@@ -264,13 +264,37 @@
             "endpoints": ["/api/v1/* (в разработке)"]
           },
           "cli": {
-            "description": "Командная строка для администрирования (частично реализована)",
+            "description": "Командная строка для администрирования, отладки и управления системой (расширена в v0.8)",
             "components": [
-              "CLI entrypoint — src/cli/ (частично реализован)",
-              "Команды — src/cli/commands/ (частично реализованы)"
+              "CLI entrypoint — src/cli/main.py (реализован)",
+              "Группы команд — src/cli/commands/ (реализованы)"
             ],
             "commands": [
-              "neuro-cli (частично реализован) — базовая команда `config` реализована в src/cli/commands/config.py"
+              {
+                "group": "config",
+                "description": "Управление конфигурацией (реализована)",
+                "subcommands": ["get", "set", "validate", "show-effective"]
+              },
+              {
+                "group": "db",
+                "description": "Управление базой данных (реализована)",
+                "subcommands": ["migrate", "downgrade", "revision", "seed"]
+              },
+              {
+                "group": "service",
+                "description": "Управление сервисами (планируется)",
+                "subcommands": ["start", "stop", "status", "restart"]
+              },
+              {
+                "group": "token",
+                "description": "Операции с токенами (планируется)",
+                "subcommands": ["create", "get", "list", "delete"]
+              },
+              {
+                "group": "graph",
+                "description": "Взаимодействие с графом (планируется)",
+                "subcommands": ["stats", "query", "connect"]
+              }
             ]
           },
           "websocket": {
