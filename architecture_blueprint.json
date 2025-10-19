@@ -1,6 +1,6 @@
 {
   "neurograph_os": {
-    "version": "0.10.0",
+    "version": "0.11.0 mvp_cleanup",
     "architecture_style": "clean-architecture-mvp",
     "status": "MVP Ready - Token v2.0 + FastAPI + React Dashboard",
     "last_updated": "2025-10-19",
