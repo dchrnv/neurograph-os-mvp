@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from src.infrastructure.websocket.server import connection_manager
 from src.infrastructure.api.websocket_routes import router as ws_router
 from src.infrastructure.api.routes.tokens import router as tokens_router
+from src.infrastructure.api.routes.tokens_v2 import router as tokens_v2_router  # NEW: Token v2.0
 from src.infrastructure.api.routes.graph import router as graph_router
 from src.infrastructure.api.routes.system import system_router, experience_router
 from src.core.utils.logger import get_logger
@@ -56,7 +57,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(ws_router, tags=["WebSocket"])
-app.include_router(tokens_router, prefix="/api/v1")
+app.include_router(tokens_v2_router)  # NEW: Token v2.0 API (replaces old tokens API)
+# app.include_router(tokens_router, prefix="/api/v1")  # OLD: Deprecated
 app.include_router(graph_router, prefix="/api/v1")
 app.include_router(system_router, prefix="/api/v1")
 app.include_router(experience_router, prefix="/api/v1")
@@ -73,15 +75,15 @@ async def api_info():
     """API information endpoint."""
     return {
         "name": "NeuroGraph OS API",
-        "version": "0.3.0",
+        "version": "0.10.0",  # Token v2.0 + HTTP API
         "status": "running",
+        "token_version": "2.0",
         "endpoints": {
             "docs": "/docs",
             "openapi": "/openapi.json",
             "websocket": "/ws",
-            "tokens": "/api/v1/tokens",
+            "tokens": "/api/v1/tokens",  # Token v2.0 API
             "graph": "/api/v1/graph",
-            "experience": "/api/v1/experience",
             "system": "/api/v1/system"
         }
     }

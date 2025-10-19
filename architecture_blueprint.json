@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-  "version": "0.10.0",
+  "version": "0.11.0-mvp",
   "architecture_style": "clean-architecture-with-hexagonal",
-  "status": "В разработке (v0.10 - Реализован HTTP API (FastAPI), добавлены эндпоинты для токенов и системы)",
-  "last_updated": "2025-10-15",
+  "status": "MVP реализован (v0.11): Token v2.0, In-memory API (FastAPI) и React-дашборд.",
+  "last_updated": "2025-10-19",
     
     "core_principles": {
       "token_based_computing": "Токен-ориентированные вычисления",
@@ -19,7 +19,7 @@
           "token": {
             "responsibility": "Основная сущность для представления данных",
             "components": [
-              "Token (реализован, спецификация завершена) — src/core/token/token.py",
+              "Token v2.0 (реализован в MVP) — src/core/token/token_v2.py",
               "TokenFactory (реализована) — src/core/token/factory.py",
               "TokenService (реализован, orchestration) — src/core/token/token_service.py",
               "TokenRegistry (планируется)",
@@ -243,12 +243,19 @@
           "api": {
             "description": "Реализация внешних API",
             "technologies": ["FastAPI (реализован)"],
-            "components": [
-              "Main application entrypoint — src/main.py",
-              "API Routers — src/api/routes/",
-              "Request/Response Schemas (Pydantic) — src/api/schemas/",
-              "Dependencies and Security — src/api/dependencies.py"
-            ]
+            "components": {
+              "main_api": {
+                "description": "Основное API с полной архитектурой",
+                "entrypoint": "src/main.py",
+                "status": "В разработке"
+              },
+              "mvp_api": {
+                "description": "Упрощенное API для MVP с in-memory хранилищем",
+                "entrypoint": "src/api_mvp/main.py",
+                "status": "Реализован",
+                "notes": "Не использует персистентность и полную архитектуру, предназначен для демонстрации Token v2.0 и дашборда."
+              }
+            }
           },
           "messaging": {
             "description": "Асинхронный обмен сообщениями",
@@ -268,29 +275,55 @@
       "interfaces": {
         "purpose": "Точки входа в систему",
         "entry_points": {
-          "http": {
-            "description": "HTTP API для внешних систем (реализован на FastAPI)",
+          "http_mvp": {
+            "description": "HTTP API для MVP (реализован на FastAPI, in-memory)",
             "base_path": "/api/v1",
             "endpoints": [
               {
-                "path": "/system/health",
+                "path": "/health",
                 "method": "GET",
-                "description": "Проверка состояния сервиса (реализован)"
+                "description": "Проверка состояния MVP сервиса (реализован)"
               },
               {
                 "path": "/tokens/",
                 "method": "POST",
-                "description": "Создание нового токена (реализован)"
+                "description": "Создание нового токена v2.0 (реализован)"
               },
               {
                 "path": "/tokens/{token_id}",
                 "method": "GET",
-                "description": "Получение информации о токене (реализован)"
+                "description": "Получение информации о токене v2.0 (реализован)"
               },
               {
                 "path": "/tokens/",
                 "method": "GET",
-                "description": "Получение списка токенов с пагинацией (реализован)"
+                "description": "Получение списка токенов v2.0 с пагинацией (реализован)"
+              },
+              {
+                "path": "/tokens/{token_id}",
+                "method": "DELETE",
+                "description": "Удаление токена v2.0 (реализован)"
+              },
+              {
+                "path": "/tokens/examples/create",
+                "method": "POST",
+                "description": "Создание набора демонстрационных токенов (реализован)"
+              },
+              {
+                "path": "/tokens/admin/clear",
+                "method": "DELETE",
+                "description": "Полная очистка in-memory хранилища токенов (реализован)"
+              }
+            ]
+          },
+          "http_full": {
+            "description": "Полнофункциональное HTTP API (планируется)",
+            "base_path": "/api/v1",
+            "endpoints": [
+              {
+                "path": "/graph/stats",
+                "method": "GET",
+                "description": "Получение статистики графа (планируется)"
               },
               {
                 "path": "/graph/stats",
@@ -339,6 +372,16 @@
               "/ws/v1/updates (реализован)",
               "Поддерживаемые топики: 'tokens', 'graph', 'system.metrics', 'dna.violations'",
               "Клиент отправляет JSON-RPC для подписки: `{\"jsonrpc\": \"2.0\", \"method\": \"subscribe\", \"params\": {\"topic\": \"tokens\"}}`"
+            ]
+          },
+          "ui": {
+            "description": "Пользовательские интерфейсы",
+            "components": [
+              {
+                "name": "React Dashboard (MVP)",
+                "path": "ui/web/",
+                "description": "Киберпанк-дашборд для мониторинга и управления токенами в реальном времени. Взаимодействует с MVP API."
+              }
             ]
           }
         }
