@@ -80,7 +80,7 @@
 3.  **Создайте и активируйте виртуальное окружение:**
     > **Важно:** Этот шаг обязателен, чтобы избежать конфликтов с системными пакетами Python.
     ```bash
-    python -m venv .venv
+    python3 -m venv .venv
     source .venv/bin/activate  # Linux/macOS
     # .\.venv\Scripts\activate  # Windows
     ```
