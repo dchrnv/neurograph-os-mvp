@@ -4,8 +4,8 @@
 
 ```bash
 # 1. Clone & enter
-git clone https://github.com/dchrnv/neurograph-os-dev.git
-cd neurograph-os-dev
+git clone https://github.com/dchrnv/neurograph-os-mvp.git
+cd neurograph-os-mvp
 
 # 2. Run (автоматически создаст venv и установит зависимости)
 ./run_mvp.sh

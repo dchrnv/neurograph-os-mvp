@@ -28,9 +28,9 @@
 
 ```bash
 # Fork репозитория через GitHub UI
-git clone https://github.com/YOUR_USERNAME/neurograph-os-dev.git
-cd neurograph-os-dev
-git remote add upstream https://github.com/dchrnv/neurograph-os-dev.git
+git clone https://github.com/YOUR_USERNAME/neurograph-os-mvp.git
+cd neurograph-os-mvp
+git remote add upstream https://github.com/dchrnv/neurograph-os-mvp.git
 ```
 
 ### Шаг 2: Создание ветки
@@ -296,7 +296,7 @@ API возвращает 500 при создании токена с невал�
 
 - **GitHub Issues** - для багов и фич
 - **GitHub Discussions** - для общих вопросов
-- **Email**: dreeftwood@gmail.com - для приватных вопросов
+- **Email**: <dreeftwood@gmail.com> - для приватных вопросов
 
 ---
 
