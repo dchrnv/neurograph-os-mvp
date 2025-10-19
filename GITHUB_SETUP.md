@@ -25,7 +25,7 @@ Experimental cognitive architecture based on token-based spatial computing with 
 
 ### Website (если есть)
 ```
-https://github.com/dchrnv/neurograph-os-dev
+https://github.com/dchrnv/neurograph-os-mvp
 ```
 
 ---
@@ -212,10 +212,10 @@ jobs:
 ## 🔗 Полезные ссылки
 
 **После публикации добавьте в README:**
-- Issues: `https://github.com/dchrnv/neurograph-os-dev/issues`
-- Discussions: `https://github.com/dchrnv/neurograph-os-dev/discussions`
-- Projects: `https://github.com/dchrnv/neurograph-os-dev/projects`
-- Wiki: `https://github.com/dchrnv/neurograph-os-dev/wiki`
+- Issues: `https://github.com/dchrnv/neurograph-os-mvp/issues`
+- Discussions: `https://github.com/dchrnv/neurograph-os-mvp/discussions`
+- Projects: `https://github.com/dchrnv/neurograph-os-mvp/projects`
+- Wiki: `https://github.com/dchrnv/neurograph-os-mvp/wiki`
 
 ---
 
@@ -297,8 +297,8 @@ git push origin v0.10.0
 
 ### 🚀 Быстрый старт
 ```bash
-git clone https://github.com/dchrnv/neurograph-os-dev.git
-cd neurograph-os-dev
+git clone https://github.com/dchrnv/neurograph-os-mvp.git
+cd neurograph-os-mvp
 ./run_mvp.sh
 ```
 
@@ -307,7 +307,7 @@ cd neurograph-os-dev
 - CDNA validator
 - Basic graph visualization
 
-**Full Changelog**: https://github.com/dchrnv/neurograph-os-dev/commits/v0.10.0
+**Full Changelog**: https://github.com/dchrnv/neurograph-os-mvp/commits/v0.10.0
 ```
 
 ---

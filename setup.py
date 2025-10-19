@@ -31,7 +31,7 @@ setup(
     description="Когнитивная архитектура с токен-ориентированными вычислениями и пространственным интеллектом",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dchrnv/neurograph-os-dev",
+    url="https://github.com/dchrnv/neurograph-os-mvp",
     license="MIT",
 
     # Package structure

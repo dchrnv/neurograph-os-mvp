@@ -2,7 +2,7 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/dchrnv/neurograph-os-dev)
+[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -24,8 +24,8 @@
 ### 1. Клонируйте репозиторий
 
 ```bash
-git clone https://github.com/dchrnv/neurograph-os-dev.git
-cd neurograph-os-dev
+git clone https://github.com/dchrnv/neurograph-os-mvp.git
+cd neurograph-os-mvp
 ```
 
 ### 2. Создайте виртуальное окружение
@@ -168,7 +168,7 @@ curl http://localhost:8000/health
 ## 📁 Структура проекта (MVP)
 
 ```
-neurograph-os-dev/
+neurograph-os-mvp/
 ├── src/
 │   ├── core/
 │   │   └── token/
@@ -312,7 +312,7 @@ MIT License - см. [LICENSE](LICENSE)
 
 **Автор**: Chernov Denys
 **Email**: dreeftwood@gmail.com
-**GitHub**: [dchrnv/neurograph-os-dev](https://github.com/dchrnv/neurograph-os-dev)
+**GitHub**: [dchrnv/neurograph-os-mvp](https://github.com/dchrnv/neurograph-os-mvp)
 
 ---
 
