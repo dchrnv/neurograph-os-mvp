@@ -62,17 +62,17 @@ body {
 }
 
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: rgba(13, 13, 13, 0.5); /* Adjusted to fit cyberpunk theme */
+  border: 1px solid var(--border-color); /* Changed to use new var */
   border-radius: 8px;
   padding: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 15px rgba(0, 255, 255, 0.1); /* Adjusted to fit cyberpunk theme */
   transition: all 0.3s ease;
 }
 
 .card:hover {
-  border-color: var(--accent-cyan);
-  box-shadow: var(--glow);
+  border-color: var(--primary-glow); /* Changed to use new var */
+  box-shadow: 0 0 20px var(--primary-glow); /* Adjusted to fit cyberpunk theme */
   transform: translateY(-2px);
 }
 
