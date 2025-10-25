@@ -140,7 +140,7 @@
 
 ---
 
-*Документация актуальна для версии: 0.14.0 mvp_FFI*
+*Документация актуальна для версии: 0.15.0 mvp_Grid*
 *Последнее обновление: 2025-10-25*
 
 ---
@@ -174,29 +174,47 @@
     - Connection implementation
     - Технические детали
 
-### FFI Integration (v0.14.0 - NEW)
+### FFI Integration (v0.14.0)
 
-12. **[FFI Integration Guide](FFI_INTEGRATION.md)** ⭐ NEW
+12. **[FFI Integration Guide](FFI_INTEGRATION.md)** ⭐
     - Python биндинги через PyO3
     - Полный Python API для Token & Connection
     - Установка и использование
     - Примеры и бенчмарки
     - 10-100x ускорение vs чистый Python
 
-13. **[V0.14.0 Release Notes](V0.14.0_RELEASE_NOTES.md)** NEW
+13. **[V0.14.0 Release Notes](V0.14.0_RELEASE_NOTES.md)**
     - Что нового в v0.14.0
     - PyO3 FFI реализация
     - Python wrapper и примеры
     - Бенчмарки производительности
 
+### Grid V2.0 (v0.15.0 - NEW)
+
+14. **[Grid V2 Rust Overview](../GRID_V2_RUST.md)** ⭐ NEW
+    - Обзор Rust реализации Grid V2.0
+    - 8-мерная пространственная индексация
+    - Bucket-based поиск
+    - KNN и Range запросы
+    - Физика полей (влияние, плотность)
+    - Python FFI биндинги
+    - Примеры и API
+
+15. **[V0.15.0 Release Notes](V0.15.0_RELEASE_NOTES.md)** ⭐ NEW
+    - Что нового в v0.15.0
+    - Grid V2.0 реализация
+    - Пространственная индексация
+    - Технические детали
+    - Бенчмарки производительности
+
 ### Общее
 
-14. **[Rust API README](../src/core_rust/README.md)**
+16. **[Rust API README](../src/core_rust/README.md)**
     - Полная API документация
-    - Token + Connection
+    - Token + Connection + Grid
     - Установка и использование
 
-15. **[Installation Guide](../src/core_rust/INSTALL.md)**
+17. **[Installation Guide](../src/core_rust/INSTALL.md)**
     - Установка Rust
     - Сборка и тестирование
     - Troubleshooting

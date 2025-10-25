@@ -1,9 +1,9 @@
 [package]
 name = "neurograph-core"
-version = "0.14.0"
+version = "0.15.0"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
-description = "Core Rust implementation of NeuroGraph OS with Python FFI bindings"
+description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid with Python FFI"
 
 [dependencies]
 # PyO3 for Python FFI bindings
@@ -29,3 +29,7 @@ path = "src/bin/demo.rs"
 [[bin]]
 name = "connection-demo"
 path = "src/bin/connection-demo.rs"
+
+[[bin]]
+name = "grid-demo"
+path = "src/bin/grid-demo.rs"

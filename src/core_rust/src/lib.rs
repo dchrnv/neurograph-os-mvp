@@ -13,6 +13,7 @@
 
 pub mod token;
 pub mod connection;
+pub mod grid;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -32,10 +33,15 @@ pub use connection::{
     flags as connection_flags,
 };
 
+pub use grid::{
+    Grid,
+    GridConfig,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 14;
+pub const VERSION_MINOR: u8 = 15;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -44,6 +50,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.14.0");
+        assert_eq!(VERSION, "0.15.0");
     }
 }

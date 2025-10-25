@@ -3,6 +3,7 @@
 //! This module provides Python bindings for the core Rust structures:
 //! - Token (64-byte structure)
 //! - Connection (32-byte structure)
+//! - Grid (8-dimensional spatial indexing)
 //!
 //! To build the Python extension:
 //! ```bash
@@ -16,6 +17,9 @@ pub mod token;
 pub mod connection;
 
 #[cfg(feature = "python")]
+pub mod grid;
+
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
 
 /// Python module initialization
@@ -27,5 +31,7 @@ fn neurograph_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<token::PyEntityType>()?;
     m.add_class::<connection::PyConnection>()?;
     m.add_class::<connection::PyConnectionType>()?;
+    m.add_class::<grid::PyGrid>()?;
+    m.add_class::<grid::PyGridConfig>()?;
     Ok(())
 }
