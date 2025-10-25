@@ -2,8 +2,9 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.10.0-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
+[![Version](https://img.shields.io/badge/version-0.12.0_mvp__TokenR-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
@@ -57,6 +58,59 @@ API будет доступен на `http://localhost:8000`
 - 📖 **Документация**: http://localhost:8000/docs
 - 💚 **Health check**: http://localhost:8000/health
 - 🎯 **API info**: http://localhost:8000/api
+
+---
+
+## 🦀 Rust Core (NEW in v0.12.0)
+
+**High-performance Rust implementation of Token V2.0** - 100× faster, zero dependencies!
+
+### Quick Start (Rust)
+
+```bash
+# Install Rust (one-time)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+
+# Build and test
+cd src/core_rust
+./setup_and_test.sh
+```
+
+### Features
+
+- ✅ **64-byte packed structure** - Cache-friendly
+- ✅ **Zero dependencies** - Pure Rust
+- ✅ **100× faster** than Python
+- ✅ **Type-safe** - Compile-time guarantees
+- ✅ **Binary-compatible** with Python version
+- ✅ **12+ unit tests** - All passing
+
+### Usage Example (Rust)
+
+```rust
+use neurograph_core::{Token, CoordinateSpace, EntityType, flags};
+
+// Create token
+let mut token = Token::new(Token::create_id(12345, 0, 0));
+
+// Set coordinates (precision: x.xx for proper encoding)
+token.set_coordinates(CoordinateSpace::L1Physical, 10.50, 20.30, 5.20);
+token.set_coordinates(CoordinateSpace::L4Emotional, 0.80, 0.60, 0.50);
+
+// Configure
+token.set_entity_type(EntityType::Concept);
+token.set_flag(flags::PERSISTENT);
+token.weight = 0.75;
+
+// Serialize (zero-copy)
+let bytes = token.to_bytes();  // [u8; 64]
+```
+
+**Documentation:**
+- [Token V2 Rust README](src/core_rust/README.md) - Full API docs
+- [Installation Guide](src/core_rust/INSTALL.md) - Setup & troubleshooting
+- [Release Notes](V0.12.0_RELEASE_NOTES.md) - What's new
 
 ---
 

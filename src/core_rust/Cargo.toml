@@ -1,0 +1,21 @@
+[package]
+name = "neurograph-core"
+version = "0.12.0"
+edition = "2021"
+authors = ["NeuroGraph OS Team"]
+description = "Core Rust implementation of NeuroGraph OS Token V2"
+
+[dependencies]
+# No external dependencies for core Token V2 - pure Rust implementation
+
+[dev-dependencies]
+# Testing dependencies
+rand = "0.8"
+
+[lib]
+name = "neurograph_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "token-demo"
+path = "src/bin/demo.rs"
