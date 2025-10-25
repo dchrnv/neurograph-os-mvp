@@ -8,10 +8,14 @@
 /// - Connection V1.0: 32-byte link between tokens
 /// - 8-dimensional semantic space (L1-L8)
 /// - Binary-compatible format for cross-language interop
-/// - Zero external dependencies (pure Rust)
+/// - Python FFI bindings via PyO3 (optional)
+/// - Zero core dependencies (pure Rust)
 
 pub mod token;
 pub mod connection;
+
+#[cfg(feature = "python")]
+pub mod ffi;
 
 pub use token::{
     Token,
@@ -31,7 +35,7 @@ pub use connection::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 13;
+pub const VERSION_MINOR: u8 = 14;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -40,6 +44,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.13.0");
+        assert_eq!(VERSION, "0.14.0");
     }
 }

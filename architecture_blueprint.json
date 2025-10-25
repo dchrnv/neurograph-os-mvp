@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-    "version": "0.13.0 mvp_ConnectionR",
+    "version": "0.14.0 mvp_FFI",
     "architecture_style": "clean-architecture-mvp",
-    "status": "Token V2 + Connection V1 Rust Implementation",
+    "status": "FFI Integration (PyO3) + Python Bindings",
     "last_updated": "2025-10-25",
 
     "mvp_status": {
