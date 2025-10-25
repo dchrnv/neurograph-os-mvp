@@ -140,7 +140,7 @@
 
 ---
 
-*Документация актуальна для версии: 0.13.0 mvp_ConnectionR*
+*Документация актуальна для версии: 0.14.0 mvp_FFI*
 *Последнее обновление: 2025-10-25*
 
 ---
@@ -160,28 +160,43 @@
    - Технические детали
    - Roadmap
 
-### Connection V1.0 (v0.13.0 - NEW)
+### Connection V1.0 (v0.13.0)
 
-10. **[Connection V1 Rust Overview](../CONNECTION_V1_RUST.md)** ⭐ NEW
+10. **[Connection V1 Rust Overview](../CONNECTION_V1_RUST.md)** ⭐
     - Обзор Rust реализации Connection V1.0
     - 32-байтная структура
     - 40+ типов связей
     - Физическая модель сил
     - Примеры и API
 
-11. **[V0.13.0 Release Notes](../V0.13.0_RELEASE_NOTES.md)** NEW
+11. **[V0.13.0 Release Notes](V0.13.0_RELEASE_NOTES.md)**
     - Что нового в v0.13.0
     - Connection implementation
     - Технические детали
 
+### FFI Integration (v0.14.0 - NEW)
+
+12. **[FFI Integration Guide](FFI_INTEGRATION.md)** ⭐ NEW
+    - Python биндинги через PyO3
+    - Полный Python API для Token & Connection
+    - Установка и использование
+    - Примеры и бенчмарки
+    - 10-100x ускорение vs чистый Python
+
+13. **[V0.14.0 Release Notes](V0.14.0_RELEASE_NOTES.md)** NEW
+    - Что нового в v0.14.0
+    - PyO3 FFI реализация
+    - Python wrapper и примеры
+    - Бенчмарки производительности
+
 ### Общее
 
-12. **[Rust API README](../src/core_rust/README.md)**
+14. **[Rust API README](../src/core_rust/README.md)**
     - Полная API документация
     - Token + Connection
     - Установка и использование
 
-13. **[Installation Guide](../src/core_rust/INSTALL.md)**
+15. **[Installation Guide](../src/core_rust/INSTALL.md)**
     - Установка Rust
     - Сборка и тестирование
     - Troubleshooting

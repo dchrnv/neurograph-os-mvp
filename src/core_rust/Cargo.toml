@@ -1,12 +1,13 @@
 [package]
 name = "neurograph-core"
-version = "0.13.0"
+version = "0.14.0"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
-description = "Core Rust implementation of NeuroGraph OS Token V2 + Connection V1"
+description = "Core Rust implementation of NeuroGraph OS with Python FFI bindings"
 
 [dependencies]
-# No external dependencies - pure Rust implementation
+# PyO3 for Python FFI bindings
+pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
 
 [dev-dependencies]
 # Testing dependencies
@@ -15,6 +16,11 @@ rand = "0.8"
 [lib]
 name = "neurograph_core"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
+
+[features]
+default = []
+python = ["pyo3"]  # Enable Python bindings with --features python
 
 [[bin]]
 name = "token-demo"
