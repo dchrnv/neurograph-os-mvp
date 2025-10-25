@@ -2,10 +2,10 @@
 NeuroGraph OS - Python Wrapper for Rust Core
 
 This module provides a high-level Python interface to the Rust core implementation
-of NeuroGraph OS, including Token V2.0 and Connection V1.0 structures.
+of NeuroGraph OS, including Token V2.0, Connection V1.0, and Grid V2.0 structures.
 
 Usage:
-    from neurograph import Token, Connection, CoordinateSpace, ConnectionType
+    from neurograph import Token, Connection, Grid, CoordinateSpace, ConnectionType
 
     # Create a token
     token = Token(42)
@@ -17,9 +17,16 @@ Usage:
     conn.pull_strength = 0.70
     conn.activate()
 
+    # Create a grid and add tokens
+    grid = Grid()
+    grid.add(token)
+
+    # Find neighbors
+    neighbors = grid.find_neighbors(42, 0, radius=10.0, max_results=5)
+
 Performance:
     The Rust implementation is typically 10-100x faster than pure Python
-    for Token/Connection operations, with zero-copy serialization.
+    for Token/Connection/Grid operations, with zero-copy serialization.
 """
 
 from typing import Tuple, List, Optional
@@ -28,6 +35,8 @@ import neurograph_core as _core
 # Re-export core classes
 Token = _core.Token
 Connection = _core.Connection
+Grid = _core.Grid
+GridConfig = _core.GridConfig
 CoordinateSpace = _core.CoordinateSpace
 EntityType = _core.EntityType
 ConnectionType = _core.ConnectionType
@@ -35,12 +44,15 @@ ConnectionType = _core.ConnectionType
 __all__ = [
     'Token',
     'Connection',
+    'Grid',
+    'GridConfig',
     'CoordinateSpace',
     'EntityType',
     'ConnectionType',
     'create_example_token',
     'create_emotional_token',
     'create_semantic_connection',
+    'create_grid_with_tokens',
 ]
 
 # Helper functions for common patterns
@@ -153,6 +165,69 @@ def create_semantic_connection(
     return conn
 
 
+def create_grid_with_tokens(
+    num_tokens: int,
+    space: int = 0,
+    spread: float = 100.0,
+    config: Optional[GridConfig] = None
+) -> Tuple[Grid, List[Token]]:
+    """
+    Create a grid populated with random tokens for testing/demos.
+
+    Args:
+        num_tokens: Number of tokens to create
+        space: Coordinate space to populate (0-7, default 0 = L1Physical)
+        spread: Maximum coordinate value (default 100.0)
+        config: Grid configuration (default: None, uses default config)
+
+    Returns:
+        Tuple of (Grid, list of created Tokens)
+
+    Example:
+        >>> grid, tokens = create_grid_with_tokens(100, space=0, spread=50.0)
+        >>> len(grid)
+        100
+        >>> neighbors = grid.find_neighbors(tokens[0].id, 0, radius=10.0)
+    """
+    import random
+
+    # Create grid
+    grid = Grid(config) if config else Grid()
+
+    # Create tokens
+    tokens = []
+    for i in range(num_tokens):
+        token = Token(i)
+
+        # Set random coordinates
+        x = random.uniform(-spread, spread)
+        y = random.uniform(-spread, spread)
+        z = random.uniform(-spread, spread)
+
+        coord_space = [
+            CoordinateSpace.L1Physical(),
+            CoordinateSpace.L2Sensory(),
+            CoordinateSpace.L3Motor(),
+            CoordinateSpace.L4Emotional(),
+            CoordinateSpace.L5Cognitive(),
+            CoordinateSpace.L6Social(),
+            CoordinateSpace.L7Temporal(),
+            CoordinateSpace.L8Abstract(),
+        ][space]
+
+        token.set_coordinates(coord_space, x, y, z)
+        token.set_active(True)
+
+        # Random field properties
+        token.field_radius = random.randint(50, 150)  # 0.5 - 1.5 decoded
+        token.field_strength = random.randint(100, 255)  # 0.4 - 1.0 decoded
+
+        tokens.append(token)
+        grid.add(token)
+
+    return grid, tokens
+
+
 # Version info
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 __author__ = "NeuroGraph OS Team"

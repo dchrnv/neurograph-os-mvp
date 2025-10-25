@@ -2,7 +2,7 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.14.0_mvp__FFI-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
+[![Version](https://img.shields.io/badge/version-0.15.0_mvp__Grid-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -86,13 +86,23 @@ cd src/core_rust
 - ✅ Field properties (radius, strength)
 - ✅ 12+ unit tests
 
-**Connection V1.0 (32 bytes - NEW in v0.13.0):**
+**Connection V1.0 (32 bytes):**
 
 - ✅ 40+ connection types (11 categories)
 - ✅ Physical force model (attraction/repulsion)
 - ✅ 8-level selective activation
 - ✅ Lifecycle tracking
 - ✅ 10+ unit tests
+
+**Grid V2.0 (NEW in v0.15.0):**
+
+- ✅ 8-dimensional spatial indexing
+- ✅ Bucket-based fast lookups
+- ✅ KNN search (K-Nearest Neighbors)
+- ✅ Range queries (find all within radius)
+- ✅ Field influence calculations
+- ✅ Density calculations
+- ✅ 6+ unit tests
 
 **Performance:**
 
@@ -149,17 +159,46 @@ conn.activate();  // Increments counter, updates timestamp
 let bytes = conn.to_bytes();  // [u8; 32]
 ```
 
+**Grid:**
+
+```rust
+use neurograph_core::{Grid, Token, CoordinateSpace};
+
+// Create grid
+let mut grid = Grid::new();
+
+// Add tokens
+let mut token = Token::new(42);
+token.set_coordinates(CoordinateSpace::L1Physical, 10.50, 20.30, 5.20);
+grid.add(token).unwrap();
+
+// Find neighbors
+let neighbors = grid.find_neighbors(42, CoordinateSpace::L1Physical, 10.0, 5);
+for (id, distance) in neighbors {
+    println!("Token {}: distance = {:.2}", id, distance);
+}
+
+// Range query
+let results = grid.range_query(CoordinateSpace::L1Physical, 0.0, 0.0, 0.0, 15.0);
+
+// Field influence
+let influence = grid.calculate_field_influence(
+    CoordinateSpace::L1Physical, 10.0, 20.0, 5.0, 10.0
+);
+```
+
 **Documentation:**
 
 - [Token V2 Rust Overview](TOKEN_V2_RUST.md) - Token implementation
 - [Connection V1 Rust Overview](CONNECTION_V1_RUST.md) - Connection implementation
-- [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Python bindings (NEW in v0.14.0)
+- [Grid V2 Rust Overview](GRID_V2_RUST.md) - Grid implementation (NEW in v0.15.0)
+- [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Python bindings
 - [Rust API README](src/core_rust/README.md) - Full API docs
 - [Installation Guide](src/core_rust/INSTALL.md) - Setup & troubleshooting
 
 ---
 
-## 🐍 Python Bindings (NEW in v0.14.0)
+## 🐍 Python Bindings
 
 **Rust performance with Python convenience!** Use the high-performance Rust core from Python with **10-100x speedup**.
 
@@ -174,14 +213,14 @@ cd src/core_rust
 maturin develop --release --features python
 
 # Verify installation
-python -c "from neurograph import Token; print(Token(42))"
+python -c "from neurograph import Token, Grid; print(Token(42), Grid())"
 ```
 
 ### Python FFI Features
 
 - ✅ **Zero-copy serialization** - Instant to_bytes/from_bytes
 - ✅ **10-100x faster** than pure Python
-- ✅ **Complete API** - All Token & Connection features
+- ✅ **Complete API** - Token, Connection, Grid
 - ✅ **Type-safe** - PyO3 automatic type conversion
 - ✅ **Helper functions** - Convenience wrappers
 
@@ -232,10 +271,44 @@ print(f"Activations: {conn.activation_count}")
 force = conn.calculate_force(1.00)  # At distance 1.0m
 ```
 
+**Grid:**
+
+```python
+from neurograph import Grid, GridConfig, Token, CoordinateSpace
+
+# Create grid with custom config
+config = GridConfig()
+config.bucket_size = 20.0
+grid = Grid(config)
+
+# Add tokens
+token = Token(42)
+token.set_coordinates(CoordinateSpace.L1Physical(), 10.50, 20.30, 5.20)
+grid.add(token)
+
+# Find neighbors (space index: 0 = L1Physical)
+neighbors = grid.find_neighbors(
+    center_token_id=42,
+    space=0,
+    radius=10.0,
+    max_results=5
+)
+
+for token_id, distance in neighbors:
+    print(f"Token {token_id}: distance = {distance:.2f}")
+
+# Range query
+results = grid.range_query(space=0, x=0.0, y=0.0, z=0.0, radius=15.0)
+
+# Field calculations
+influence = grid.calculate_field_influence(space=0, x=10.0, y=20.0, z=5.0, radius=10.0)
+density = grid.calculate_density(space=0, x=0.0, y=0.0, z=0.0, radius=5.0)
+```
+
 **Helper Functions:**
 
 ```python
-from neurograph import create_emotional_token, create_semantic_connection
+from neurograph import create_emotional_token, create_semantic_connection, create_grid_with_tokens
 
 # Emotional token (VAD model)
 happy = create_emotional_token(1, valence=0.80, arousal=0.60, dominance=0.70)
@@ -247,6 +320,9 @@ conn = create_semantic_connection(
     strength=0.90,
     bidirectional=False
 )
+
+# Grid with random tokens
+grid, tokens = create_grid_with_tokens(num_tokens=100, space=0, spread=50.0)
 ```
 
 ### Performance Benchmarks
@@ -268,8 +344,11 @@ python examples/benchmark.py
 ### Examples
 
 ```bash
-# Complete usage examples
+# Token & Connection usage
 python src/core_rust/examples/python_usage.py
+
+# Grid usage examples
+python src/core_rust/examples/python_grid_usage.py
 
 # Performance benchmarks
 python src/core_rust/examples/benchmark.py
@@ -278,7 +357,8 @@ python src/core_rust/examples/benchmark.py
 ### Documentation
 
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Complete Python API reference
-- [v0.14.0 Release Notes](docs/V0.14.0_RELEASE_NOTES.md) - What's new
+- [v0.14.0 Release Notes](docs/V0.14.0_RELEASE_NOTES.md) - FFI Integration
+- [v0.15.0 Release Notes](docs/V0.15.0_RELEASE_NOTES.md) - Grid V2.0 (NEW)
 
 ---
 
@@ -516,13 +596,15 @@ print(f'Packed size: {len(token.pack())} bytes')
 - ✅ Helper functions and examples
 - ✅ Comprehensive documentation
 
-### 📋 v0.15.0 - Grid Rust (Next)
+### ✅ v0.15.0 - Grid Rust (Completed)
 
-- [ ] Grid V2.0 Rust implementation
-- [ ] Spatial indexing (R-tree/Octree)
-- [ ] Field physics simulation
-- [ ] KNN and range queries
-- [ ] Python FFI bindings
+- ✅ Grid V2.0 Rust implementation
+- ✅ Bucket-based spatial indexing
+- ✅ Field physics simulation
+- ✅ KNN and range queries
+- ✅ Python FFI bindings
+- ✅ 8-dimensional spatial search
+- ✅ Comprehensive examples and docs
 
 ### 📋 v0.16.0 - Graph Rust
 
