@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-    "version": "0.11.0 mvp_cleanup",
+    "version": "0.12.0 mvp_TokenR",
     "architecture_style": "clean-architecture-mvp",
-    "status": "MVP Ready - Token v2.0 + FastAPI + React Dashboard",
-    "last_updated": "2025-10-19",
+    "status": "Token V2 Rust Implementation + MVP Backend",
+    "last_updated": "2025-10-25",
 
     "mvp_status": {
       "completed": [
