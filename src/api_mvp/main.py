@@ -117,8 +117,8 @@ def token_to_response(token: Token) -> TokenResponse:
 
 app = FastAPI(
     title="NeuroGraph OS - MVP",
-    description="Token v2.0 spatial computing (MVP)",
-    version="0.10.0",
+    description="Token v2.0 + Grid v2.0 spatial computing (MVP)",
+    version="0.15.0",
 )
 
 app.add_middleware(
@@ -128,6 +128,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include Grid routes
+try:
+    from .grid_routes import router as grid_router
+    app.include_router(grid_router)
+    GRID_ENABLED = True
+except Exception as e:
+    GRID_ENABLED = False
+    print(f"⚠️  Grid routes not available: {e}")
 
 
 # ═══════════════════════════════════════════════════════
@@ -141,15 +150,23 @@ async def root():
 
 @app.get("/api")
 async def api_info():
+    endpoints = {
+        "docs": "/docs",
+        "tokens": "/api/v1/tokens",
+        "health": "/health"
+    }
+
+    if GRID_ENABLED:
+        endpoints["grid"] = "/api/v1/grid"
+        endpoints["grid_status"] = "/api/v1/grid/status"
+
     return {
         "name": "NeuroGraph OS MVP",
-        "version": "0.10.0",
+        "version": "0.15.0",
         "token_version": "2.0",
-        "endpoints": {
-            "docs": "/docs",
-            "tokens": "/api/v1/tokens",
-            "health": "/health"
-        }
+        "grid_version": "2.0" if GRID_ENABLED else "not available",
+        "grid_enabled": GRID_ENABLED,
+        "endpoints": endpoints
     }
 
 

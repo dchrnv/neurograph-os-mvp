@@ -33,3 +33,7 @@ path = "src/bin/connection-demo.rs"
 [[bin]]
 name = "grid-demo"
 path = "src/bin/grid-demo.rs"
+
+[[bin]]
+name = "integration-demo"
+path = "src/bin/integration-demo.rs"

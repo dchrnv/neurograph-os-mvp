@@ -354,8 +354,60 @@ python src/core_rust/examples/python_grid_usage.py
 python src/core_rust/examples/benchmark.py
 ```
 
+### Integration Example
+
+**Token + Connection + Grid working together:**
+
+```python
+from neurograph import Token, Connection, Grid
+from neurograph import CoordinateSpace, EntityType, ConnectionType
+
+# Create grid
+grid = Grid()
+
+# Create tokens in semantic space
+dog = Token(1)
+dog.set_coordinates(CoordinateSpace.L8Abstract(), 0.0, 0.0, 0.0)
+dog.set_entity_type(EntityType.Concept())
+grid.add(dog)
+
+cat = Token(2)
+cat.set_coordinates(CoordinateSpace.L8Abstract(), 2.0, 1.0, 0.0)
+cat.set_entity_type(EntityType.Concept())
+grid.add(cat)
+
+animal = Token(3)
+animal.set_coordinates(CoordinateSpace.L8Abstract(), 1.0, 5.0, 0.0)
+animal.set_entity_type(EntityType.Concept())
+grid.add(animal)
+
+# Create semantic connections
+hypernym = Connection(1, 3, ConnectionType.Hypernym())  # dog -> animal
+hypernym.pull_strength = 230  # 0.90
+hypernym.set_active(True)
+
+similar = Connection(1, 2, ConnectionType.Similar())   # dog <-> cat
+similar.pull_strength = 178  # 0.70
+similar.set_bidirectional(True)
+similar.set_active(True)
+
+# Spatial query: Find semantic neighbors of "dog"
+neighbors = grid.find_neighbors(
+    center_token_id=1,
+    space=7,  # L8Abstract
+    radius=3.0,
+    max_results=10
+)
+
+print(f"Semantic neighbors: {[(id, f'{dist:.2f}') for id, dist in neighbors]}")
+# Output: [(1, '0.00'), (2, '2.24')]
+```
+
+See [Integration Guide](docs/INTEGRATION_GUIDE.md) for more examples.
+
 ### Documentation
 
+- [Integration Guide](docs/INTEGRATION_GUIDE.md) - Token + Connection + Grid (NEW)
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Complete Python API reference
 - [v0.14.0 Release Notes](docs/V0.14.0_RELEASE_NOTES.md) - FFI Integration
 - [v0.15.0 Release Notes](docs/V0.15.0_RELEASE_NOTES.md) - Grid V2.0 (NEW)
@@ -469,7 +521,7 @@ curl http://localhost:8000/health
 
 ## 📁 Структура проекта (MVP)
 
-```
+```bash
 neurograph-os-mvp/
 ├── src/
 │   ├── core/
@@ -542,6 +594,7 @@ print(f'Packed size: {len(token.pack())} bytes')
 - ❌ CLI (командная строка)
 
 **MVP фокус:**
+
 - ✅ Token v2.0 (64 bytes, 8 spaces)
 - ✅ RESTful API
 - ✅ React Dashboard
@@ -596,15 +649,13 @@ print(f'Packed size: {len(token.pack())} bytes')
 - ✅ Helper functions and examples
 - ✅ Comprehensive documentation
 
-### ✅ v0.15.0 - Grid Rust (Completed)
+### 📋 v0.15.0 - Grid Rust (Next)
 
-- ✅ Grid V2.0 Rust implementation
-- ✅ Bucket-based spatial indexing
-- ✅ Field physics simulation
-- ✅ KNN and range queries
-- ✅ Python FFI bindings
-- ✅ 8-dimensional spatial search
-- ✅ Comprehensive examples and docs
+- [ ] Grid V2.0 Rust implementation
+- [ ] Spatial indexing (R-tree/Octree)
+- [ ] Field physics simulation
+- [ ] KNN and range queries
+- [ ] Python FFI bindings
 
 ### 📋 v0.16.0 - Graph Rust
 
