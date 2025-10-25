@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-    "version": "0.12.0 mvp_TokenR",
+    "version": "0.13.0 mvp_ConnectionR",
     "architecture_style": "clean-architecture-mvp",
-    "status": "Token V2 Rust Implementation + MVP Backend",
+    "status": "Token V2 + Connection V1 Rust Implementation",
     "last_updated": "2025-10-25",
 
     "mvp_status": {
