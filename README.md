@@ -2,7 +2,7 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.12.0_mvp__TokenR-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
+[![Version](https://img.shields.io/badge/version-0.13.0_mvp__ConnectionR-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -61,9 +61,9 @@ API будет доступен на `http://localhost:8000`
 
 ---
 
-## 🦀 Rust Core (NEW in v0.12.0)
+## 🦀 Rust Core
 
-**High-performance Rust implementation of Token V2.0** - 100× faster, zero dependencies!
+**High-performance Rust implementation** - Token V2.0 + Connection V1.0, 100× faster, zero dependencies!
 
 ### Quick Start (Rust)
 
@@ -79,17 +79,34 @@ cd src/core_rust
 
 ### Features
 
-- ✅ **64-byte packed structure** - Cache-friendly
-- ✅ **Zero dependencies** - Pure Rust
-- ✅ **100× faster** than Python
-- ✅ **Type-safe** - Compile-time guarantees
-- ✅ **Binary-compatible** with Python version
-- ✅ **12+ unit tests** - All passing
+**Token V2.0 (64 bytes):**
 
-### Usage Example (Rust)
+- ✅ 8-dimensional coordinate system
+- ✅ Type-safe entity types
+- ✅ Field properties (radius, strength)
+- ✅ 12+ unit tests
+
+**Connection V1.0 (32 bytes - NEW in v0.13.0):**
+
+- ✅ 40+ connection types (11 categories)
+- ✅ Physical force model (attraction/repulsion)
+- ✅ 8-level selective activation
+- ✅ Lifecycle tracking
+- ✅ 10+ unit tests
+
+**Performance:**
+
+- ✅ Zero dependencies - Pure Rust
+- ✅ 100× faster than Python
+- ✅ Zero-copy serialization
+- ✅ Cache-friendly structures
+
+### Usage Examples (Rust)
+
+**Token:**
 
 ```rust
-use neurograph_core::{Token, CoordinateSpace, EntityType, flags};
+use neurograph_core::{Token, CoordinateSpace, EntityType, token_flags};
 
 // Create token
 let mut token = Token::new(Token::create_id(12345, 0, 0));
@@ -100,17 +117,44 @@ token.set_coordinates(CoordinateSpace::L4Emotional, 0.80, 0.60, 0.50);
 
 // Configure
 token.set_entity_type(EntityType::Concept);
-token.set_flag(flags::PERSISTENT);
+token.set_flag(token_flags::PERSISTENT);
 token.weight = 0.75;
 
 // Serialize (zero-copy)
 let bytes = token.to_bytes();  // [u8; 64]
 ```
 
+**Connection:**
+
+```rust
+use neurograph_core::{Connection, ConnectionType, active_levels, connection_flags};
+
+// Create connection between tokens
+let mut conn = Connection::new(token_a_id, token_b_id);
+
+// Set type and parameters
+conn.set_connection_type(ConnectionType::Cause);
+conn.set_rigidity(0.85);
+conn.pull_strength = 0.70;  // Attraction
+conn.preferred_distance = 1.50;
+
+// Activate on specific spaces
+conn.active_levels = active_levels::COGNITIVE_ABSTRACT;
+conn.set_flag(connection_flags::PERSISTENT);
+
+// Use the connection
+conn.activate();  // Increments counter, updates timestamp
+
+// Serialize (zero-copy)
+let bytes = conn.to_bytes();  // [u8; 32]
+```
+
 **Documentation:**
-- [Token V2 Rust README](src/core_rust/README.md) - Full API docs
+
+- [Token V2 Rust Overview](TOKEN_V2_RUST.md) - Token implementation
+- [Connection V1 Rust Overview](CONNECTION_V1_RUST.md) - Connection implementation (NEW)
+- [Rust API README](src/core_rust/README.md) - Full API docs
 - [Installation Guide](src/core_rust/INSTALL.md) - Setup & troubleshooting
-- [Release Notes](V0.12.0_RELEASE_NOTES.md) - What's new
 
 ---
 
@@ -315,23 +359,67 @@ print(f'Packed size: {len(token.pack())} bytes')
 
 ## 📝 Roadmap
 
-### v0.11 (Next)
+### ✅ v0.10.0 - MVP (Completed)
 
-- [ ] Граф токенов (GraphEngine)
-- [ ] CDNA валидатор
-- [ ] Базовая визуализация графа
+- ✅ Token v2.0 Python (64 bytes, 8 spaces)
+- ✅ FastAPI REST API
+- ✅ React Dashboard (Cyberpunk UI)
+- ✅ In-memory storage
+- ✅ Documentation & guides
 
-### v0.12
+### ✅ v0.12.0 - Token Rust (Completed)
 
-- [ ] Персистентность (PostgreSQL)
-- [ ] WebSocket для real-time
-- [ ] Experience Stream
+- ✅ Token V2.0 Rust implementation
+- ✅ Zero dependencies (pure Rust)
+- ✅ 100× performance vs Python
+- ✅ 12+ unit tests
+- ✅ Binary-compatible format
 
-### v1.0
+### ✅ v0.13.0 - Connection Rust (Completed)
 
-- [ ] Мини-нейронки
-- [ ] Полная интеграция с геномом
-- [ ] Production-ready deployment
+- ✅ Connection V1.0 Rust implementation
+- ✅ 40+ connection types (11 categories)
+- ✅ Physical force model
+- ✅ 8-level selective activation
+- ✅ 10+ unit tests
+
+### 📋 v0.14.0 - FFI & Integration (Next)
+
+- [ ] PyO3 FFI bindings (Rust ↔ Python)
+- [ ] Integration tests (Token + Connection)
+- [ ] Performance benchmarks
+- [ ] Python wrapper for Rust core
+
+### 📋 v0.15.0 - Grid Rust
+
+- [ ] Grid V2.0 Rust implementation
+- [ ] Spatial indexing (R-tree/Octree)
+- [ ] Field physics simulation
+- [ ] KNN and range queries
+
+### 📋 v0.16.0 - Graph Rust
+
+- [ ] Graph V2.0 Rust implementation
+- [ ] Topology operations (BFS, DFS)
+- [ ] Path finding algorithms
+- [ ] Subgraph extraction
+
+### 📋 v0.17.0 - Guardian & CDNA
+
+- [ ] Guardian V1 Rust implementation
+- [ ] CDNA V2 (384 bytes genome)
+- [ ] Validation system
+- [ ] Event orchestration
+
+### 🔮 v1.0.0 - Production (Vision)
+
+- [ ] Complete Rust core (Token + Connection + Grid + Graph + Guardian)
+- [ ] Python integration via FFI
+- [ ] PostgreSQL persistence
+- [ ] WebSocket real-time
+- [ ] Production deployment
+- [ ] Performance optimization
+- [ ] Full documentation
 
 ---
 
