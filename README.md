@@ -2,7 +2,7 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.15.0_mvp__Grid-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
+[![Version](https://img.shields.io/badge/version-0.16.0_mvp__Graph-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -94,7 +94,7 @@ cd src/core_rust
 - ✅ Lifecycle tracking
 - ✅ 10+ unit tests
 
-**Grid V2.0 (NEW in v0.15.0):**
+**Grid V2.0:**
 
 - ✅ 8-dimensional spatial indexing
 - ✅ Bucket-based fast lookups
@@ -103,6 +103,16 @@ cd src/core_rust
 - ✅ Field influence calculations
 - ✅ Density calculations
 - ✅ 6+ unit tests
+
+**Graph V2.0 (NEW in v0.16.0):**
+
+- ✅ Topological navigation and pathfinding
+- ✅ Adjacency lists for O(1) neighbor access
+- ✅ BFS/DFS traversal with iterators
+- ✅ Shortest path (BFS) and weighted paths (Dijkstra)
+- ✅ Subgraph extraction (induced + ego-networks)
+- ✅ Directed/undirected edge support
+- ✅ 10+ unit tests
 
 **Performance:**
 
@@ -185,13 +195,44 @@ let results = grid.range_query(CoordinateSpace::L1Physical, 0.0, 0.0, 0.0, 15.0)
 let influence = grid.calculate_field_influence(
     CoordinateSpace::L1Physical, 10.0, 20.0, 5.0, 10.0
 );
+
+// === GRAPH V2.0 - Topological Navigation ===
+
+use neurograph_core::{Graph, Direction};
+
+let mut graph = Graph::new();
+
+// Add nodes
+graph.add_node(1);
+graph.add_node(2);
+graph.add_node(3);
+
+// Add edges
+let edge_id = Graph::compute_edge_id(1, 2, 0);
+graph.add_edge(edge_id, 1, 2, 0, 1.0, false)?;
+
+// Find neighbors
+let neighbors = graph.get_neighbors(1, Direction::Outgoing);
+
+// Find shortest path
+let path = graph.find_path(1, 3)?;
+println!("Path length: {}", path.length);
+
+// BFS traversal
+graph.bfs(1, Some(3), |node_id, depth| {
+    println!("Visited node {} at depth {}", node_id, depth);
+});
+
+// Extract subgraph
+let subgraph = graph.extract_neighborhood(2, 2);
 ```
 
 **Documentation:**
 
 - [Token V2 Rust Overview](TOKEN_V2_RUST.md) - Token implementation
 - [Connection V1 Rust Overview](CONNECTION_V1_RUST.md) - Connection implementation
-- [Grid V2 Rust Overview](GRID_V2_RUST.md) - Grid implementation (NEW in v0.15.0)
+- [Grid V2 Rust Overview](GRID_V2_RUST.md) - Grid implementation
+- [Graph V2 Rust Overview](GRAPH_V2_RUST.md) - Graph implementation (NEW in v0.16.0)
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Python bindings
 - [Rust API README](src/core_rust/README.md) - Full API docs
 - [Installation Guide](src/core_rust/INSTALL.md) - Setup & troubleshooting
@@ -407,10 +448,11 @@ See [Integration Guide](docs/INTEGRATION_GUIDE.md) for more examples.
 
 ### Documentation
 
-- [Integration Guide](docs/INTEGRATION_GUIDE.md) - Token + Connection + Grid (NEW)
+- [Integration Guide](docs/INTEGRATION_GUIDE.md) - Token + Connection + Grid + Graph
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Complete Python API reference
 - [v0.14.0 Release Notes](docs/V0.14.0_RELEASE_NOTES.md) - FFI Integration
-- [v0.15.0 Release Notes](docs/V0.15.0_RELEASE_NOTES.md) - Grid V2.0 (NEW)
+- [v0.15.0 Release Notes](docs/V0.15.0_RELEASE_NOTES.md) - Grid V2.0
+- [v0.16.0 Release Notes](docs/V0.16.0_RELEASE_NOTES.md) - Graph V2.0 (NEW)
 
 ---
 
@@ -649,21 +691,26 @@ print(f'Packed size: {len(token.pack())} bytes')
 - ✅ Helper functions and examples
 - ✅ Comprehensive documentation
 
-### 📋 v0.15.0 - Grid Rust (Next)
+### ✅ v0.15.0 - Grid Rust (Completed)
 
-- [ ] Grid V2.0 Rust implementation
-- [ ] Spatial indexing (R-tree/Octree)
-- [ ] Field physics simulation
-- [ ] KNN and range queries
-- [ ] Python FFI bindings
+- ✅ Grid V2.0 Rust implementation
+- ✅ 8-dimensional spatial indexing (bucket-based)
+- ✅ Field physics (influence & density calculations)
+- ✅ KNN and range queries
+- ✅ Python FFI bindings
+- ✅ 6+ unit tests
+- ✅ Comprehensive examples and documentation
 
-### 📋 v0.16.0 - Graph Rust
+### ✅ v0.16.0 - Graph Rust (Completed)
 
-- [ ] Graph V2.0 Rust implementation
-- [ ] Topology operations (BFS, DFS)
-- [ ] Path finding algorithms
-- [ ] Subgraph extraction
-- [ ] Python FFI bindings
+- ✅ Graph V2.0 Rust implementation
+- ✅ Topological indexing (adjacency lists)
+- ✅ Traversal algorithms (BFS, DFS with iterators)
+- ✅ Pathfinding (BFS shortest path + Dijkstra)
+- ✅ Subgraph extraction (induced subgraphs + ego-networks)
+- ✅ Python FFI bindings
+- ✅ 10+ comprehensive unit tests
+- ✅ Full API documentation
 
 ### 📋 v0.17.0 - Guardian & CDNA
 
