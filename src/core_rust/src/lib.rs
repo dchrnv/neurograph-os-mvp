@@ -15,6 +15,8 @@ pub mod token;
 pub mod connection;
 pub mod grid;
 pub mod graph;
+pub mod cdna;
+pub mod guardian;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -50,10 +52,29 @@ pub use graph::{
     EdgeInfo,
 };
 
+pub use cdna::{
+    CDNA,
+    ProfileId,
+    ProfileState,
+    CDNAFlags,
+    CDNA_MAGIC,
+    CDNA_VERSION_MAJOR,
+    CDNA_VERSION_MINOR,
+};
+
+pub use guardian::{
+    Guardian,
+    GuardianConfig,
+    Event,
+    EventType,
+    Subscription,
+    ValidationError,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 16;
+pub const VERSION_MINOR: u8 = 17;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -62,6 +83,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.16.0");
+        assert_eq!(VERSION, "0.17.0");
     }
 }

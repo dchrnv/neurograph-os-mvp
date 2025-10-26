@@ -24,6 +24,12 @@ pub mod grid;
 pub mod graph;
 
 #[cfg(feature = "python")]
+pub mod cdna;
+
+#[cfg(feature = "python")]
+pub mod guardian;
+
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
 
 /// Python module initialization
@@ -41,6 +47,12 @@ fn neurograph_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<graph::PyGraphConfig>()?;
     m.add_class::<graph::PyPath>()?;
     m.add_class::<graph::PySubgraph>()?;
+    m.add_class::<cdna::PyCDNA>()?;
+    m.add_class::<cdna::PyProfileId>()?;
+    m.add_class::<guardian::PyGuardian>()?;
+    m.add_class::<guardian::PyGuardianConfig>()?;
+    m.add_class::<guardian::PyEventType>()?;
+    m.add_class::<guardian::PyEvent>()?;
     m.add_function(wrap_pyfunction!(graph::create_simple_graph, m)?)?;
     Ok(())
 }

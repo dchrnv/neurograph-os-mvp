@@ -2,7 +2,7 @@
 
 > **Token-based spatial computing system with 8 semantic coordinate spaces**
 
-[![Version](https://img.shields.io/badge/version-0.16.0_mvp__Graph-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
+[![Version](https://img.shields.io/badge/version-0.17.0_mvp__Guardian__CDNA-blue.svg)](https://github.com/dchrnv/neurograph-os-mvp)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -104,7 +104,7 @@ cd src/core_rust
 - ✅ Density calculations
 - ✅ 6+ unit tests
 
-**Graph V2.0 (NEW in v0.16.0):**
+**Graph V2.0:**
 
 - ✅ Topological navigation and pathfinding
 - ✅ Adjacency lists for O(1) neighbor access
@@ -113,6 +113,17 @@ cd src/core_rust
 - ✅ Subgraph extraction (induced + ego-networks)
 - ✅ Directed/undirected edge support
 - ✅ 10+ unit tests
+
+**Guardian & CDNA V2.1 (NEW in v0.17.0):**
+
+- ✅ CDNA: 384-byte constitutional framework (6 cache lines)
+- ✅ Guardian: System coordinator and validator
+- ✅ Event system: Pub/Sub architecture (3.5M events/sec)
+- ✅ Validation: Token and Connection constraint enforcement
+- ✅ Profile system: Default, Explorer, Analyst, Creative
+- ✅ Evolution: CDNA versioning with rollback
+- ✅ Python FFI bindings
+- ✅ 70+ unit tests
 
 **Performance:**
 
@@ -225,6 +236,38 @@ graph.bfs(1, Some(3), |node_id, depth| {
 
 // Extract subgraph
 let subgraph = graph.extract_neighborhood(2, 2);
+
+// === GUARDIAN & CDNA V2.1 - Constitutional Layer ===
+
+use neurograph_core::{Guardian, CDNA, ProfileId, EventType};
+
+// Create CDNA with Explorer profile (high plasticity)
+let cdna = CDNA::with_profile(ProfileId::Explorer);
+let mut guardian = Guardian::new(cdna);
+
+// Validate token before adding to grid
+let token = Token::new();
+guardian.validate_token(&token)?;
+grid.add(token);
+
+// Validate connection before adding to graph
+let conn = Connection::new();
+guardian.validate_connection(&conn)?;
+graph.add_edge_from_connection(&conn);
+
+// Event system
+guardian.subscribe(MODULE_GRID, EventType::TokenCreated);
+guardian.emit_event(EventType::TokenCreated, MODULE_GRID, token.id(), 0);
+
+// CDNA evolution
+let analyst = CDNA::with_profile(ProfileId::Analyst);
+guardian.update_cdna(analyst)?;  // Switch to strict validation
+guardian.rollback_cdna()?;       // Revert to previous
+
+// Statistics
+println!("Validations: {}/{}",
+    guardian.successful_validations(),
+    guardian.total_validations());
 ```
 
 **Documentation:**
@@ -232,7 +275,8 @@ let subgraph = graph.extract_neighborhood(2, 2);
 - [Token V2 Rust Overview](TOKEN_V2_RUST.md) - Token implementation
 - [Connection V1 Rust Overview](CONNECTION_V1_RUST.md) - Connection implementation
 - [Grid V2 Rust Overview](GRID_V2_RUST.md) - Grid implementation
-- [Graph V2 Rust Overview](GRAPH_V2_RUST.md) - Graph implementation (NEW in v0.16.0)
+- [Graph V2 Rust Overview](GRAPH_V2_RUST.md) - Graph implementation
+- [Guardian & CDNA Rust Overview](GUARDIAN_CDNA_RUST.md) - Constitutional layer (NEW in v0.17.0)
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Python bindings
 - [Rust API README](src/core_rust/README.md) - Full API docs
 - [Installation Guide](src/core_rust/INSTALL.md) - Setup & troubleshooting
@@ -452,7 +496,8 @@ See [Integration Guide](docs/INTEGRATION_GUIDE.md) for more examples.
 - [FFI Integration Guide](docs/FFI_INTEGRATION.md) - Complete Python API reference
 - [v0.14.0 Release Notes](docs/V0.14.0_RELEASE_NOTES.md) - FFI Integration
 - [v0.15.0 Release Notes](docs/V0.15.0_RELEASE_NOTES.md) - Grid V2.0
-- [v0.16.0 Release Notes](docs/V0.16.0_RELEASE_NOTES.md) - Graph V2.0 (NEW)
+- [v0.16.0 Release Notes](docs/V0.16.0_RELEASE_NOTES.md) - Graph V2.0
+- [v0.17.0 Release Notes](docs/V0.17.0_RELEASE_NOTES.md) - Guardian & CDNA (NEW)
 
 ---
 
@@ -712,26 +757,33 @@ print(f'Packed size: {len(token.pack())} bytes')
 - ✅ 10+ comprehensive unit tests
 - ✅ Full API documentation
 
-### 📋 v0.17.0 - Guardian & CDNA
+### ✅ v0.17.0 - Guardian & CDNA (Completed)
 
-- [ ] Guardian V1 Rust implementation
-- [ ] CDNA V2 (384 bytes genome)
-- [ ] Validation system
-- [ ] Event orchestration
-- [ ] Python FFI bindings
+- ✅ Guardian V1.0 Rust implementation
+- ✅ CDNA V2.1: 384-byte constitutional framework (6 cache lines)
+- ✅ Validation system (Token & Connection constraint enforcement)
+- ✅ Event orchestration (Pub/Sub, 3.5M events/sec)
+- ✅ Profile system (Default, Explorer, Analyst, Creative)
+- ✅ CDNA evolution with version control and rollback
+- ✅ Python FFI bindings (PyCDNA, PyGuardian)
+- ✅ 70+ comprehensive unit tests
+- ✅ Full technical documentation
 
-### 🔮 v1.0.0 - Production (Vision)
+### 🎯 v1.0.0 - Production (Vision)
 
-- [ ] Complete Rust core (Token + Connection + Grid + Graph + Guardian)
-- [ ] Full Python FFI integration
+- ✅ Complete Rust core (Token + Connection + Grid + Graph + Guardian + CDNA)
+- ✅ Full Python FFI integration
+- [ ] System integration and optimization
+- [ ] Advanced evolution algorithms
 - [ ] TypeScript bindings (NAPI-RS)
 - [ ] PostgreSQL persistence
 - [ ] WebSocket real-time
 - [ ] Production deployment
 - [ ] CLI tools
-- [ ] Full test coverage (unit + integration)
-- [ ] Performance optimization
-- [ ] Full documentation
+- [ ] Full test coverage (>95% unit + integration)
+- [ ] Performance profiling and optimization
+- [ ] Production hardening and stability guarantees
+- [ ] Complete API documentation
 
 ---
 
