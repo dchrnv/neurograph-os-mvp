@@ -1,0 +1,2 @@
+[console_scripts]
+model-reqs = model_requirements:main
