@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import CDNADashboard from './components/CDNADashboard'
 
 interface Token {
   id: number
@@ -15,6 +16,7 @@ export default function App() {
   const [tokens, setTokens] = useState<Token[]>([])
   const [stats, setStats] = useState({ total: 0 })
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'tokens' | 'cdna'>('tokens')
 
   const fetchTokens = async () => {
     try {
@@ -54,75 +56,96 @@ export default function App() {
       <header className="header">
         <h1>⚡ NEUROGRAPH OS ⚡</h1>
         <p>Token v2.0 | 8 Semantic Coordinate Spaces | MVP Dashboard</p>
+
+        <div className="tab-navigation">
+          <button
+            className={`tab-button ${activeTab === 'tokens' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tokens')}
+          >
+            🔷 TOKENS
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'cdna' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cdna')}
+          >
+            🧬 CDNA CONFIG
+          </button>
+        </div>
       </header>
 
-      <div className="dashboard">
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">SYSTEM STATUS</span>
-          </div>
-          <div>
-            <div className="meta-item">
-              <span className="meta-label">Total Tokens:</span>
-              <span className="stat-value">{stats.total}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Memory:</span>
-              <span className="meta-value">{stats.total * 64} bytes</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">CONTROLS</span>
-          </div>
-          <div className="controls">
-            <button className="button" onClick={createExample}>
-              Create Examples
-            </button>
-            <button className="button" onClick={fetchTokens}>
-              Refresh
-            </button>
-            <button className="button" onClick={clearAll}>
-              Clear All
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">TOKENS ({tokens.length})</span>
-        </div>
-        <div className="token-list">
-          {tokens.length === 0 ? (
-            <p style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'}}>
-              No tokens yet. Click "Create Examples" to start.
-            </p>
-          ) : (
-            tokens.map(token => (
-              <div key={token.id} className="token-item">
-                <div className="token-id">ID: {token.id_hex}</div>
-                <div className="token-meta">
-                  <div className="meta-item">
-                    <span className="meta-label">Type:</span>
-                    <span className="meta-value">{token.entity_type}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-label">Weight:</span>
-                    <span className="meta-value">{token.weight.toFixed(2)}</span>
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-label">Age:</span>
-                    <span className="meta-value">{token.age_seconds}s</span>
-                  </div>
+      {activeTab === 'tokens' ? (
+        <>
+          <div className="dashboard">
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">SYSTEM STATUS</span>
+              </div>
+              <div>
+                <div className="meta-item">
+                  <span className="meta-label">Total Tokens:</span>
+                  <span className="stat-value">{stats.total}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Memory:</span>
+                  <span className="meta-value">{stats.total * 64} bytes</span>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            </div>
+
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">CONTROLS</span>
+              </div>
+              <div className="controls">
+                <button className="button" onClick={createExample}>
+                  Create Examples
+                </button>
+                <button className="button" onClick={fetchTokens}>
+                  Refresh
+                </button>
+                <button className="button" onClick={clearAll}>
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title">TOKENS ({tokens.length})</span>
+            </div>
+            <div className="token-list">
+              {tokens.length === 0 ? (
+                <p style={{color: 'var(--text-secondary)', textAlign: 'center', padding: '20px'}}>
+                  No tokens yet. Click "Create Examples" to start.
+                </p>
+              ) : (
+                tokens.map((token: Token) => (
+                  <div key={token.id} className="token-item">
+                    <div className="token-id">ID: {token.id_hex}</div>
+                    <div className="token-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">Type:</span>
+                        <span className="meta-value">{token.entity_type}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Weight:</span>
+                        <span className="meta-value">{token.weight.toFixed(2)}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Age:</span>
+                        <span className="meta-value">{token.age_seconds}s</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <CDNADashboard />
+      )}
     </div>
   )
 }

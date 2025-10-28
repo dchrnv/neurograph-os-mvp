@@ -131,12 +131,27 @@ app.add_middleware(
 
 # Include Grid routes
 try:
-    from .grid_routes import router as grid_router
+    try:
+        from .grid_routes import router as grid_router
+    except ImportError:
+        from grid_routes import router as grid_router
     app.include_router(grid_router)
     GRID_ENABLED = True
 except Exception as e:
     GRID_ENABLED = False
     print(f"⚠️  Grid routes not available: {e}")
+
+# Include CDNA routes
+try:
+    try:
+        from .cdna_routes import router as cdna_router
+    except ImportError:
+        from cdna_routes import router as cdna_router
+    app.include_router(cdna_router)
+    CDNA_ENABLED = True
+except Exception as e:
+    CDNA_ENABLED = False
+    print(f"⚠️  CDNA routes not available: {e}")
 
 
 # ═══════════════════════════════════════════════════════
@@ -160,12 +175,19 @@ async def api_info():
         endpoints["grid"] = "/api/v1/grid"
         endpoints["grid_status"] = "/api/v1/grid/status"
 
+    if CDNA_ENABLED:
+        endpoints["cdna"] = "/api/v1/cdna"
+        endpoints["cdna_status"] = "/api/v1/cdna/status"
+        endpoints["cdna_profiles"] = "/api/v1/cdna/profiles"
+
     return {
         "name": "NeuroGraph OS MVP",
-        "version": "0.15.0",
+        "version": "0.17.0",
         "token_version": "2.0",
         "grid_version": "2.0" if GRID_ENABLED else "not available",
+        "cdna_version": "2.1" if CDNA_ENABLED else "not available",
         "grid_enabled": GRID_ENABLED,
+        "cdna_enabled": CDNA_ENABLED,
         "endpoints": endpoints
     }
 

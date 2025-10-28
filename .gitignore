@@ -42,4 +42,5 @@ htmlcov/
 # Build artifacts
 build/
 dist/
-*.egg-info/
+*.egg-info/ui/web/node_modules/
+ui/web/package-lock.json
