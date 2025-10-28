@@ -44,3 +44,6 @@ build/
 dist/
 *.egg-info/ui/web/node_modules/
 ui/web/package-lock.json
+
+# Project reference map (internal development)
+project-reference-map.md

@@ -1,5 +1,0 @@
-* [33m1f53a04[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;33mtag: [m[1;33mv0.13.0[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m v0.13.0 mvp_ConnectionR - Connection V1.0 Rust Implementation
-* [33m726f6b6[m[33m ([m[1;33mtag: [m[1;33mv0.12.0[m[33m)[m v0.12.0 mvp_TokenR - Token V2.0 Rust Implementation
-* [33m8c4baf2[m major documentation cleanup and restructuring
-* [33m2f9a525[m docs: major documentation cleanup and restructuring
-* [33mdb49ad5[m[33m ([m[1;33mtag: [m[1;33mv0.10.0[m[33m)[m refactor: rename repository from neurograph-os-dev to neurograph-os-mvp

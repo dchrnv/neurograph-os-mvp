@@ -1,3 +1,0 @@
-[console_scripts]
-neuro-reqs = infrastructure.requirements.requirements_cli:main
-neurograph = src.cli.main:cli
