@@ -294,16 +294,22 @@ impl Token {
 
 impl std::fmt::Debug for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Copy packed fields to avoid unaligned references
+        let id = self.id;
+        let flags = self.flags;
+        let weight = self.weight;
+        let timestamp = self.timestamp;
+
         f.debug_struct("Token")
-            .field("id", &self.id)
+            .field("id", &id)
             .field("local_id", &self.local_id())
             .field("entity_type", &self.get_entity_type())
             .field("domain", &self.domain())
-            .field("flags", &format!("{:#06x}", self.flags))
-            .field("weight", &self.weight)
+            .field("flags", &format!("{:#06x}", flags))
+            .field("weight", &weight)
             .field("field_radius", &self.get_field_radius())
             .field("field_strength", &self.get_field_strength())
-            .field("timestamp", &self.timestamp)
+            .field("timestamp", &timestamp)
             .field("coordinates", &"[8 spaces × 3 axes]")
             .finish()
     }

@@ -1,0 +1,28 @@
+[package]
+name = "neurograph-desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# UI Framework
+iced = { version = "0.12", features = ["tokio", "advanced"] }
+
+# Direct link to Rust core (NO HTTP!)
+neurograph-core = { path = "../core_rust" }
+
+# Password hashing
+argon2 = "0.5"
+rand = "0.8"
+
+# Config management
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5.0"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

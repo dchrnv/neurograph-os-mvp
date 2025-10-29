@@ -173,7 +173,7 @@ impl Grid {
 
         // Index token in all coordinate spaces where it has valid coordinates
         for level in 0..8 {
-            let (x, y, z) = token.get_coordinates(match level {
+            let [x, y, z] = token.get_coordinates(match level {
                 0 => CoordinateSpace::L1Physical,
                 1 => CoordinateSpace::L2Sensory,
                 2 => CoordinateSpace::L3Motor,
@@ -204,7 +204,7 @@ impl Grid {
             // Remove from spatial indexes
             for level in 0..8 {
                 if token.coordinates[level][0] != 127 {
-                    let (x, y, z) = token.get_coordinates(match level {
+                    let [x, y, z] = token.get_coordinates(match level {
                         0 => CoordinateSpace::L1Physical,
                         1 => CoordinateSpace::L2Sensory,
                         2 => CoordinateSpace::L3Motor,
@@ -267,7 +267,7 @@ impl Grid {
         };
 
         // Get center coordinates
-        let (cx, cy, cz) = center_token.get_coordinates(space);
+        let [cx, cy, cz] = center_token.get_coordinates(space);
 
         // Get candidates from spatial index
         let candidates = if let Some(index) = &self.indexes[level] {
@@ -282,7 +282,8 @@ impl Grid {
             .filter(|&id| id != center_token_id)
             .filter_map(|id| {
                 let token = self.tokens.get(&id)?;
-                let distance = center_token.distance_to(token, space);
+                let [tx, ty, tz] = token.get_coordinates(space);
+                let distance = ((tx - cx).powi(2) + (ty - cy).powi(2) + (tz - cz).powi(2)).sqrt();
                 if distance <= radius {
                     Some((id, distance))
                 } else {
@@ -331,7 +332,7 @@ impl Grid {
             .into_iter()
             .filter_map(|id| {
                 let token = self.tokens.get(&id)?;
-                let (tx, ty, tz) = token.get_coordinates(space);
+                let [tx, ty, tz] = token.get_coordinates(space);
                 let distance = ((tx - x).powi(2) + (ty - y).powi(2) + (tz - z).powi(2)).sqrt();
                 if distance <= radius {
                     Some((id, distance))

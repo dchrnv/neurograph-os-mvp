@@ -319,19 +319,20 @@ impl Guardian {
         let mut errors = Vec::new();
 
         // Validate weight
-        if token.weight < self.cdna.min_token_weight {
+        let token_weight = token.weight; // Copy to avoid unaligned reference
+        if token_weight < self.cdna.min_token_weight {
             errors.push(ValidationError::new(
                 "weight",
                 "Token weight below minimum",
-                &format!("{} < {}", token.weight, self.cdna.min_token_weight),
+                &format!("{} < {}", token_weight, self.cdna.min_token_weight),
             ));
         }
 
-        if token.weight > self.cdna.max_token_weight {
+        if token_weight > self.cdna.max_token_weight {
             errors.push(ValidationError::new(
                 "weight",
                 "Token weight above maximum",
-                &format!("{} > {}", token.weight, self.cdna.max_token_weight),
+                &format!("{} > {}", token_weight, self.cdna.max_token_weight),
             ));
         }
 
@@ -413,20 +414,20 @@ impl Guardian {
             ));
         }
 
-        // Validate weight
-        if connection.weight < self.cdna.min_connection_weight {
+        // Validate pull_strength (weight equivalent)
+        if connection.pull_strength < self.cdna.min_connection_weight {
             errors.push(ValidationError::new(
-                "weight",
-                "Connection weight below minimum",
-                &format!("{} < {}", connection.weight, self.cdna.min_connection_weight),
+                "pull_strength",
+                "Connection pull_strength below minimum",
+                &format!("{} < {}", connection.pull_strength, self.cdna.min_connection_weight),
             ));
         }
 
-        if connection.weight > self.cdna.max_connection_weight {
+        if connection.pull_strength > self.cdna.max_connection_weight {
             errors.push(ValidationError::new(
-                "weight",
-                "Connection weight above maximum",
-                &format!("{} > {}", connection.weight, self.cdna.max_connection_weight),
+                "pull_strength",
+                "Connection pull_strength above maximum",
+                &format!("{} > {}", connection.pull_strength, self.cdna.max_connection_weight),
             ));
         }
 
@@ -457,7 +458,7 @@ impl Guardian {
             // Emit validation failed event
             if self.config.enable_events {
                 let event = Event::new(EventType::ValidationFailed)
-                    .with_connection(connection.from_token_id(), connection.to_token_id())
+                    .with_connection(connection.token_a_id, connection.token_b_id)
                     .with_data(format!("Connection validation failed: {} errors", errors.len()));
                 self.emit_event(event);
             }
