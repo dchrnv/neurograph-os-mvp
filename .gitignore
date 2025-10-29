@@ -42,8 +42,11 @@ htmlcov/
 # Build artifacts
 build/
 dist/
-*.egg-info/ui/web/node_modules/
-ui/web/package-lock.json
+*.egg-info/
+
+# Rust
+target/
+Cargo.lock
 
 # Project reference map (internal development)
 project-reference-map.md
