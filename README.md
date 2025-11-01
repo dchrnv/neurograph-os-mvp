@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.20.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.21.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -24,12 +24,32 @@
 
 ## Быстрый старт
 
-### Rust Core
+### Desktop UI v2.0 (Cyberpunk Edition)
 
 ```bash
 # Установить Rust (один раз)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
+# Запустить Desktop UI
+cd src/desktop
+cargo run
+
+# По умолчанию:
+# User password: "user123"
+# Root password: "root123"
+```
+
+**Возможности:**
+- 🎨 Киберпанк UI с неоновыми акцентами
+- 🔐 Dual-mode: User/Root аутентификация
+- 📊 Real-time системные метрики
+- 💬 Chat интерфейс для управления
+- ⚙️ Module Manager для системных компонентов
+- ⚡ Native performance (Iced 0.12 + Direct FFI)
+
+### Rust Core
+
+```bash
 # Собрать и протестировать
 cd src/core_rust
 ./setup_and_test.sh
@@ -111,6 +131,16 @@ neurograph-os/
 │   │   ├── tests/               # 100+ unit тестов
 │   │   └── examples/            # Примеры использования
 │   │
+│   ├── desktop/            # Desktop UI v2.0 (Iced 0.12)
+│   │   └── src/
+│   │       ├── main.rs          # Entry point
+│   │       ├── app.rs           # Главное приложение
+│   │       ├── auth.rs          # Аутентификация (User/Root)
+│   │       ├── core.rs          # FFI bridge
+│   │       ├── theme.rs         # Cyberpunk палитра
+│   │       ├── metrics.rs       # Визуализация метрик
+│   │       └── workspaces/      # UI экраны
+│   │
 │   └── core/token/         # Минимальный Python Token V2.0
 │       └── token_v2.py          # Только для MVP API
 │
@@ -121,7 +151,8 @@ neurograph-os/
 │       ├── CONNECTION_V1_RUST.md
 │       ├── GRID_V2_RUST.md
 │       ├── GRAPH_V2_RUST.md
-│       └── GUARDIAN_CDNA_RUST.md
+│       ├── GUARDIAN_CDNA_RUST.md
+│       └── DESKTOP_UI_SPEC_V2.md  # Desktop UI спецификация
 │
 ├── requirements.txt        # Минимальные зависимости
 └── README.md               # Этот файл
@@ -131,7 +162,27 @@ neurograph-os/
 
 ## История версий
 
-### Hielo - Total Clean (Текущая)
+### v0.21.0 - Desktop UI v2.0 (Cyberpunk Edition) (Текущая)
+
+**Native Desktop UI на Iced 0.12:**
+- Киберпанк эстетика (неоновые цвета #00ffcc, #3399ff, #9966ff)
+- Unity-style layout: левый Dock (80px) с ASCII иконками `[≈] [◐] [⚙] [◉] [⬡] [!]`
+- Dual-mode система: User/Root режимы с визуальным разделением
+- 6 Workspaces: Welcome, Chat, Settings, Status, Modules, Admin
+- Система метрик (CPU, Memory, Temperature, Disk I/O, Network)
+- Module Manager для управления системными модулями
+- Direct FFI интеграция с Rust core (низкая латентность)
+- Аутентификация Argon2id для User/Root режимов
+- Custom StyleSheet для всех компонентов
+
+### v0.20.1 - Project Cleanup
+
+**Документация и рефакторинг:**
+- Обновлена структура проекта
+- Чистая архитектура Rust core
+- Подготовка к Desktop UI v2.0
+
+### Hielo - Total Clean (v0.19)
 
 **Крупная очистка и рефакторинг:**
 - Удалены все устаревшие Python модули (DNA, Events, Graph, Spatial)
@@ -198,9 +249,10 @@ neurograph-os/
 ### Текущий статус (Hielo)
 
 **Завершено:**
-- Полное Rust ядро (Token + Connection + Grid + Graph + Guardian + CDNA)
-- Минимальный Python Token V2.0
-- Комплексное покрытие тестами
+- Token V2.0: полная Rust реализация + Python FFI обертки
+- Connection V1.0, Grid V2.0, Graph V2.0 - полное Rust ядро
+- Guardian + CDNA V2.1 конституционный слой
+- Комплексное покрытие тестами (100+ unit tests)
 - Чистая архитектура кодовой базы
 
 **Следующие шаги:**
@@ -245,6 +297,10 @@ cargo run --example graph_demo
 | Категория | Технология |
 |-----------|------------|
 | **Ядро** | Rust 2021 (нулевые зависимости) |
+| **Desktop UI** | Iced 0.12 (Rust native GUI) |
+| **Аутентификация** | Argon2id password hashing |
+| **Архитектура UI** | Elm Architecture (Model-View-Update) |
+| **FFI** | Direct Rust-to-Rust (zero overhead) |
 | **Хранение** | In-memory (PostgreSQL запланирован) |
 | **Тестирование** | Rust test framework |
 
@@ -252,12 +308,27 @@ cargo run --example graph_demo
 
 ## Документация
 
+**Архитектура:**
+
 - [Architecture Blueprint](architecture_blueprint.json) - Архитектура системы
+- [Project Reference Map](project-reference-map.md) - Референс-карта проекта v2.0
+
+**Desktop UI:**
+
+- [Desktop UI Spec v2.0](docs/specs/DESKTOP_UI_SPEC_V2.md) - Cyberpunk Edition спецификация
+- [UI Control Panel v2](docs/specs/UI_Control_Panel_V2.md) - Дизайн-система
+- [UI Windows System v2](docs/specs/UI_Windows_System_V2.md) - Оконная система
+
+**Core модули:**
+
 - [Token V2 Spec](docs/specs/TOKEN_V2_RUST.md) - Реализация Token
 - [Connection V1 Spec](docs/specs/CONNECTION_V1_RUST.md) - Реализация Connection
 - [Grid V2 Spec](docs/specs/GRID_V2_RUST.md) - Реализация Grid
 - [Graph V2 Spec](docs/specs/GRAPH_V2_RUST.md) - Реализация Graph
 - [Guardian & CDNA Spec](docs/specs/GUARDIAN_CDNA_RUST.md) - Конституционный слой
+
+**Интеграция:**
+
 - [FFI Integration](docs/FFI_INTEGRATION.md) - Python биндинги (v0.14)
 - [Quick Start](QUICKSTART.md) - Руководство по началу работы
 - [Contributing](CONTRIBUTING.md) - Руководство для разработчиков
