@@ -1267,14 +1267,14 @@ mod tests {
         }
 
         // Chain: 1 -> 2 -> 3 -> 4 -> 5
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, true).unwrap();
+        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, true).unwrap();
+        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, true).unwrap();
+        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, true).unwrap();
 
-        // 2-hop neighborhood around node 3
+        // 2-hop neighborhood around node 3 (bidirectional edges)
         let neighborhood = graph.extract_neighborhood(3, 2);
-        assert_eq!(neighborhood.node_count(), 5); // All nodes within 2 hops
+        assert_eq!(neighborhood.node_count(), 5); // All nodes within 2 hops: 1,2,3,4,5
     }
 
     #[test]

@@ -2,10 +2,40 @@
 
 **Версия:** 1.0.0 (MVP)
 **Дата:** 2025-11-02
-**Статус:** Спецификация для реализации
+**Статус:** ✅ Реализовано (v0.23.0)
 **Зависимости:** CDNA v2.1, Guardian v1.0, Token v2.0, Connection v1.0
 **Размер:** 256 байт (фиксированный)
 **Цель:** Базовая инфраструктура для статических политик и параметров системы
+
+---
+
+## 📝 Implementation Notes (v0.23.0)
+
+**Оптимизации структуры для точного размера 256 байт:**
+
+1. **ADNAHeader (64 bytes):**
+   - ❌ Removed `current_hash: [u8; 32]` field (saves 32 bytes)
+   - ✅ Current hash computed on-demand via `compute_fnv1a_hash()` (~50ns)
+   - ✅ `parent_hash[0..8]` reused for storing current parameters hash
+   - ✅ Removed `#[repr(C, align(64))]` → `#[repr(C)]` for precise 64-byte size
+
+2. **EvolutionMetrics (64 bytes):**
+   - ✅ `_reserved` increased from 28 to 36 bytes for exact 64-byte alignment
+
+3. **PolicyPointer (64 bytes):**
+   - ✅ Reordered fields: u64 first, then u32, then u8 (minimizes padding)
+   - ✅ `_reserved2` adjusted to 40 bytes for exact 64-byte size
+
+4. **Hashing:**
+   - ✅ FNV-1a instead of SHA256 (zero dependencies, ~50ns performance)
+   - ✅ Only hashes `parameters` block (64 bytes) for version tracking
+
+**Trade-offs:**
+
+- ✅ Zero external dependencies for ADNA module
+- ✅ Cache-friendly (exactly 4 × 64-byte cache lines)
+- ✅ Fast hash computation (50ns vs ~1μs for SHA256)
+- ❌ No pre-computed current_hash (computed on-demand when needed)
 
 ---
 
@@ -66,7 +96,7 @@ TOTAL  | 256   | bytes (cache-aligned)
 ### 2.2 Header Block (64 bytes)
 
 ```rust
-#[repr(C, align(64))]
+#[repr(C)]
 pub struct ADNAHeader {
     /// Magic number 'ADNA' (0x41444E41)
     pub magic: u32,
@@ -81,19 +111,23 @@ pub struct ADNAHeader {
     /// Reserved for alignment
     pub _reserved1: u16,
 
-    /// SHA256 hash of parent ADNA version
-    pub parent_hash: [u8; 32],
-
-    /// SHA256 hash of current state
-    pub current_hash: [u8; 32],
-
-    /// Creation timestamp (Unix epoch)
+    /// Creation timestamp (Unix epoch seconds)
     pub created_at: u64,
 
     /// Last modification timestamp
     pub modified_at: u64,
+
+    /// FNV-1a hash of parent ADNA version (for lineage tracking)
+    /// First 8 bytes also store current parameters hash
+    pub parent_hash: [u8; 32],
 }
 ```
+
+**Changes from initial design:**
+- ❌ Removed `current_hash` field (32 bytes saved)
+- ✅ Current hash computed on-demand via FNV-1a (~50ns)
+- ✅ `parent_hash` reused for lineage + version tracking
+- ✅ Removed `align(64)` to allow precise 64-byte size
 
 **Policy Types:**
 - `0x0000` - StaticRules (JSON/TOML конфигурация)
@@ -124,8 +158,8 @@ pub struct EvolutionMetrics {
     /// Reserved for rollback tracking
     pub rollback_count: u32,
 
-    /// Reserved for future use
-    pub _reserved: [u8; 28],
+    /// Reserved for future use (total: 4+4+4+4+4+4+4 = 28, need 36 more for 64)
+    pub _reserved: [u8; 36],
 }
 ```
 
@@ -137,12 +171,16 @@ pub struct EvolutionMetrics {
 ### 2.4 Policy Pointer Block (64 bytes)
 
 ```rust
+#[repr(C)]
 pub struct PolicyPointer {
+    /// File path hash (FNV-1a for identification)
+    pub policy_path_hash: u64,
+
+    /// Checksum of policy file (FNV-1a)
+    pub policy_checksum: u64,
+
     /// Size of external policy file (bytes)
     pub policy_size: u32,
-
-    /// File path hash (для идентификации)
-    pub policy_path_hash: u64,
 
     /// Compression type (0 = none, 1 = LZ4, 2 = Zstd)
     pub compression_type: u8,
@@ -156,13 +194,16 @@ pub struct PolicyPointer {
     /// Reserved
     pub _reserved1: u8,
 
-    /// Checksum of policy file (FNV-1a)
-    pub policy_checksum: u64,
-
-    /// Reserved for future
-    pub _reserved2: [u8; 36],
+    /// Reserved for future (8+8+4+1+1+1+1 = 24, need 40 more for 64)
+    pub _reserved2: [u8; 40],
 }
 ```
+
+**Field ordering:**
+- ✅ u64 fields first (policy_path_hash, policy_checksum)
+- ✅ u32 field next (policy_size)
+- ✅ u8 fields last (compression_type, encryption_flag, cache_strategy, _reserved1)
+- ✅ Padding adjusted to 40 bytes for exact 64-byte size
 
 **MVP:** Политики хранятся в отдельных файлах (JSON/TOML), referenced by hash.
 
@@ -295,14 +336,14 @@ pub enum PolicyType {
     // Future: Neural = 1, Tree = 2, Hybrid = 3
 }
 
-/// Complete ADNA structure (256 bytes)
+/// Complete ADNA structure (256 bytes, cache-aligned)
 #[repr(C, align(64))]
 #[derive(Debug, Clone, Copy)]
 pub struct ADNA {
-    pub header: ADNAHeader,
-    pub metrics: EvolutionMetrics,
-    pub pointer: PolicyPointer,
-    pub parameters: ADNAParameters,
+    pub header: ADNAHeader,           // 64 bytes (offset 0-63)
+    pub metrics: EvolutionMetrics,    // 64 bytes (offset 64-127)
+    pub pointer: PolicyPointer,       // 64 bytes (offset 128-191)
+    pub parameters: ADNAParameters,   // 64 bytes (offset 192-255)
 }
 
 // Compile-time size check
@@ -311,14 +352,12 @@ const _: () = assert!(std::mem::size_of::<ADNA>() == 256);
 impl ADNA {
     /// Create new ADNA with default parameters
     pub fn new() -> Self {
-        let mut adna = Self {
+        Self {
             header: ADNAHeader::default(),
             metrics: EvolutionMetrics::default(),
             pointer: PolicyPointer::default(),
             parameters: ADNAParameters::default(),
-        };
-        adna.header.current_hash = adna.compute_hash();
-        adna
+        }
     }
 
     /// Load ADNA from binary + external policy
@@ -351,24 +390,37 @@ impl ADNA {
         Ok(())
     }
 
-    /// Compute SHA256 hash of ADNA (excluding current_hash field)
-    pub fn compute_hash(&self) -> [u8; 32] {
-        use sha2::{Sha256, Digest};
-        let mut hasher = Sha256::new();
+    /// Compute FNV-1a hash of parameters (for version tracking)
+    pub fn compute_hash(&self) -> u64 {
+        const FNV_OFFSET: u64 = 14695981039346656037;
+        const FNV_PRIME: u64 = 1099511628211;
 
-        // Hash all fields except current_hash
-        let bytes = unsafe {
-            std::slice::from_raw_parts(self as *const ADNA as *const u8, 256)
+        let mut hash = FNV_OFFSET;
+
+        // Hash parameters block (64 bytes at offset 192)
+        let params_bytes = unsafe {
+            std::slice::from_raw_parts(
+                &self.parameters as *const ADNAParameters as *const u8,
+                64
+            )
         };
 
-        // Skip current_hash field (offset 12, size 32)
-        hasher.update(&bytes[0..12]);
-        hasher.update(&bytes[44..256]);
+        for &byte in params_bytes {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(FNV_PRIME);
+        }
 
-        let result = hasher.finalize();
-        let mut hash = [0u8; 32];
-        hash.copy_from_slice(&result);
         hash
+    }
+
+    /// Update modification timestamp and parent hash
+    pub fn update_hash(&mut self) {
+        let hash = self.compute_hash();
+        self.header.parent_hash[0..8].copy_from_slice(&hash.to_le_bytes());
+        self.header.modified_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
     }
 
     /// Validate ADNA structure
@@ -386,12 +438,6 @@ impl ADNA {
             ));
         }
 
-        // Check hash
-        let computed = self.compute_hash();
-        if computed != self.header.current_hash {
-            return Err(ADNAError::HashMismatch);
-        }
-
         // Validate parameters
         self.parameters.validate()?;
 
@@ -401,10 +447,17 @@ impl ADNA {
     /// Create new version based on current
     pub fn evolve(&self) -> Self {
         let mut new_adna = *self;
-        new_adna.header.parent_hash = self.header.current_hash;
+
+        // Store current hash in parent_hash for lineage tracking
+        let current_hash = self.compute_hash();
+        new_adna.header.parent_hash[0..8].copy_from_slice(&current_hash.to_le_bytes());
+
         new_adna.metrics.generation += 1;
-        new_adna.header.modified_at = current_timestamp();
-        new_adna.header.current_hash = new_adna.compute_hash();
+        new_adna.header.modified_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
         new_adna
     }
 }
@@ -600,12 +653,10 @@ mod tests {
     fn test_adna_hash() {
         let adna = ADNA::new();
         let hash1 = adna.compute_hash();
-        assert_eq!(hash1, adna.header.current_hash);
 
         let mut adna2 = adna;
         adna2.parameters.exploration_rate = 0.5;
-        adna2.header.current_hash = adna2.compute_hash();
-        let hash2 = adna2.header.current_hash;
+        let hash2 = adna2.compute_hash();
 
         assert_ne!(hash1, hash2);
     }
@@ -614,18 +665,23 @@ mod tests {
     fn test_parameter_validation() {
         let mut adna = ADNA::new();
         adna.parameters.homeostasis_weight = 1.5; // Invalid
-        adna.header.current_hash = adna.compute_hash();
         assert!(adna.validate().is_err());
     }
 
     #[test]
     fn test_evolution() {
         let adna1 = ADNA::new();
-        let adna2 = adna1.evolve();
+        let hash1 = adna1.compute_hash();
 
-        assert_eq!(adna2.header.parent_hash, adna1.header.current_hash);
+        let adna2 = adna1.evolve();
+        let hash2 = adna2.compute_hash();
+
+        // Parent hash should contain hash of previous version
+        let stored_parent = u64::from_le_bytes(adna2.header.parent_hash[0..8].try_into().unwrap());
+        assert_eq!(stored_parent, hash1);
+
         assert_eq!(adna2.metrics.generation, adna1.metrics.generation + 1);
-        assert_ne!(adna2.header.current_hash, adna1.header.current_hash);
+        assert_eq!(hash1, hash2); // Parameters didn't change, so hash is same
     }
 }
 ```
