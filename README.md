@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.22.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.23.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -92,13 +92,21 @@ cd src/core_rust
 - Система профилей (Default, Explorer, Analyst, Creative)
 - Эволюция CDNA с откатом
 
-### ExperienceStream v2.0 ✨ NEW
+### ExperienceStream v2.0
 - 128-байтная структура событий (ExperienceEvent)
 - Circular buffer (1M событий = 128 MB в памяти)
 - Real-time pub-sub система (tokio::broadcast)
 - Sampling strategies (Uniform, PrioritizedReward, Recent)
 - Reward accumulation для Appraisers
 - Фундамент для KEY архитектуры
+
+### ADNA v1.0 MVP ✨ NEW
+- 256-байтная структура статических политик
+- 4 профиля (Balanced, Cautious, Curious, Adaptive)
+- Веса для 4 Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)
+- Параметры поведения системы (exploration rate, timeouts)
+- Version tracking и валидация
+- Фундамент для эволюции до ADNA v2.0/v3.0
 
 **Производительность:**
 - В 100× быстрее чем Python
@@ -173,7 +181,19 @@ neurograph-os/
 
 ## История версий
 
-### v0.22.0 - ExperienceStream v2.0 (Текущая)
+### v0.23.0 - ADNA v1.0 MVP (Текущая)
+
+**Static Policy Engine:**
+- ADNA v1.0 MVP - 256-byte статический policy engine
+- 4 предустановленных профиля (Balanced, Cautious, Curious, Adaptive)
+- Веса для Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)
+- Параметры поведения (exploration_rate, decision_timeout, max_actions)
+- Version tracking с FNV-1a hash
+- Валидация параметров
+- 10 unit тестов (100% coverage)
+- Фундамент для ADNA v2.0+ (ML-assisted policies)
+
+### v0.22.0 - ExperienceStream v2.0
 
 **Фундамент KEY архитектуры:**
 - ExperienceStream v2.0 - система памяти событий

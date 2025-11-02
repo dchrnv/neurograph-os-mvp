@@ -1,8 +1,8 @@
 {
   "neurograph_os": {
-    "version": "0.22.0 - ExperienceStream v2.0",
-    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core + KEY Foundation)",
-    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA + ExperienceStream) + Desktop UI v2.0 - PRODUCTION",
+    "version": "0.23.0 - ADNA v1.0 MVP",
+    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core + KEY Foundation + Static Policy Engine)",
+    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA + ExperienceStream + ADNA) + Desktop UI v2.0 - PRODUCTION",
     "last_updated": "2025-11-02",
 
     "current_status": {
@@ -15,7 +15,8 @@
         "✅ Python FFI bindings (v0.14.0) - PyO3, 10-100x speedup",
         "✅ Desktop UI v2.0 (v0.21.0) - Cyberpunk Edition with dual-mode system, metrics, modules",
         "✅ Project cleanup (Hielo) - removed Python modules, ui/web, old docs",
-        "✅ ExperienceStream v2.0 (v0.22.0) - 128-byte events, circular buffer, pub-sub, sampling, KEY foundation"
+        "✅ ExperienceStream v2.0 (v0.22.0) - 128-byte events, circular buffer, pub-sub, sampling, KEY foundation",
+        "✅ ADNA v1.0 MVP (v0.23.0) - 256-byte static policy engine, 4 profiles, Appraiser weights, validation"
       ],
       "in_progress": [],
       "planned": [
@@ -127,7 +128,7 @@
         "status": "✅ PRODUCTION READY",
         "location": "src/core_rust/",
         "language": "Rust 2021 Edition",
-        "dependencies": "tokio, uuid, parking_lot, rand for ExperienceStream; PyO3 for FFI (optional)",
+        "dependencies": "tokio, uuid, parking_lot, rand for ExperienceStream; PyO3 for FFI (optional); zero deps for ADNA",
         "modules": {
           "token": {
             "status": "✅ v0.12.0 - PRODUCTION READY",

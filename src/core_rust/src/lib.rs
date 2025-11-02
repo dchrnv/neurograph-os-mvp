@@ -18,6 +18,7 @@ pub mod graph;
 pub mod cdna;
 pub mod guardian;
 pub mod experience_stream;
+pub mod adna;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -82,10 +83,24 @@ pub use experience_stream::{
     StreamError,
 };
 
+pub use adna::{
+    ADNA,
+    ADNAHeader,
+    ADNAParameters,
+    EvolutionMetrics,
+    PolicyPointer,
+    PolicyType,
+    ADNAProfile,
+    ADNAError,
+    ADNA_MAGIC,
+    ADNA_VERSION_MAJOR,
+    ADNA_VERSION_MINOR,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 22;
+pub const VERSION_MINOR: u8 = 23;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -94,6 +109,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.22.0");
+        assert_eq!(VERSION, "0.23.0");
     }
 }
