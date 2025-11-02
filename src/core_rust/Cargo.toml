@@ -1,17 +1,30 @@
 [package]
 name = "neurograph-core"
-version = "0.17.0"
+version = "0.22.0"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
-description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian/CDNA with Python FFI"
+description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian/CDNA + ExperienceStream v2.0 with Python FFI"
 
 [dependencies]
 # PyO3 for Python FFI bindings
 pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
 
+# Async runtime for ExperienceStream
+tokio = { version = "1.35", features = ["sync", "time", "rt"] }
+
+# UUID for event IDs
+uuid = { version = "1.6", features = ["v4"] }
+
+# Locking primitives
+parking_lot = "0.12"
+
+# Random sampling for experience batch selection
+rand = "0.8"
+
 [dev-dependencies]
 # Testing dependencies
 rand = "0.8"
+tokio = { version = "1.35", features = ["full"] }
 
 [lib]
 name = "neurograph_core"
@@ -22,22 +35,25 @@ crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
 default = []
 python = ["pyo3"]  # Enable Python bindings with --features python
 
-[[bin]]
-name = "token-demo"
-path = "src/bin/demo.rs"
+# Temporarily disabled bins with compilation errors
+# Will fix in future releases
 
-[[bin]]
-name = "connection-demo"
-path = "src/bin/connection-demo.rs"
+# [[bin]]
+# name = "token-demo"
+# path = "src/bin/demo.rs"
 
-[[bin]]
-name = "grid-demo"
-path = "src/bin/grid-demo.rs"
+# [[bin]]
+# name = "connection-demo"
+# path = "src/bin/connection-demo.rs"
 
-[[bin]]
-name = "integration-demo"
-path = "src/bin/integration-demo.rs"
+# [[bin]]
+# name = "grid-demo"
+# path = "src/bin/grid-demo.rs"
 
-[[bin]]
-name = "graph-demo"
-path = "src/bin/graph-demo.rs"
+# [[bin]]
+# name = "integration-demo"
+# path = "src/bin/integration-demo.rs"
+
+# [[bin]]
+# name = "graph-demo"
+# path = "src/bin/graph-demo.rs"

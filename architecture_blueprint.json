@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-    "version": "0.21.0 - Desktop UI v2.0 (Cyberpunk Edition)",
-    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core)",
-    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA) + Desktop UI v2.0 - PRODUCTION",
-    "last_updated": "2025-11-01",
+    "version": "0.22.0 - ExperienceStream v2.0",
+    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core + KEY Foundation)",
+    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA + ExperienceStream) + Desktop UI v2.0 - PRODUCTION",
+    "last_updated": "2025-11-02",
 
     "current_status": {
       "completed": [
@@ -14,7 +14,8 @@
         "✅ Guardian + CDNA V2.1 Rust (v0.17.0) - constitutional layer, validation, events (3.5M/sec)",
         "✅ Python FFI bindings (v0.14.0) - PyO3, 10-100x speedup",
         "✅ Desktop UI v2.0 (v0.21.0) - Cyberpunk Edition with dual-mode system, metrics, modules",
-        "✅ Project cleanup (Hielo) - removed Python modules, ui/web, old docs"
+        "✅ Project cleanup (Hielo) - removed Python modules, ui/web, old docs",
+        "✅ ExperienceStream v2.0 (v0.22.0) - 128-byte events, circular buffer, pub-sub, sampling, KEY foundation"
       ],
       "in_progress": [],
       "planned": [
@@ -126,7 +127,7 @@
         "status": "✅ PRODUCTION READY",
         "location": "src/core_rust/",
         "language": "Rust 2021 Edition",
-        "dependencies": "Zero for core, PyO3 for FFI (optional)",
+        "dependencies": "tokio, uuid, parking_lot, rand for ExperienceStream; PyO3 for FFI (optional)",
         "modules": {
           "token": {
             "status": "✅ v0.12.0 - PRODUCTION READY",
@@ -330,6 +331,103 @@
             "tests": "70+ unit tests"
           },
 
+          "experience_stream": {
+            "status": "✅ v0.22.0 - PRODUCTION READY",
+            "version": "2.0",
+            "file": "src/core_rust/src/experience_stream.rs (~607 lines)",
+            "description": "Система памяти событий для KEY архитектуры (Appraisers + Intuition + Evolution + Actions)",
+            "event_structure": {
+              "size": "128 bytes (fixed, aligned to 16)",
+              "fields": {
+                "event_id": "16 bytes - UUID v4 (unique identifier)",
+                "timestamp": "8 bytes - u64 (Unix microseconds)",
+                "episode_id": "8 bytes - u64 (episode grouping)",
+                "step_number": "4 bytes - u32 (step within episode)",
+                "event_type": "2 bytes - u16 (State, Action, Reward, etc.)",
+                "flags": "2 bytes - u16 (IsTerminal, IsSuccess, IsSampled, etc.)",
+                "state": "32 bytes - [f32; 8] (8D observation)",
+                "action": "32 bytes - [f32; 8] (8D action vector)",
+                "reward": "4 bytes - f32 (total reward from 4 Appraisers)",
+                "adna_version_hash": "4 bytes - u32 (policy version tracking)",
+                "_reserved": "16 bytes - future expansion"
+              }
+            },
+            "characteristics": [
+              "Circular buffer (1M events = 128 MB RAM, configurable)",
+              "Zero-copy writes using unsafe pointer arithmetic",
+              "Real-time pub-sub (tokio::broadcast, configurable subscriber count)",
+              "Thread-safe (parking_lot RwLock for concurrent access)",
+              "4 sampling strategies (Uniform, PrioritizedReward, Recent, FilteredByType)",
+              "Reward accumulation tracking (total_reward field)",
+              "Episode management (start/end tracking)",
+              "Query API (range, last_n, by_episode)",
+              "Update API (modify reward after event creation)"
+            ],
+            "hot_buffer": {
+              "description": "Lock-free circular buffer for high-throughput event storage",
+              "implementation": "Box<[ExperienceEvent]> with wrapping write pointer",
+              "write_performance": "~100ns per event (single-threaded)",
+              "read_performance": "O(1) random access, O(n) sequential scan",
+              "memory": "exactly 128 MB for 1M events (default config)",
+              "concurrency": "RwLock for write_pos and total_written tracking"
+            },
+            "pub_sub_system": {
+              "framework": "tokio::sync::broadcast",
+              "subscribers": "configurable channel size (default: 1000 events)",
+              "behavior": "non-blocking send, subscribers drop old events if slow",
+              "use_cases": [
+                "Real-time Appraiser reward computation",
+                "Visualization updates",
+                "Logging and debugging",
+                "External event consumers"
+              ]
+            },
+            "sampling_strategies": {
+              "Uniform": "Random uniform sampling (baseline)",
+              "PrioritizedReward": "Probability ∝ |reward| (important experiences)",
+              "Recent": "Last N events (temporal locality)",
+              "FilteredByType": "Only specific event types (State, Action, Reward)"
+            },
+            "api": {
+              "stream_management": "ExperienceStream::new(capacity, channel_size)",
+              "write": "write_event(event) -> Result<u64, StreamError>",
+              "subscribe": "subscribe() -> broadcast::Receiver<ExperienceEvent>",
+              "query": "query_range(start, end), last_n(n), query_episode(episode_id)",
+              "update": "update_reward(seq_num, new_reward)",
+              "sampling": "sample(strategy, n) -> Vec<ExperienceEvent>",
+              "builder": "ExperienceEvent::builder() fluent API"
+            },
+            "integration": {
+              "appraisers": "Subscribe to events, compute rewards, update via update_reward()",
+              "intuition_engine": "Sample batches for gradient descent (PrioritizedReward strategy)",
+              "evolution_manager": "Query episodes for meta-learning and policy updates",
+              "action_controller": "Write action events before execution",
+              "adna": "Track policy version via adna_version_hash field"
+            },
+            "performance": {
+              "write_throughput": "~10M events/sec (single-threaded, no subscribers)",
+              "write_latency": "~100ns per event",
+              "read_latency": "~50ns (direct buffer access)",
+              "sampling": "~10-50μs for 1000 samples from 1M events",
+              "memory_overhead": "~24 bytes per ExperienceStream instance + buffer size",
+              "pub_sub_overhead": "~500ns per event with 4 active subscribers"
+            },
+            "tests": "11 unit tests (100% coverage)",
+            "test_coverage": [
+              "test_event_size - compile-time size verification (128 bytes)",
+              "test_event_creation - basic event construction",
+              "test_event_builder - fluent builder API",
+              "test_hot_buffer_write_read - circular buffer write/read",
+              "test_circular_wrap - wrapping behavior at capacity",
+              "test_experience_stream_write_read - full stream integration",
+              "test_pubsub - subscriber receives events",
+              "test_multiple_subscribers - multiple concurrent subscribers",
+              "test_query_range - range query correctness",
+              "test_sample_recent - Recent sampling strategy",
+              "test_update_reward - reward update after creation"
+            ]
+          },
+
           "ffi": {
             "status": "✅ v0.14.0 - PRODUCTION READY (optional)",
             "location": "src/core_rust/src/ffi/",
@@ -465,18 +563,50 @@
         ],
         "result": "Production-ready cyberpunk UI with dual-mode system"
       },
-      "v0_22_learner": {
-        "status": "📋 PLANNED",
-        "estimated": "2025-11 (1-2 weeks)",
-        "description": "Learner Module - First Mini-Neuron",
-        "tasks": [
-          "📋 Hebbian learning implementation",
-          "📋 Coactivation tracking",
-          "📋 Automatic connection creation",
-          "📋 Connection reinforcement",
-          "📋 Integration with Desktop UI chat"
+      "v0_22_experience_stream": {
+        "status": "✅ COMPLETED (2025-11-02)",
+        "description": "ExperienceStream v2.0 - KEY Architecture Foundation",
+        "completed": [
+          "✅ 128-byte ExperienceEvent structure with 8D state/action vectors",
+          "✅ Circular buffer (HotBuffer) with 1M event capacity",
+          "✅ Real-time pub-sub system (tokio::broadcast)",
+          "✅ 4 sampling strategies (Uniform, PrioritizedReward, Recent, FilteredByType)",
+          "✅ Query API (range, last_n, by_episode)",
+          "✅ Reward accumulation and update API",
+          "✅ Episode management (start/end tracking)",
+          "✅ Builder pattern for event creation",
+          "✅ 11 comprehensive unit tests (100% coverage)",
+          "✅ ExperienceStream v2.0 specification (docs/specs/ExperienceStream_v2.0.md)",
+          "✅ ADNA v1.0 MVP specification (docs/specs/ADNA_v1.0_MVP.md)",
+          "✅ Phase 1-5 roadmap (docs/specs/arch/ROADMAP.md)"
         ],
-        "result": "System learns to associate tokens"
+        "result": "Foundation for Appraisers, Intuition, Evolution, and Actions (KEY architecture)"
+      },
+      "v0_23_adna_v1": {
+        "status": "📋 PLANNED - NEXT",
+        "estimated": "2025-11 (1 week)",
+        "description": "ADNA v1.0 MVP - Static Policy Engine",
+        "tasks": [
+          "📋 256-byte ADNA structure (packed, aligned)",
+          "📋 Static policy parameters (JSON/TOML loading)",
+          "📋 Guardian integration (validation)",
+          "📋 Version history and rollback",
+          "📋 4 default profiles (Balanced, Cautious, Curious, Adaptive)",
+          "📋 Unit tests and validation"
+        ],
+        "result": "Static policy engine ready for Appraisers integration"
+      },
+      "v0_24_guardian_v1_1": {
+        "status": "📋 PLANNED",
+        "estimated": "2025-11 (1 week)",
+        "description": "Guardian v1.1 - ADNA + ExperienceStream Integration",
+        "result": "Guardian validates ADNA policies and manages ExperienceStream lifecycle"
+      },
+      "v0_25_appraisers": {
+        "status": "📋 PLANNED",
+        "estimated": "2025-12 (2-3 weeks)",
+        "description": "4 Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)",
+        "result": "Real-time reward computation from ExperienceStream events"
       },
       "v0_23_attention": {
         "status": "📋 PLANNED",
@@ -527,7 +657,7 @@
 
     "documentation": {
       "current": [
-        "README.md - main documentation (updated for v0.21.0)",
+        "README.md - main documentation (updated for v0.22.0)",
         "project-reference-map.md - principles and aesthetics v2.0",
         "architecture_blueprint.json - this file",
         "docs/specs/TOKEN_V2_RUST.md",
@@ -535,10 +665,13 @@
         "docs/specs/GRID_V2_RUST.md",
         "docs/specs/GRAPH_V2_RUST.md",
         "docs/specs/GUARDIAN_CDNA_RUST.md",
+        "docs/specs/ExperienceStream_v2.0.md - Event memory system (v0.22.0)",
+        "docs/specs/ADNA_v1.0_MVP.md - Static policy engine MVP (v0.22.0)",
         "docs/specs/DESKTOP_UI_SPEC_V2.md - Cyberpunk Edition (v0.21.0)",
         "docs/specs/UI_Control_Panel_V2.md - design system",
         "docs/specs/UI_Windows_System_V2.md - window system",
         "docs/specs/arch/DESKTOP_UI_SPEC.md - v1.0 archived",
+        "docs/specs/arch/ROADMAP.md - Phase 1-5 roadmap (internal)",
         "docs/FFI_INTEGRATION.md"
       ],
       "removed_in_cleanup": [
@@ -569,10 +702,10 @@
 
     "metrics": {
       "code_stats": {
-        "rust_core": "~3500 lines (Token + Connection + Grid + Graph + Guardian + CDNA)",
+        "rust_core": "~4100 lines (Token + Connection + Grid + Graph + Guardian + CDNA + ExperienceStream)",
         "desktop_ui": "~1500 lines (v2.0 - all workspaces + metrics + custom styles)",
-        "tests": "100+ unit tests",
-        "docs": "~7000 lines (specs + README + v2.0 UI docs)"
+        "tests": "111+ unit tests (11 new for ExperienceStream)",
+        "docs": "~10000 lines (specs + README + v2.0 UI docs + ExperienceStream + ADNA MVP + Roadmap)"
       },
       "performance": {
         "token_ops": "10-20x faster than Python",

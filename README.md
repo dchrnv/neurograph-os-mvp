@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.21.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.22.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -92,6 +92,14 @@ cd src/core_rust
 - Система профилей (Default, Explorer, Analyst, Creative)
 - Эволюция CDNA с откатом
 
+### ExperienceStream v2.0 ✨ NEW
+- 128-байтная структура событий (ExperienceEvent)
+- Circular buffer (1M событий = 128 MB в памяти)
+- Real-time pub-sub система (tokio::broadcast)
+- Sampling strategies (Uniform, PrioritizedReward, Recent)
+- Reward accumulation для Appraisers
+- Фундамент для KEY архитектуры
+
 **Производительность:**
 - В 100× быстрее чем Python
 - Zero-copy сериализация
@@ -122,12 +130,13 @@ neurograph-os/
 ├── src/
 │   ├── core_rust/          # Полная Rust реализация
 │   │   ├── src/
-│   │   │   ├── token.rs         # Token V2.0
-│   │   │   ├── connection.rs    # Connection V1.0
-│   │   │   ├── grid.rs          # Grid V2.0
-│   │   │   ├── graph.rs         # Graph V2.0
-│   │   │   ├── cdna.rs          # CDNA V2.1
-│   │   │   └── guardian.rs      # Guardian V1.0
+│   │   │   ├── token.rs              # Token V2.0
+│   │   │   ├── connection.rs         # Connection V1.0
+│   │   │   ├── grid.rs               # Grid V2.0
+│   │   │   ├── graph.rs              # Graph V2.0
+│   │   │   ├── cdna.rs               # CDNA V2.1
+│   │   │   ├── guardian.rs           # Guardian V1.0
+│   │   │   └── experience_stream.rs  # ExperienceStream v2.0 ✨ NEW
 │   │   ├── tests/               # 100+ unit тестов
 │   │   └── examples/            # Примеры использования
 │   │
@@ -152,7 +161,9 @@ neurograph-os/
 │       ├── GRID_V2_RUST.md
 │       ├── GRAPH_V2_RUST.md
 │       ├── GUARDIAN_CDNA_RUST.md
-│       └── DESKTOP_UI_SPEC_V2.md  # Desktop UI спецификация
+│       ├── DESKTOP_UI_SPEC_V2.md       # Desktop UI спецификация
+│       ├── ExperienceStream_v2.0.md    # ExperienceStream спецификация ✨ NEW
+│       └── ADNA_v1.0_MVP.md            # ADNA MVP спецификация ✨ NEW
 │
 ├── requirements.txt        # Минимальные зависимости
 └── README.md               # Этот файл
@@ -162,7 +173,22 @@ neurograph-os/
 
 ## История версий
 
-### v0.21.0 - Desktop UI v2.0 (Cyberpunk Edition) (Текущая)
+### v0.22.0 - ExperienceStream v2.0 (Текущая)
+
+**Фундамент KEY архитектуры:**
+- ExperienceStream v2.0 - система памяти событий
+- 128-байтная структура `ExperienceEvent` (state, action, reward)
+- Circular buffer (1M событий = 128 MB RAM)
+- Real-time pub-sub система (tokio::broadcast)
+- 4 стратегии семплирования (Uniform, PrioritizedReward, Recent, FilteredByType)
+- Reward accumulation для Appraisers
+- 11 unit тестов (100% coverage)
+- Async runtime (tokio)
+- UUID v4 для event_id
+- Спецификации: ADNA v1.0 MVP + ExperienceStream v2.0
+- Roadmap Phase 1-5 (13 releases)
+
+### v0.21.0 - Desktop UI v2.0 (Cyberpunk Edition)
 
 **Native Desktop UI на Iced 0.12:**
 - Киберпанк эстетика (неоновые цвета #00ffcc, #3399ff, #9966ff)

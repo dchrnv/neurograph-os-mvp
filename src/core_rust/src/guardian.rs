@@ -631,12 +631,13 @@ mod tests {
         let mut guardian = Guardian::new();
 
         // Valid connection
-        let mut conn = Connection::new(1, 2, crate::ConnectionType::Proximity);
-        conn.weight = 0.5;
+        let mut conn = Connection::new(1, 2);
+        conn.set_connection_type(crate::ConnectionType::Near);
+        conn.pull_strength = 0.5;
         assert!(guardian.validate_connection(&conn).is_ok());
 
-        // Invalid connection (weight too high)
-        conn.weight = 10.0;
+        // Invalid connection (pull_strength too high)
+        conn.pull_strength = 10.0;
         let result = guardian.validate_connection(&conn);
         assert!(result.is_err());
     }

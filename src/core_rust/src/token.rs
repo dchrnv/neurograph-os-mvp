@@ -327,10 +327,12 @@ mod tests {
     #[test]
     fn test_token_new() {
         let token = Token::new(42);
-        assert_eq!(token.id, 42);
+        let id = token.id; // Copy to avoid packed field reference
+        let weight = token.weight; // Copy to avoid packed field reference
+        assert_eq!(id, 42);
         assert_eq!(token.local_id(), 42);
         assert!(token.has_flag(flags::ACTIVE));
-        assert_eq!(token.weight, 0.0);
+        assert_eq!(weight, 0.0);
     }
 
     #[test]
@@ -409,8 +411,10 @@ mod tests {
         let bytes = token.to_bytes();
         let token2 = Token::from_bytes(&bytes);
 
-        assert_eq!(token2.id, 42);
-        assert_eq!(token2.weight, 0.5);
+        let id2 = token2.id; // Copy to avoid packed field reference
+        let weight2 = token2.weight; // Copy to avoid packed field reference
+        assert_eq!(id2, 42);
+        assert_eq!(weight2, 0.5);
         let coords = token2.get_coordinates(CoordinateSpace::L1Physical);
         assert!((coords[0] - 1.0).abs() < 0.01);
     }
@@ -420,7 +424,7 @@ mod tests {
         let token = Token::new(42);
         assert!(token.validate().is_ok());
 
-        let mut bad_token = Token::new(0);
+        let bad_token = Token::new(0);
         assert!(bad_token.validate().is_err());
     }
 }

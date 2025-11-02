@@ -17,6 +17,7 @@ pub mod grid;
 pub mod graph;
 pub mod cdna;
 pub mod guardian;
+pub mod experience_stream;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -71,10 +72,20 @@ pub use guardian::{
     ValidationError,
 };
 
+pub use experience_stream::{
+    ExperienceStream,
+    ExperienceEvent,
+    EventType as StreamEventType,
+    EventFlags,
+    HotBuffer,
+    SamplingStrategy,
+    StreamError,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 17;
+pub const VERSION_MINOR: u8 = 22;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -83,6 +94,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.17.0");
+        assert_eq!(VERSION, "0.22.0");
     }
 }
