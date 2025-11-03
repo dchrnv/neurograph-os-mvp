@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.23.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.24.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -181,9 +181,24 @@ neurograph-os/
 
 ## История версий
 
-### v0.23.0 - ADNA v1.0 MVP (Текущая)
+### v0.24.0 - Guardian v1.1 (Текущая)
+
+**ADNA + Guardian Integration:**
+
+- Guardian v1.1 - интеграция ADNA в систему валидации
+- `load_adna()` - загрузка ADNA с валидацией через CDNA
+- `update_adna_parameter()` - обновление параметров с версионированием
+- `validate_adna_against_cdna()` - конституционная валидация ADNA
+- ADNA event types (ADNALoaded, ADNAUpdated, ADNARolledBack)
+- ADNA history management (rollback support)
+- 9 интеграционных тестов (100% coverage)
+- Generation tracking для ADNA эволюции
+- 89 total tests passing
+
+### v0.23.0 - ADNA v1.0 MVP
 
 **Static Policy Engine:**
+
 - ADNA v1.0 MVP - 256-byte статический policy engine
 - 4 предустановленных профиля (Balanced, Cautious, Curious, Adaptive)
 - Веса для Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)

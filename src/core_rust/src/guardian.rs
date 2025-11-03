@@ -1,10 +1,11 @@
-/// Guardian V1.0 - System Coordinator for NeuroGraph OS
+/// Guardian V1.1 - System Coordinator for NeuroGraph OS
 ///
 /// Guardian is the central orchestrator that:
 /// - Enforces CDNA constitutional rules
+/// - Manages ADNA (Adaptive DNA) lifecycle and evolution
 /// - Validates Token and Connection operations
 /// - Manages event pub/sub system
-/// - Tracks CDNA version history
+/// - Tracks CDNA and ADNA version history
 /// - Coordinates module interactions
 ///
 /// # Architecture
@@ -23,6 +24,7 @@
 /// - **Immutability**: CDNA changes are versioned and reversible
 
 use crate::cdna::{CDNA, ProfileId};
+use crate::adna::ADNA;
 use crate::{Token, Connection};
 use std::collections::{HashMap, VecDeque};
 
@@ -31,6 +33,12 @@ use std::collections::{HashMap, VecDeque};
 pub enum EventType {
     /// CDNA was updated
     CDNAUpdated,
+    /// ADNA was loaded
+    ADNALoaded,
+    /// ADNA parameter was updated
+    ADNAUpdated,
+    /// ADNA was rolled back to previous version
+    ADNARolledBack,
     /// Token was created
     TokenCreated,
     /// Token was deleted
@@ -169,15 +177,22 @@ impl Default for GuardianConfig {
     }
 }
 
-/// Guardian V1.0 - System coordinator and validator
+/// Guardian V1.1 - System coordinator and validator with ADNA integration
 ///
 /// # Example
 ///
 /// ```rust
-/// use neurograph_core::{Guardian, CDNA, Token, Connection, ProfileId};
+/// use neurograph_core::{Guardian, CDNA, ADNA, ADNAProfile, Token, Connection, ProfileId};
 ///
 /// // Create Guardian with default CDNA
 /// let mut guardian = Guardian::new();
+///
+/// // Load ADNA
+/// let adna = ADNA::from_profile(ADNAProfile::Balanced);
+/// guardian.load_adna(adna).unwrap();
+///
+/// // Update ADNA parameter
+/// guardian.update_adna_parameter("curiosity_weight", 0.8).unwrap();
 ///
 /// // Validate token
 /// let token = Token::new(1);
@@ -187,7 +202,7 @@ impl Default for GuardianConfig {
 /// }
 ///
 /// // Subscribe to events
-/// guardian.subscribe("my_module".to_string(), vec![EventType::TokenCreated]);
+/// guardian.subscribe("my_module".to_string(), vec![EventType::TokenCreated, EventType::ADNAUpdated]);
 ///
 /// // Update CDNA
 /// let new_cdna = CDNA::with_profile(ProfileId::Explorer);
@@ -198,6 +213,10 @@ pub struct Guardian {
     cdna: CDNA,
     /// CDNA version history
     cdna_history: VecDeque<CDNA>,
+    /// Current active ADNA (optional)
+    adna: Option<ADNA>,
+    /// ADNA version history
+    adna_history: VecDeque<ADNA>,
     /// Configuration
     config: GuardianConfig,
     /// Event subscribers
@@ -231,6 +250,8 @@ impl Guardian {
         Self {
             cdna,
             cdna_history: history,
+            adna: None,
+            adna_history: VecDeque::new(),
             config: GuardianConfig::default(),
             subscribers: HashMap::new(),
             event_queue: VecDeque::new(),
@@ -469,6 +490,219 @@ impl Guardian {
         } else {
             Err(errors)
         }
+    }
+
+    // ==================== ADNA MANAGEMENT ====================
+
+    /// Load ADNA (Adaptive DNA) with validation against CDNA
+    ///
+    /// # Arguments
+    /// * `adna` - ADNA instance to load
+    ///
+    /// # Returns
+    /// * `Ok(())` if ADNA is valid and compatible with CDNA
+    /// * `Err(String)` if validation fails
+    ///
+    /// # Example
+    /// ```rust
+    /// use neurograph_core::{Guardian, ADNA, ADNAProfile};
+    ///
+    /// let mut guardian = Guardian::new();
+    /// let adna = ADNA::from_profile(ADNAProfile::Balanced);
+    ///
+    /// guardian.load_adna(adna).unwrap();
+    /// ```
+    pub fn load_adna(&mut self, adna: ADNA) -> Result<(), String> {
+        // Validate ADNA structure
+        adna.validate()
+            .map_err(|e| format!("ADNA validation failed: {:?}", e))?;
+
+        // Validate against CDNA
+        self.validate_adna_against_cdna(&adna)?;
+
+        // Store in history if replacing existing ADNA
+        if let Some(current_adna) = self.adna.take() {
+            self.adna_history.push_back(current_adna);
+
+            // Limit history size
+            while self.adna_history.len() > self.config.max_history_size {
+                self.adna_history.pop_front();
+            }
+        }
+
+        // Load new ADNA
+        self.adna = Some(adna);
+
+        // Emit event
+        if self.config.enable_events {
+            let event = Event::new(EventType::ADNALoaded)
+                .with_data(format!("Generation: {}", adna.metrics.generation));
+            self.emit_event(event);
+        }
+
+        Ok(())
+    }
+
+    /// Get current ADNA (read-only reference)
+    pub fn adna(&self) -> Option<&ADNA> {
+        self.adna.as_ref()
+    }
+
+    /// Get ADNA history
+    pub fn adna_history(&self) -> &VecDeque<ADNA> {
+        &self.adna_history
+    }
+
+    /// Update ADNA parameter with versioning
+    ///
+    /// Creates a new ADNA version (generation++) based on current ADNA
+    ///
+    /// # Arguments
+    /// * `param_name` - Parameter name to update
+    /// * `value` - New parameter value
+    ///
+    /// # Returns
+    /// * `Ok(())` if parameter updated successfully
+    /// * `Err(String)` if ADNA not loaded or parameter invalid
+    pub fn update_adna_parameter(&mut self, param_name: &str, value: f32) -> Result<(), String> {
+        let current_adna = self.adna
+            .as_ref()
+            .ok_or("No ADNA loaded")?;
+
+        // Create evolved version
+        let mut new_adna = current_adna.evolve();
+
+        // Update parameter
+        match param_name {
+            "homeostasis_weight" => new_adna.parameters.homeostasis_weight = value,
+            "curiosity_weight" => new_adna.parameters.curiosity_weight = value,
+            "efficiency_weight" => new_adna.parameters.efficiency_weight = value,
+            "goal_weight" => new_adna.parameters.goal_weight = value,
+            "exploration_rate" => new_adna.parameters.exploration_rate = value,
+            _ => return Err(format!("Unknown parameter: {}", param_name)),
+        }
+
+        // Update hash with new parameter values
+        new_adna.update_hash();
+
+        // Validate new ADNA
+        new_adna.validate()
+            .map_err(|e| format!("ADNA validation failed: {:?}", e))?;
+
+        // Validate against CDNA
+        self.validate_adna_against_cdna(&new_adna)?;
+
+        // Save current to history
+        let old_adna = self.adna.replace(new_adna);
+        if let Some(old) = old_adna {
+            self.adna_history.push_back(old);
+
+            // Limit history size
+            while self.adna_history.len() > self.config.max_history_size {
+                self.adna_history.pop_front();
+            }
+        }
+
+        // Emit event
+        if self.config.enable_events {
+            let event = Event::new(EventType::ADNAUpdated)
+                .with_data(format!("{} = {}", param_name, value));
+            self.emit_event(event);
+        }
+
+        Ok(())
+    }
+
+    /// Rollback ADNA to previous version
+    pub fn rollback_adna(&mut self) -> Result<(), String> {
+        if self.adna_history.is_empty() {
+            return Err("No previous ADNA version to rollback to".to_string());
+        }
+
+        // Pop previous version from history
+        let previous_adna = self.adna_history.pop_back().unwrap();
+
+        // Save current to history (if exists)
+        if let Some(current) = self.adna.replace(previous_adna) {
+            // Don't add back to history - this is a rollback
+            drop(current);
+        }
+
+        // Emit event
+        if self.config.enable_events {
+            let event = Event::new(EventType::ADNARolledBack)
+                .with_data(format!("Generation: {}", previous_adna.metrics.generation));
+            self.emit_event(event);
+        }
+
+        Ok(())
+    }
+
+    /// Validate ADNA against CDNA constitutional rules
+    ///
+    /// Ensures ADNA parameters don't violate CDNA constraints
+    fn validate_adna_against_cdna(&self, adna: &ADNA) -> Result<(), String> {
+        // Check appraiser weights are valid (0.0 - 1.0)
+        let weights = &adna.parameters;
+
+        if weights.homeostasis_weight < 0.0 || weights.homeostasis_weight > 1.0 {
+            return Err(format!(
+                "homeostasis_weight out of range: {}",
+                weights.homeostasis_weight
+            ));
+        }
+
+        if weights.curiosity_weight < 0.0 || weights.curiosity_weight > 1.0 {
+            return Err(format!(
+                "curiosity_weight out of range: {}",
+                weights.curiosity_weight
+            ));
+        }
+
+        if weights.efficiency_weight < 0.0 || weights.efficiency_weight > 1.0 {
+            return Err(format!(
+                "efficiency_weight out of range: {}",
+                weights.efficiency_weight
+            ));
+        }
+
+        if weights.goal_weight < 0.0 || weights.goal_weight > 1.0 {
+            return Err(format!(
+                "goal_weight out of range: {}",
+                weights.goal_weight
+            ));
+        }
+
+        // Check exploration rate
+        if weights.exploration_rate < 0.0 || weights.exploration_rate > 1.0 {
+            return Err(format!(
+                "exploration_rate out of range: {}",
+                weights.exploration_rate
+            ));
+        }
+
+        // Optional: Check decision timeout is reasonable (1ms - 10s)
+        if weights.decision_timeout_ms == 0 || weights.decision_timeout_ms > 10000 {
+            return Err(format!(
+                "decision_timeout_ms out of range: {}ms (expected 1-10000)",
+                weights.decision_timeout_ms
+            ));
+        }
+
+        // Optional: Check max actions per cycle is reasonable (1-1000)
+        if weights.max_actions_per_cycle == 0 || weights.max_actions_per_cycle > 1000 {
+            return Err(format!(
+                "max_actions_per_cycle out of range: {} (expected 1-1000)",
+                weights.max_actions_per_cycle
+            ));
+        }
+
+        // Future: Add more CDNA-specific constraints
+        // - Check against CDNA rate limits
+        // - Validate stability requirements
+        // - etc.
+
+        Ok(())
     }
 
     // ==================== EVENT SYSTEM ====================
@@ -717,5 +951,220 @@ mod tests {
 
         // Queue should be limited to 5
         assert_eq!(guardian.event_queue_size(), 5);
+    }
+
+    // ==================== ADNA INTEGRATION TESTS ====================
+
+    #[test]
+    fn test_adna_load() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+
+        // Initially no ADNA loaded
+        assert!(guardian.adna().is_none());
+        assert_eq!(guardian.adna_history().len(), 0);
+
+        // Load ADNA
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        assert!(guardian.load_adna(adna).is_ok());
+
+        // ADNA should be loaded
+        assert!(guardian.adna().is_some());
+        assert_eq!(guardian.adna_history().len(), 0);
+
+        let loaded_adna = guardian.adna().unwrap();
+        assert_eq!(loaded_adna.parameters.homeostasis_weight, 0.25);
+        assert_eq!(loaded_adna.parameters.curiosity_weight, 0.25);
+    }
+
+    #[test]
+    fn test_adna_update_parameter() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        let generation_before = guardian.adna().unwrap().metrics.generation;
+
+        // Update parameter
+        assert!(guardian.update_adna_parameter("curiosity_weight", 0.8).is_ok());
+
+        // Check updated value
+        let updated_adna = guardian.adna().unwrap();
+        assert_eq!(updated_adna.parameters.curiosity_weight, 0.8);
+
+        // Generation should be incremented
+        assert_eq!(updated_adna.metrics.generation, generation_before + 1);
+
+        // History should have old version
+        assert_eq!(guardian.adna_history().len(), 1);
+        assert_eq!(guardian.adna_history()[0].parameters.curiosity_weight, 0.25);
+    }
+
+    #[test]
+    fn test_adna_parameter_validation() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        // Invalid parameter value (> 1.0)
+        let result = guardian.update_adna_parameter("curiosity_weight", 1.5);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("out of range"));
+
+        // Invalid parameter name
+        let result = guardian.update_adna_parameter("invalid_param", 0.5);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Unknown parameter"));
+
+        // No ADNA loaded
+        let mut guardian2 = Guardian::new();
+        let result = guardian2.update_adna_parameter("curiosity_weight", 0.5);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("No ADNA loaded"));
+    }
+
+    #[test]
+    fn test_adna_rollback() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        // Update parameter
+        guardian.update_adna_parameter("curiosity_weight", 0.8).unwrap();
+        assert_eq!(guardian.adna().unwrap().parameters.curiosity_weight, 0.8);
+
+        // Rollback
+        assert!(guardian.rollback_adna().is_ok());
+        assert_eq!(guardian.adna().unwrap().parameters.curiosity_weight, 0.25);
+
+        // History should be empty after rollback
+        assert_eq!(guardian.adna_history().len(), 0);
+    }
+
+    #[test]
+    fn test_adna_rollback_no_history() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        // Try to rollback without history
+        let result = guardian.rollback_adna();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("No previous ADNA version"));
+    }
+
+    #[test]
+    fn test_adna_multiple_updates() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        // Multiple updates
+        guardian.update_adna_parameter("curiosity_weight", 0.3).unwrap();
+        guardian.update_adna_parameter("exploration_rate", 0.5).unwrap();
+        guardian.update_adna_parameter("homeostasis_weight", 0.4).unwrap();
+
+        let current = guardian.adna().unwrap();
+        assert_eq!(current.parameters.curiosity_weight, 0.3);
+        assert_eq!(current.parameters.exploration_rate, 0.5);
+        assert_eq!(current.parameters.homeostasis_weight, 0.4);
+
+        // History should have 3 versions
+        assert_eq!(guardian.adna_history().len(), 3);
+
+        // Generation should be 3 (started at 0)
+        assert_eq!(current.metrics.generation, 3);
+    }
+
+    #[test]
+    fn test_adna_cdna_validation() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+        let mut adna = ADNA::from_profile(ADNAProfile::Balanced);
+
+        // Set invalid timeout (> 10000ms)
+        adna.parameters.decision_timeout_ms = 15000;
+        let result = guardian.load_adna(adna);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("decision_timeout_ms"));
+
+        // Set invalid max_actions (> 1000)
+        let mut adna2 = ADNA::from_profile(ADNAProfile::Balanced);
+        adna2.parameters.max_actions_per_cycle = 2000;
+        let result = guardian.load_adna(adna2);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("max_actions_per_cycle"));
+    }
+
+    #[test]
+    fn test_adna_events() {
+        use crate::adna::ADNAProfile;
+
+        let mut guardian = Guardian::new();
+
+        // Subscribe to ADNA events
+        guardian.subscribe(
+            "test_module".to_string(),
+            vec![EventType::ADNALoaded, EventType::ADNAUpdated, EventType::ADNARolledBack],
+        ).unwrap();
+
+        // Load ADNA - should emit ADNALoaded event
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        let events = guardian.poll_events(&"test_module".to_string());
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, EventType::ADNALoaded);
+        guardian.clear_events();
+
+        // Update parameter - should emit ADNAUpdated event
+        guardian.update_adna_parameter("curiosity_weight", 0.8).unwrap();
+
+        let events = guardian.poll_events(&"test_module".to_string());
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, EventType::ADNAUpdated);
+        assert!(events[0].data.contains("curiosity_weight"));
+        guardian.clear_events();
+
+        // Rollback - should emit ADNARolledBack event
+        guardian.rollback_adna().unwrap();
+
+        let events = guardian.poll_events(&"test_module".to_string());
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, EventType::ADNARolledBack);
+    }
+
+    #[test]
+    fn test_adna_history_limit() {
+        use crate::adna::ADNAProfile;
+
+        let mut config = GuardianConfig::default();
+        config.max_history_size = 5;
+
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+        let adna = ADNA::from_profile(ADNAProfile::Balanced);
+        guardian.load_adna(adna).unwrap();
+
+        // Make 10 updates
+        for i in 0..10 {
+            let value = 0.1 + (i as f32 * 0.05);
+            guardian.update_adna_parameter("curiosity_weight", value).unwrap();
+        }
+
+        // History should be limited to 5
+        assert_eq!(guardian.adna_history().len(), 5);
+        assert_eq!(guardian.adna().unwrap().metrics.generation, 10);
     }
 }

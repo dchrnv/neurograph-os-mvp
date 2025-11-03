@@ -100,7 +100,7 @@ pub use adna::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 23;
+pub const VERSION_MINOR: u8 = 24;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -109,6 +109,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.23.0");
+        assert_eq!(VERSION, "0.24.0");
     }
 }

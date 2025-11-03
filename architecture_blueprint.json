@@ -1,9 +1,9 @@
 {
   "neurograph_os": {
-    "version": "0.23.0 - ADNA v1.0 MVP",
-    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core + KEY Foundation + Static Policy Engine)",
-    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA + ExperienceStream + ADNA) + Desktop UI v2.0 - PRODUCTION",
-    "last_updated": "2025-11-02",
+    "version": "0.24.0 - Guardian v1.1 (ADNA Integration)",
+    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core + KEY Foundation + ADNA Integration)",
+    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian v1.1 + CDNA + ExperienceStream + ADNA) + Desktop UI v2.0 - PRODUCTION",
+    "last_updated": "2025-11-03",
 
     "current_status": {
       "completed": [
@@ -16,7 +16,8 @@
         "✅ Desktop UI v2.0 (v0.21.0) - Cyberpunk Edition with dual-mode system, metrics, modules",
         "✅ Project cleanup (Hielo) - removed Python modules, ui/web, old docs",
         "✅ ExperienceStream v2.0 (v0.22.0) - 128-byte events, circular buffer, pub-sub, sampling, KEY foundation",
-        "✅ ADNA v1.0 MVP (v0.23.0) - 256-byte static policy engine, 4 profiles, Appraiser weights, validation"
+        "✅ ADNA v1.0 MVP (v0.23.0) - 256-byte static policy engine, 4 profiles, Appraiser weights, validation",
+        "✅ Guardian v1.1 (v0.24.0) - ADNA integration, load/update/rollback, CDNA validation, 9 integration tests"
       ],
       "in_progress": [],
       "planned": [

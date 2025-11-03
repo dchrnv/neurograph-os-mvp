@@ -297,6 +297,48 @@ impl ADNA {
         self.metrics.activation_count += 1;
     }
 
+    /// Create evolved version (new generation) based on current ADNA
+    ///
+    /// Creates a copy with:
+    /// - Generation counter incremented
+    /// - Parent hash set to current parameters hash
+    /// - Modified timestamp updated
+    ///
+    /// # Returns
+    /// New ADNA instance with incremented generation
+    ///
+    /// # Example
+    /// ```rust
+    /// use neurograph_core::{ADNA, ADNAProfile};
+    ///
+    /// let adna1 = ADNA::from_profile(ADNAProfile::Balanced);
+    /// let mut adna2 = adna1.evolve();
+    ///
+    /// // Modify parameters
+    /// adna2.parameters.exploration_rate = 0.5;
+    /// adna2.update_hash();
+    ///
+    /// assert_eq!(adna2.metrics.generation, adna1.metrics.generation + 1);
+    /// ```
+    pub fn evolve(&self) -> Self {
+        let mut new_adna = *self;
+
+        // Store current parameters hash in parent_hash for lineage tracking
+        let current_hash = self.compute_fnv1a_hash();
+        new_adna.header.parent_hash[0..8].copy_from_slice(&current_hash.to_le_bytes());
+
+        // Increment generation
+        new_adna.metrics.generation += 1;
+
+        // Update modification timestamp
+        new_adna.header.modified_at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        new_adna
+    }
+
     /// Get total size in bytes
     pub const fn size_bytes() -> usize {
         std::mem::size_of::<ADNA>()
