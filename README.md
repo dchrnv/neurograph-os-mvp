@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.24.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.25.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -181,7 +181,23 @@ neurograph-os/
 
 ## История версий
 
-### v0.24.0 - Guardian v1.1 (Текущая)
+### v0.25.0 - 4 Appraisers (Текущая)
+
+**Reward System для KEY Architecture:**
+
+- **AppraisersManager** - координирует все оценщики
+- **HomeostasisAppraiser** - квадратичный штраф за отклонение от целевых параметров
+  - Cognitive Load target: [0.3, 0.7]
+  - Certainty target: [0.5, 0.9]
+- **CuriosityAppraiser** - линейная награда за новизну (L2)
+- **EfficiencyAppraiser** - линейный штраф за затраты энергии (L7)
+- **GoalDirectedAppraiser** - линейная награда за прогресс к цели (L8)
+- Trait-based architecture для расширяемости
+- Weighted reward calculation: `reward = Σ(component_i * weight_i)`
+- 37 unit тестов для всех appraisers
+- 126 total tests passing
+
+### v0.24.0 - Guardian v1.1
 
 **ADNA + Guardian Integration:**
 

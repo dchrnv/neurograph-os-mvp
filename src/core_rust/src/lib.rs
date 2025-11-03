@@ -19,6 +19,7 @@ pub mod cdna;
 pub mod guardian;
 pub mod experience_stream;
 pub mod adna;
+pub mod appraisers;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -97,10 +98,19 @@ pub use adna::{
     ADNA_VERSION_MINOR,
 };
 
+pub use appraisers::{
+    Appraiser,
+    AppraisersManager,
+    HomeostasisAppraiser,
+    CuriosityAppraiser,
+    EfficiencyAppraiser,
+    GoalDirectedAppraiser,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 24;
+pub const VERSION_MINOR: u8 = 25;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -109,6 +119,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.24.0");
+        assert_eq!(VERSION, "0.25.0");
     }
 }
