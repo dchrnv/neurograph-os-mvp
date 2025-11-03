@@ -95,6 +95,154 @@ manager.appraise_event(&mut event, &adna);
 
 ---
 
+### v0.24.0 - Guardian v1.1 (ADNA Integration)
+
+**Полная интеграция ADNA в систему валидации:**
+
+Guardian v1.1 расширяет Guardian v1.0 поддержкой ADNA lifecycle management:
+
+**Новые возможности:**
+
+1. **ADNA Loading & Validation:**
+   ```rust
+   pub fn load_adna(&mut self, adna: ADNA) -> Result<(), String> {
+       // 1. Validate ADNA structure
+       adna.validate()?;
+
+       // 2. Validate against CDNA constraints
+       self.validate_adna_against_cdna(&adna)?;
+
+       // 3. Store old ADNA in history
+       if let Some(current) = self.adna.take() {
+           self.adna_history.push_back(current);
+       }
+
+       // 4. Load new ADNA
+       self.adna = Some(adna);
+
+       // 5. Emit event
+       self.emit_event(Event::new(EventType::ADNALoaded));
+       Ok(())
+   }
+   ```
+
+2. **ADNA Parameter Updates:**
+   ```rust
+   pub fn update_adna_parameter(&mut self, param_name: &str, value: f32) -> Result<(), String> {
+       let current = self.adna.as_ref().ok_or("No ADNA loaded")?;
+
+       // Create evolved version with updated parameter
+       let mut new_adna = current.evolve();
+       match param_name {
+           "homeostasis_weight" => new_adna.parameters.homeostasis_weight = value,
+           "curiosity_weight" => new_adna.parameters.curiosity_weight = value,
+           "efficiency_weight" => new_adna.parameters.efficiency_weight = value,
+           "goal_weight" => new_adna.parameters.goal_weight = value,
+           "exploration_rate" => new_adna.parameters.exploration_rate = value,
+           _ => return Err(format!("Unknown parameter: {}", param_name)),
+       }
+
+       // Validate and store
+       new_adna.update_hash();
+       new_adna.validate()?;
+       self.validate_adna_against_cdna(&new_adna)?;
+
+       let old = self.adna.replace(new_adna);
+       if let Some(old) = old {
+           self.adna_history.push_back(old);
+       }
+
+       self.emit_event(Event::new(EventType::ADNAUpdated));
+       Ok(())
+   }
+   ```
+
+3. **ADNA Constitutional Validation:**
+   ```rust
+   fn validate_adna_against_cdna(&self, adna: &ADNA) -> Result<(), String> {
+       // Check all weights in [0.0, 1.0]
+       if adna.parameters.homeostasis_weight < 0.0 ||
+          adna.parameters.homeostasis_weight > 1.0 {
+           return Err("homeostasis_weight out of range");
+       }
+
+       // Check decision_timeout in [1ms, 10s]
+       if adna.parameters.decision_timeout_ms == 0 ||
+          adna.parameters.decision_timeout_ms > 10000 {
+           return Err("decision_timeout_ms out of range");
+       }
+
+       // Check max_actions_per_cycle in [1, 1000]
+       if adna.parameters.max_actions_per_cycle == 0 ||
+          adna.parameters.max_actions_per_cycle > 1000 {
+           return Err("max_actions_per_cycle out of range");
+       }
+
+       Ok(())
+   }
+   ```
+
+4. **ADNA History & Rollback:**
+   ```rust
+   pub fn rollback_adna(&mut self) -> Result<(), String> {
+       let previous = self.adna_history.pop_back()
+           .ok_or("No ADNA history available")?;
+
+       if let Some(current) = self.adna.replace(previous) {
+           // Don't add rolled-back version to history
+       }
+
+       self.emit_event(Event::new(EventType::ADNARolledBack));
+       Ok(())
+   }
+   ```
+
+**Новые Event Types:**
+- `ADNALoaded` (0x0011) - ADNA successfully loaded
+- `ADNAUpdated` (0x0012) - ADNA parameter updated
+- `ADNARolledBack` (0x0013) - ADNA rolled back to previous version
+
+**Структура Guardian:**
+```rust
+pub struct Guardian {
+    cdna: CDNA,
+    cdna_history: VecDeque<CDNA>,
+    adna: Option<ADNA>,              // NEW in v1.1
+    adna_history: VecDeque<ADNA>,    // NEW in v1.1
+    config: GuardianConfig,
+    event_queue: Vec<Event>,
+    subscriptions: HashMap<String, Vec<EventType>>,
+    validation_stats: ValidationStats,
+}
+```
+
+**Интеграция с ADNA.evolve():**
+- При обновлении параметров Guardian вызывает `adna.evolve()`
+- Это создает новую версию ADNA с:
+  - Incremented generation counter
+  - Parent hash = current parameters hash
+  - Updated modification timestamp
+
+**Тестирование:**
+- 9 integration tests для ADNA lifecycle
+- Tests for load, update, rollback, validation
+- Tests for event emission
+- Tests for history management
+- 89 total tests passing (включая ADNA tests)
+
+**Файлы:**
+- `src/core_rust/src/guardian.rs` - updated with ADNA support
+- `src/core_rust/src/adna.rs` - added `evolve()` method
+
+**Архитектурный смысл:**
+Guardian v1.1 делает ADNA "first-class citizen":
+- ADNA проходит те же проверки, что и CDNA
+- ADNA изменения всегда валидируются
+- ADNA история позволяет откатываться к stable configurations
+- Events позволяют модулям реагировать на ADNA changes
+
+---
+
 ### v0.23.0 - ADNA Structure Implementation
 
 **Оптимизации структуры для точного размера 256 байт:**
