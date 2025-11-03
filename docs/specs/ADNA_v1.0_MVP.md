@@ -2,14 +2,100 @@
 
 **Версия:** 1.0.0 (MVP)
 **Дата:** 2025-11-02
-**Статус:** ✅ Реализовано (v0.23.0)
-**Зависимости:** CDNA v2.1, Guardian v1.0, Token v2.0, Connection v1.0
+**Статус:** ✅ Реализовано (v0.23.0) + 4 Appraisers (v0.25.0)
+**Зависимости:** CDNA v2.1, Guardian v1.1, Token v2.0, Connection v1.0, ExperienceStream v2.0
 **Размер:** 256 байт (фиксированный)
-**Цель:** Базовая инфраструктура для статических политик и параметров системы
+**Цель:** Базовая инфраструктура для статических политик и параметров системы + Reward System
 
 ---
 
-## 📝 Implementation Notes (v0.23.0)
+## 📝 Implementation Notes
+
+### v0.25.0 - 4 Appraisers (Reward System)
+
+**Полная реализация Reward System для KEY Architecture:**
+
+Все 4 Appraiser'а из ADNA parameters теперь полностью реализованы:
+
+1. **HomeostasisAppraiser** (`homeostasis_weight`)
+   - Квадратичный штраф за отклонение от целевых параметров
+   - Cognitive Load target: [0.3, 0.7] (L4, index 3)
+   - Certainty target: [0.5, 0.9] (L6, index 5)
+   - Формула: `penalty = -k * deviation²`
+   - 10 unit tests
+
+2. **CuriosityAppraiser** (`curiosity_weight`)
+   - Линейная награда за новизну
+   - Novelty (L2, index 1)
+   - Формула: `reward = k * novelty`
+   - 9 unit tests
+
+3. **EfficiencyAppraiser** (`efficiency_weight`)
+   - Линейный штраф за затраты энергии
+   - Energy cost (L7, index 6)
+   - Формула: `penalty = -k * energy_cost`
+   - 9 unit tests
+
+4. **GoalDirectedAppraiser** (`goal_weight`)
+   - Линейная награда за прогресс к цели
+   - Goal progress (L8, index 7)
+   - Формула: `reward = k * goal_progress`
+   - 9 unit tests
+
+**AppraisersManager:**
+- Координирует все 4 appraiser'а
+- Weighted sum: `reward = Σ(component_i * weight_i)`
+- Веса берутся из ADNA parameters
+- 3 integration tests
+
+**Архитектура:**
+```rust
+pub trait Appraiser: Send + Sync {
+    fn calculate_reward(&self, event: &ExperienceEvent, adna: &ADNA) -> f32;
+    fn name(&self) -> &str;
+    fn weight(&self, adna: &ADNA) -> f32;
+}
+
+pub struct AppraisersManager {
+    homeostasis: HomeostasisAppraiser,
+    curiosity: CuriosityAppraiser,
+    efficiency: EfficiencyAppraiser,
+    goal_directed: GoalDirectedAppraiser,
+}
+```
+
+**Использование:**
+```rust
+let manager = AppraisersManager::new();
+let adna = ADNA::from_profile(ADNAProfile::Balanced);
+
+let mut event = ExperienceEvent::new(EventType::ActionExecuted)
+    .with_state([0.5, 0.8, 0.3, 0.6, 0.4, 0.7, 0.2, 0.9]);
+
+// Appraiser manager вычисляет reward на основе ADNA весов
+manager.appraise_event(&mut event, &adna);
+// event.reward теперь содержит weighted sum всех компонентов
+```
+
+**Файлы:**
+- `src/core_rust/src/appraisers/mod.rs` (204 lines) - trait + manager
+- `src/core_rust/src/appraisers/homeostasis.rs` (242 lines)
+- `src/core_rust/src/appraisers/curiosity.rs` (170 lines)
+- `src/core_rust/src/appraisers/efficiency.rs` (173 lines)
+- `src/core_rust/src/appraisers/goal_directed.rs` (186 lines)
+
+**Тестирование:**
+- 37 unit tests для appraisers (100% coverage)
+- 126 total tests passing в core_rust
+
+**Интеграция с ADNA:**
+- Веса из `ADNAParameters` напрямую используются в `Appraiser::weight()`
+- Разные профили (Balanced, Cautious, Curious, Adaptive) дают разные rewards
+- События оцениваются с точки зрения 4 разных "мотиваций" системы
+
+---
+
+### v0.23.0 - ADNA Structure Implementation
 
 **Оптимизации структуры для точного размера 256 байт:**
 
@@ -785,13 +871,172 @@ evolution_manager.apply_proposal(proposal)?;
 ### 10.2 Готовность к расширению
 
 ADNA v1.0 MVP является **solid foundation** для:
-- Phase 2: Reward System (Appraisers)
-- Phase 3: IntuitionEngine integration
-- Phase 4: ActionController integration
-- Phase 5: Full learning loop (v2.0+)
+- ✅ Phase 2: Reward System (Appraisers) - **DONE v0.25.0**
+- 📋 Phase 3: IntuitionEngine integration (v0.26.0+)
+- 📋 Phase 4: ActionController integration (v0.27.0+)
+- 📋 Phase 5: Full learning loop (v2.0+)
+
+---
+
+## 11. Roadmap & Next Steps
+
+### 11.1 Текущий статус (v0.25.0)
+
+**✅ Завершено:**
+- ADNA v1.0 structure (256 bytes)
+- Guardian v1.1 integration
+- ExperienceStream v2.0 (128-byte events)
+- 4 Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)
+- Full reward calculation pipeline
+
+**🔄 Текущая архитектура:**
+```
+Token/Connection → Grid/Graph → Guardian (CDNA validation) →
+ExperienceStream (events) → Appraisers (reward calculation) →
+[Next: Learner/Attention modules]
+```
+
+### 11.2 Следующие шаги (Priority Order)
+
+#### Option A: Learner Module (Mini-Neuron)
+**Цель:** Первый обучаемый компонент
+
+Что делать:
+1. Создать `src/core_rust/src/learner/mod.rs`
+2. Реализовать простейшую Hebbian learning rule:
+   - "Neurons that fire together, wire together"
+   - Update connection weights based on co-activation
+3. Интегрировать с ExperienceStream:
+   - Subscribe to ActionExecuted events
+   - Update weights when actions lead to positive reward
+4. Добавить в Guardian validation
+5. Написать тесты
+
+**Входные данные:**
+- ExperienceEvent with state + action + reward
+- Connection weights from Graph
+
+**Выходные данные:**
+- Updated connection weights
+- Learning metrics (learning_rate, weight_changes)
+
+**Примерный объем:** ~200-300 lines + tests
+
+#### Option B: Attention Module (Salience)
+**Цель:** Selective activation of tokens
+
+Что делать:
+1. Создать `src/core_rust/src/attention/mod.rs`
+2. Реализовать salience calculation:
+   - Based on novelty (L2), certainty (L6), energy (L7)
+   - Weighted combination from ADNA parameters
+3. Add activation threshold mechanism
+4. Интегрировать с Grid (spatial attention)
+5. Написать тесты
+
+**Входные данные:**
+- Token state vectors (8D)
+- ADNA attention weights
+- Current context (recent events)
+
+**Выходные данные:**
+- Activation scores for each token
+- Top-K most salient tokens
+
+**Примерный объем:** ~250-350 lines + tests
+
+#### Option C: Policy Executor (ADNA → Actions)
+**Цель:** Bridge между ADNA policies и действиями системы
+
+Что делать:
+1. Создать `src/core_rust/src/policy/mod.rs`
+2. Реализовать policy interpreter:
+   - Parse policy rules (JSON/TOML)
+   - Match conditions against current state
+   - Execute actions (create tokens, modify connections)
+3. Add action queue management
+4. Интегрировать с ExperienceStream
+5. Написать тесты
+
+**Входные данные:**
+- ADNA policy rules
+- Current system state
+- Event triggers
+
+**Выходные данные:**
+- Actions to execute
+- Policy execution metrics
+
+**Примерный объем:** ~300-400 lines + tests
+
+### 11.3 Рекомендации для следующей сессии
+
+**Start with:** Option A (Learner Module)
+- Самый естественный next step после Appraisers
+- Замыкает loop: Events → Rewards → Learning
+- Относительно простая имплементация
+- Сразу видны результаты (weight updates)
+
+**Архитектурная картина:**
+```
+[Perception] → Tokens/Connections → Grid/Graph
+       ↓
+[Memory] → ExperienceStream (events with rewards)
+       ↓
+[Evaluation] → Appraisers (reward calculation) ← ADNA weights
+       ↓
+[Learning] → Learner (weight updates based on rewards) ← NEW
+       ↓
+[Action] → Policy Executor (execute actions)
+       ↓
+[Validation] → Guardian (CDNA/ADNA compliance)
+```
+
+**Key questions to resolve:**
+1. Where to store learned weights? (in Connection structure? separate storage?)
+2. Learning rate schedule? (fixed vs adaptive)
+3. Batch vs online learning? (update after each event vs batch)
+4. Integration point with Graph? (direct weight modification vs delta queue?)
+
+### 11.4 Implementation Template
+
+```rust
+// src/core_rust/src/learner/mod.rs
+
+pub struct Learner {
+    learning_rate: f32,
+    weight_updates: Vec<WeightUpdate>,
+}
+
+pub struct WeightUpdate {
+    connection_id: EdgeId,
+    delta: f32,
+    timestamp: u64,
+}
+
+impl Learner {
+    /// Process experience event and generate weight updates
+    pub fn learn(&mut self, event: &ExperienceEvent, adna: &ADNA) -> Vec<WeightUpdate> {
+        // 1. Extract state, action, reward from event
+        // 2. Calculate weight deltas using Hebbian rule
+        // 3. Apply learning rate from ADNA
+        // 4. Return updates for Graph to apply
+    }
+
+    /// Apply weight updates to graph
+    pub fn apply_updates(&self, graph: &mut Graph, updates: &[WeightUpdate]) {
+        // Modify connection weights in graph
+    }
+}
+```
 
 ---
 
 **Конец спецификации ADNA v1.0 MVP**
 
 *Эта спецификация определяет минимальную жизнеспособную версию ADNA, фокусируясь на структурах данных, валидации и интеграции с Guardian. Она закладывает фундамент для постепенной эволюции до полноценного Policy Engine в будущих версиях.*
+
+**Статус обновлений:**
+- v0.23.0 (2025-11-02): Initial ADNA implementation
+- v0.24.0 (2025-11-03): Guardian v1.1 integration
+- v0.25.0 (2025-11-03): 4 Appraisers + Roadmap
