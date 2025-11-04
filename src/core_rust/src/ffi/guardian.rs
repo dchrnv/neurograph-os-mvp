@@ -1,12 +1,12 @@
 //! Python bindings for Guardian V1.0 structure
 
-use crate::guardian::{Guardian, GuardianConfig, Event, EventType, ValidationError};
-use crate::cdna::CDNA;
-use crate::token::Token;
-use crate::connection::Connection;
 use super::cdna::PyCDNA;
-use super::token::PyToken;
 use super::connection::PyConnection;
+use super::token::PyToken;
+use crate::cdna::CDNA;
+use crate::connection::Connection;
+use crate::guardian::{Event, EventType, Guardian, GuardianConfig, ValidationError};
+use crate::token::Token;
 use pyo3::prelude::*;
 
 /// Python wrapper for GuardianConfig
@@ -26,7 +26,7 @@ impl PyGuardianConfig {
                 max_history,
                 validate_on_update,
                 enable_events,
-            }
+            },
         }
     }
 
@@ -63,9 +63,7 @@ impl PyGuardianConfig {
     fn __repr__(&self) -> String {
         format!(
             "GuardianConfig(max_history={}, validate_on_update={}, enable_events={})",
-            self.inner.max_history,
-            self.inner.validate_on_update,
-            self.inner.enable_events
+            self.inner.max_history, self.inner.validate_on_update, self.inner.enable_events
         )
     }
 }
@@ -81,37 +79,51 @@ pub struct PyEventType {
 impl PyEventType {
     #[staticmethod]
     fn cdna_updated() -> Self {
-        PyEventType { inner: EventType::CDNAUpdated }
+        PyEventType {
+            inner: EventType::CDNAUpdated,
+        }
     }
 
     #[staticmethod]
     fn token_created() -> Self {
-        PyEventType { inner: EventType::TokenCreated }
+        PyEventType {
+            inner: EventType::TokenCreated,
+        }
     }
 
     #[staticmethod]
     fn token_deleted() -> Self {
-        PyEventType { inner: EventType::TokenDeleted }
+        PyEventType {
+            inner: EventType::TokenDeleted,
+        }
     }
 
     #[staticmethod]
     fn connection_created() -> Self {
-        PyEventType { inner: EventType::ConnectionCreated }
+        PyEventType {
+            inner: EventType::ConnectionCreated,
+        }
     }
 
     #[staticmethod]
     fn connection_deleted() -> Self {
-        PyEventType { inner: EventType::ConnectionDeleted }
+        PyEventType {
+            inner: EventType::ConnectionDeleted,
+        }
     }
 
     #[staticmethod]
     fn validation_failed() -> Self {
-        PyEventType { inner: EventType::ValidationFailed }
+        PyEventType {
+            inner: EventType::ValidationFailed,
+        }
     }
 
     #[staticmethod]
     fn system_state_changed() -> Self {
-        PyEventType { inner: EventType::SystemStateChanged }
+        PyEventType {
+            inner: EventType::SystemStateChanged,
+        }
     }
 
     fn __repr__(&self) -> String {
@@ -142,7 +154,9 @@ pub struct PyEvent {
 impl PyEvent {
     #[getter]
     fn event_type(&self) -> PyEventType {
-        PyEventType { inner: self.inner.event_type }
+        PyEventType {
+            inner: self.inner.event_type,
+        }
     }
 
     #[getter]
@@ -168,10 +182,7 @@ impl PyEvent {
     fn __repr__(&self) -> String {
         format!(
             "Event(type={:?}, module={}, entity={}, timestamp={})",
-            self.inner.event_type,
-            self.inner.module_id,
-            self.inner.entity_id,
-            self.inner.timestamp
+            self.inner.event_type, self.inner.module_id, self.inner.entity_id, self.inner.timestamp
         )
     }
 }
@@ -195,7 +206,7 @@ impl PyGuardian {
             inner: match config_inner {
                 Some(cfg) => Guardian::with_config(cdna_inner, cfg),
                 None => Guardian::new(cdna_inner),
-            }
+            },
         }
     }
 
@@ -210,13 +221,15 @@ impl PyGuardian {
 
     /// Update CDNA
     fn update_cdna(&mut self, cdna: &PyCDNA) -> PyResult<()> {
-        self.inner.update_cdna(cdna.inner)
+        self.inner
+            .update_cdna(cdna.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
     }
 
     /// Rollback CDNA to previous version
     fn rollback_cdna(&mut self) -> PyResult<()> {
-        self.inner.rollback_cdna()
+        self.inner
+            .rollback_cdna()
             .map_err(|e| pyo3::exceptions::PyValueError::new_err("No CDNA history available"))
     }
 
@@ -234,13 +247,15 @@ impl PyGuardian {
 
     /// Validate a token against current CDNA
     fn validate_token(&self, token: &PyToken) -> PyResult<()> {
-        self.inner.validate_token(&token.inner)
+        self.inner
+            .validate_token(&token.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{:?}", e)))
     }
 
     /// Validate a connection against current CDNA
     fn validate_connection(&self, connection: &PyConnection) -> PyResult<()> {
-        self.inner.validate_connection(&connection.inner)
+        self.inner
+            .validate_connection(&connection.inner)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("{:?}", e)))
     }
 
@@ -257,13 +272,21 @@ impl PyGuardian {
     }
 
     /// Emit an event
-    fn emit_event(&mut self, event_type: &PyEventType, module_id: u32, entity_id: u64, metadata: u64) {
-        self.inner.emit_event(event_type.inner, module_id, entity_id, metadata);
+    fn emit_event(
+        &mut self,
+        event_type: &PyEventType,
+        module_id: u32,
+        entity_id: u64,
+        metadata: u64,
+    ) {
+        self.inner
+            .emit_event(event_type.inner, module_id, entity_id, metadata);
     }
 
     /// Poll events for a specific module
     fn poll_events(&mut self, module_id: u32) -> Vec<PyEvent> {
-        self.inner.poll_events(module_id)
+        self.inner
+            .poll_events(module_id)
             .into_iter()
             .map(|e| PyEvent { inner: e })
             .collect()

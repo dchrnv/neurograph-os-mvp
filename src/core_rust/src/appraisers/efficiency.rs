@@ -29,7 +29,7 @@
 
 use super::Appraiser;
 use crate::adna::ADNA;
-use crate::experience_stream::{ExperienceEvent, EventType};
+use crate::experience_stream::{EventType, ExperienceEvent};
 
 /// EfficiencyAppraiser - penalizes resource waste
 pub struct EfficiencyAppraiser {
@@ -93,8 +93,7 @@ mod tests {
     #[test]
     fn test_energy_zero() {
         let appraiser = EfficiencyAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[6] = 0.0; // No energy cost
 
         let penalty = appraiser.energy_penalty(&event);
@@ -104,8 +103,7 @@ mod tests {
     #[test]
     fn test_energy_high() {
         let appraiser = EfficiencyAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[6] = 0.8; // High energy cost
 
         let penalty = appraiser.energy_penalty(&event);
@@ -117,12 +115,10 @@ mod tests {
     fn test_energy_linear_scaling() {
         let appraiser = EfficiencyAppraiser::new();
 
-        let mut event1 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event1 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event1.state[6] = 0.2;
 
-        let mut event2 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event2 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event2.state[6] = 0.4;
 
         let penalty1 = appraiser.energy_penalty(&event1);
@@ -137,8 +133,7 @@ mod tests {
         let appraiser = EfficiencyAppraiser::new();
         let adna = ADNA::from_profile(ADNAProfile::Balanced);
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[6] = 0.5; // Medium energy cost
 
         let reward = appraiser.calculate_reward(&event, &adna);
@@ -168,8 +163,7 @@ mod tests {
     fn test_low_energy_small_penalty() {
         let appraiser = EfficiencyAppraiser::new();
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[6] = 0.1; // Low energy cost
 
         let penalty = appraiser.energy_penalty(&event);

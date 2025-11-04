@@ -24,17 +24,17 @@
 //! Веса для каждого Appraiser берутся из ADNA parameters.
 
 use crate::adna::ADNA;
-use crate::experience_stream::{ExperienceEvent, EventType};
+use crate::experience_stream::{EventType, ExperienceEvent};
 
-pub mod homeostasis;
 pub mod curiosity;
 pub mod efficiency;
 pub mod goal_directed;
+pub mod homeostasis;
 
-pub use homeostasis::HomeostasisAppraiser;
 pub use curiosity::CuriosityAppraiser;
 pub use efficiency::EfficiencyAppraiser;
 pub use goal_directed::GoalDirectedAppraiser;
+pub use homeostasis::HomeostasisAppraiser;
 
 /// Appraiser trait - базовый интерфейс для всех оценщиков
 ///
@@ -154,8 +154,7 @@ mod tests {
         let manager = AppraisersManager::new();
         let adna = ADNA::from_profile(ADNAProfile::Balanced);
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.5; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.5; 8]);
         assert_eq!(event.reward, 0.0);
 
         manager.appraise_event(&mut event, &adna);

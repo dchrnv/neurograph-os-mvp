@@ -1,8 +1,8 @@
 //! Python bindings for Grid V2.0 structure
 
+use crate::ffi::token::PyToken;
 use crate::grid::{Grid, GridConfig};
 use crate::token::CoordinateSpace;
-use crate::ffi::token::PyToken;
 use pyo3::prelude::*;
 
 /// Python wrapper for GridConfig
@@ -22,7 +22,7 @@ impl PyGridConfig {
                 bucket_size,
                 density_threshold,
                 min_field_nodes,
-            }
+            },
         }
     }
 
@@ -65,9 +65,7 @@ impl PyGridConfig {
     fn __repr__(&self) -> String {
         format!(
             "GridConfig(bucket_size={:.2}, density_threshold={:.2}, min_field_nodes={})",
-            self.inner.bucket_size,
-            self.inner.density_threshold,
-            self.inner.min_field_nodes
+            self.inner.bucket_size, self.inner.density_threshold, self.inner.min_field_nodes
         )
     }
 }
@@ -88,7 +86,7 @@ impl PyGrid {
             inner: match config {
                 Some(cfg) => Grid::with_config(cfg.inner),
                 None => Grid::new(),
-            }
+            },
         }
     }
 
@@ -96,18 +94,23 @@ impl PyGrid {
     fn add(&mut self, token: &PyToken) -> PyResult<()> {
         // Clone the inner token
         let token_copy = token.inner;
-        self.inner.add(token_copy)
+        self.inner
+            .add(token_copy)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
     }
 
     /// Remove a token from the grid
     fn remove(&mut self, token_id: u32) -> Option<PyToken> {
-        self.inner.remove(token_id).map(|token| PyToken { inner: token })
+        self.inner
+            .remove(token_id)
+            .map(|token| PyToken { inner: token })
     }
 
     /// Get a token by ID
     fn get(&self, token_id: u32) -> Option<PyToken> {
-        self.inner.get(token_id).map(|token| PyToken { inner: *token })
+        self.inner
+            .get(token_id)
+            .map(|token| PyToken { inner: *token })
     }
 
     /// Get number of tokens in the grid
@@ -138,10 +141,16 @@ impl PyGrid {
             5 => CoordinateSpace::L6Social,
             6 => CoordinateSpace::L7Temporal,
             7 => CoordinateSpace::L8Abstract,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err("Invalid space index (0-7)")),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Invalid space index (0-7)",
+                ))
+            }
         };
 
-        Ok(self.inner.find_neighbors(center_token_id, coord_space, radius, max_results))
+        Ok(self
+            .inner
+            .find_neighbors(center_token_id, coord_space, radius, max_results))
     }
 
     /// Range query: find all tokens within radius of a point in a space
@@ -163,7 +172,11 @@ impl PyGrid {
             5 => CoordinateSpace::L6Social,
             6 => CoordinateSpace::L7Temporal,
             7 => CoordinateSpace::L8Abstract,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err("Invalid space index (0-7)")),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Invalid space index (0-7)",
+                ))
+            }
         };
 
         Ok(self.inner.range_query(coord_space, x, y, z, radius))
@@ -188,22 +201,21 @@ impl PyGrid {
             5 => CoordinateSpace::L6Social,
             6 => CoordinateSpace::L7Temporal,
             7 => CoordinateSpace::L8Abstract,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err("Invalid space index (0-7)")),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Invalid space index (0-7)",
+                ))
+            }
         };
 
-        Ok(self.inner.calculate_field_influence(coord_space, x, y, z, radius))
+        Ok(self
+            .inner
+            .calculate_field_influence(coord_space, x, y, z, radius))
     }
 
     /// Calculate node density at a point in a space
     #[pyo3(signature = (space, x, y, z, radius))]
-    fn calculate_density(
-        &self,
-        space: u8,
-        x: f32,
-        y: f32,
-        z: f32,
-        radius: f32,
-    ) -> PyResult<f32> {
+    fn calculate_density(&self, space: u8, x: f32, y: f32, z: f32, radius: f32) -> PyResult<f32> {
         let coord_space = match space {
             0 => CoordinateSpace::L1Physical,
             1 => CoordinateSpace::L2Sensory,
@@ -213,7 +225,11 @@ impl PyGrid {
             5 => CoordinateSpace::L6Social,
             6 => CoordinateSpace::L7Temporal,
             7 => CoordinateSpace::L8Abstract,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err("Invalid space index (0-7)")),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Invalid space index (0-7)",
+                ))
+            }
         };
 
         Ok(self.inner.calculate_density(coord_space, x, y, z, radius))
@@ -221,10 +237,7 @@ impl PyGrid {
 
     /// String representation
     fn __repr__(&self) -> String {
-        format!(
-            "Grid(tokens={}, spaces=8)",
-            self.inner.len()
-        )
+        format!("Grid(tokens={}, spaces=8)", self.inner.len())
     }
 }
 

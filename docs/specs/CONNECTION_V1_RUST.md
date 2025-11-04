@@ -326,6 +326,147 @@ is_a2.activate();
 similar.activate();
 ```
 
+## Future Work: Connection v2.0
+
+### Motivation for v2.0 (planned for v0.27.0+)
+
+Connection v1.0 focuses on **physical force model** and **topology**. However, with the introduction of **Learner Module (v0.26.0)**, we need support for **Hebbian learning weights**.
+
+### Current Limitations (v1.0)
+
+**No built-in Hebbian weights:**
+- Connection v1.0 (32 bytes) stores physical properties (`pull_strength`, `preferred_distance`)
+- `pull_strength` is for physics, not learning
+- No field for learned connection strength
+
+**Workaround for v0.26.0:**
+- Learner Module stores weights **separately** in `HashMap<EdgeId, f32>`
+- This works but requires extra lookups
+- Less cache-friendly than embedded weights
+
+### Proposed Connection v2.0 Structure (40 bytes)
+
+```rust
+#[repr(C)]
+pub struct Connection {
+    // === Core fields (16 bytes) ===
+    pub token_a_id: u32,
+    pub token_b_id: u32,
+    pub connection_type: u8,
+    pub rigidity: u8,
+    pub active_levels: u8,
+    pub flags: u8,
+    pub activation_count: u32,
+
+    // === Physical model (8 bytes) ===
+    pub pull_strength: f32,
+    pub preferred_distance: f32,
+
+    // === Learning model (8 bytes) - NEW in v2.0 ===
+    pub hebbian_weight: f32,        // Learned connection strength (0.0-1.0)
+    pub learning_rate: f32,         // Per-connection learning rate
+
+    // === Lifecycle (8 bytes) ===
+    pub created_at: u32,
+    pub last_activation: u32,
+}
+```
+
+**Size:** 40 bytes (32 + 8 for learning)
+
+### Migration Path (v1.0 → v2.0)
+
+#### Step 1: v0.26.0 - External weights (current approach)
+
+```rust
+// Learner stores weights separately
+pub struct Learner {
+    weights: HashMap<EdgeId, f32>,  // External storage
+}
+```
+
+#### Step 2: v0.27.0+ - Connection v2.0 with embedded weights
+
+```rust
+// Weights moved into Connection
+pub struct Connection {
+    // ... existing fields
+    pub hebbian_weight: f32,  // Now embedded!
+    pub learning_rate: f32,
+}
+
+// Learner can access weights directly
+pub struct Learner {
+    // No more HashMap needed!
+}
+```
+
+### Design Considerations for v2.0
+
+#### 1. Weight semantics
+
+- `pull_strength` = physical force (can be negative for repulsion)
+- `hebbian_weight` = learned association strength (always 0.0-1.0)
+- Both can coexist: physics for Grid, learning for Graph
+
+#### 2. Learning rate per connection
+
+- Different connection types learn at different rates:
+  - `ASSOCIATION` → fast learning (high rate)
+  - `CAUSALITY` → medium learning
+  - `HIERARCHY` → slow learning (stable structure)
+  - `DEFINITION` → no learning (fixed connections)
+
+#### 3. Metadata field usage
+
+- v1.0: 8-byte `metadata` field (currently unused)
+- Could be repurposed for `hebbian_weight` + `learning_rate` without size increase
+- **Trade-off:** Breaks binary compatibility with v1.0
+
+### Compatibility Strategy
+
+#### Option A: New Connection v2.0 type (40 bytes)
+
+- ✅ Clean separation
+- ✅ Both versions can coexist
+- ❌ 25% memory increase per connection
+
+#### Option B: Repurpose metadata field (32 bytes)
+
+- ✅ No size increase
+- ✅ More cache-friendly
+- ❌ Breaks v1.0 compatibility
+
+**Recommendation:** Option A for v2.0, keep v1.0 for non-learning connections.
+
+### Timeline
+
+- **v0.26.0** (current) - Learner with external weights
+- **v0.27.0-v0.28.0** - Evaluate performance impact of external storage
+- **v0.29.0+** - Implement Connection v2.0 if needed
+
+### Notes for Implementation
+
+When implementing Connection v2.0, consider:
+
+1. **Backward compatibility:**
+   - Read v1.0 files and auto-upgrade to v2.0
+   - Initialize `hebbian_weight = 0.5`, `learning_rate = 0.01`
+
+2. **Serialization:**
+   - Add version marker to distinguish v1.0 vs v2.0
+   - Support both formats in deserialization
+
+3. **Memory management:**
+   - Connections with `hebbian_weight = 0.0` can be pruned
+   - Memory pools for 32-byte and 40-byte connections
+
+4. **CDNA validation:**
+   - Update CDNA to validate `hebbian_weight` range
+   - Add constraints for `learning_rate` (e.g., 0.001-0.1)
+
+---
+
 ## Summary
 
 Version 0.13.0 successfully delivers a **production-ready Rust implementation** of Connection V1.0, providing:

@@ -29,7 +29,7 @@
 
 use super::Appraiser;
 use crate::adna::ADNA;
-use crate::experience_stream::{ExperienceEvent, EventType};
+use crate::experience_stream::{EventType, ExperienceEvent};
 
 /// GoalDirectedAppraiser - rewards goal achievement
 pub struct GoalDirectedAppraiser {
@@ -93,8 +93,7 @@ mod tests {
     #[test]
     fn test_goal_progress_zero() {
         let appraiser = GoalDirectedAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[7] = 0.0; // No goal progress
 
         let reward = appraiser.goal_progress_reward(&event);
@@ -104,8 +103,7 @@ mod tests {
     #[test]
     fn test_goal_progress_high() {
         let appraiser = GoalDirectedAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[7] = 0.8; // High goal progress
 
         let reward = appraiser.goal_progress_reward(&event);
@@ -117,12 +115,10 @@ mod tests {
     fn test_goal_progress_linear_scaling() {
         let appraiser = GoalDirectedAppraiser::new();
 
-        let mut event1 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event1 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event1.state[7] = 0.25;
 
-        let mut event2 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event2 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event2.state[7] = 0.5;
 
         let reward1 = appraiser.goal_progress_reward(&event1);
@@ -137,8 +133,7 @@ mod tests {
         let appraiser = GoalDirectedAppraiser::new();
         let adna = ADNA::from_profile(ADNAProfile::Balanced);
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[7] = 0.7; // Good goal progress
 
         let reward = appraiser.calculate_reward(&event, &adna);
@@ -168,8 +163,7 @@ mod tests {
     fn test_medium_goal_progress() {
         let appraiser = GoalDirectedAppraiser::new();
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[7] = 0.5; // Medium goal progress
 
         let reward = appraiser.goal_progress_reward(&event);
@@ -181,8 +175,7 @@ mod tests {
     fn test_complete_goal() {
         let appraiser = GoalDirectedAppraiser::new();
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[7] = 1.0; // Complete goal progress
 
         let reward = appraiser.goal_progress_reward(&event);

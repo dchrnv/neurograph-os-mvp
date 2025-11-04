@@ -35,8 +35,8 @@ cd src/desktop
 cargo run
 
 # По умолчанию:
-# User password: "user123"
-# Root password: "root123"
+# User password: "demo"
+# Root password: "root"
 ```
 
 **Возможности:**
@@ -100,13 +100,22 @@ cd src/core_rust
 - Reward accumulation для Appraisers
 - Фундамент для KEY архитектуры
 
-### ADNA v1.0 MVP ✨ NEW
+### ADNA v1.0 MVP
 - 256-байтная структура статических политик
 - 4 профиля (Balanced, Cautious, Curious, Adaptive)
 - Веса для 4 Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)
-- Параметры поведения системы (exploration rate, timeouts)
+- Параметры поведения системы (exploration rate, learning rate, timeouts)
 - Version tracking и валидация
 - Фундамент для эволюции до ADNA v2.0/v3.0
+
+### Learner Module v1.0 ✨ NEW
+- Hebbian learning для connection weights: "Neurons that fire together, wire together"
+- 3 learning rules: Classic, BCM (stable), Oja (normalizing)
+- External weight storage (HashMap) - готовность к Connection v2.0
+- Online + Batch learning modes
+- Learning rate из ADNA parameters (адаптивная политика)
+- Metrics tracking (dead/saturated connections, variance)
+- 14 unit tests
 
 **Производительность:**
 - В 100× быстрее чем Python
@@ -179,179 +188,43 @@ neurograph-os/
 
 ---
 
-## История версий
+## Текущая версия
 
-### v0.25.0 - 4 Appraisers (Текущая)
+### v0.25.0 - 4 Appraisers (Reward System)
 
-**Reward System для KEY Architecture:**
+**Последний релиз KEY Architecture:**
 
-- **AppraisersManager** - координирует все оценщики
-- **HomeostasisAppraiser** - квадратичный штраф за отклонение от целевых параметров
-  - Cognitive Load target: [0.3, 0.7]
-  - Certainty target: [0.5, 0.9]
-- **CuriosityAppraiser** - линейная награда за новизну (L2)
-- **EfficiencyAppraiser** - линейный штраф за затраты энергии (L7)
-- **GoalDirectedAppraiser** - линейная награда за прогресс к цели (L8)
+- **AppraisersManager** - координация всех оценщиков
+- **4 Appraisers:**
+  - **HomeostasisAppraiser** - квадратичный штраф за отклонение (L4, L6)
+  - **CuriosityAppraiser** - линейная награда за новизну (L2)
+  - **EfficiencyAppraiser** - линейный штраф за энергозатраты (L7)
+  - **GoalDirectedAppraiser** - линейная награда за прогресс (L8)
 - Trait-based architecture для расширяемости
-- Weighted reward calculation: `reward = Σ(component_i * weight_i)`
-- 37 unit тестов для всех appraisers
-- 126 total tests passing
+- Weighted reward: `reward = Σ(component_i * weight_i)`
+- 163 unit + integration тестов
 
-### v0.24.0 - Guardian v1.1
+**Следующий шаг:** v0.26.0 - Learner Module (Hebbian Learning)
 
-**ADNA + Guardian Integration:**
-
-- Guardian v1.1 - интеграция ADNA в систему валидации
-- `load_adna()` - загрузка ADNA с валидацией через CDNA
-- `update_adna_parameter()` - обновление параметров с версионированием
-- `validate_adna_against_cdna()` - конституционная валидация ADNA
-- ADNA event types (ADNALoaded, ADNAUpdated, ADNARolledBack)
-- ADNA history management (rollback support)
-- 9 интеграционных тестов (100% coverage)
-- Generation tracking для ADNA эволюции
-- 89 total tests passing
-
-### v0.23.0 - ADNA v1.0 MVP
-
-**Static Policy Engine:**
-
-- ADNA v1.0 MVP - 256-byte статический policy engine
-- 4 предустановленных профиля (Balanced, Cautious, Curious, Adaptive)
-- Веса для Appraisers (Homeostasis, Curiosity, Efficiency, GoalDirected)
-- Параметры поведения (exploration_rate, decision_timeout, max_actions)
-- Version tracking с FNV-1a hash
-- Валидация параметров
-- 10 unit тестов (100% coverage)
-- Фундамент для ADNA v2.0+ (ML-assisted policies)
-
-### v0.22.0 - ExperienceStream v2.0
-
-**Фундамент KEY архитектуры:**
-- ExperienceStream v2.0 - система памяти событий
-- 128-байтная структура `ExperienceEvent` (state, action, reward)
-- Circular buffer (1M событий = 128 MB RAM)
-- Real-time pub-sub система (tokio::broadcast)
-- 4 стратегии семплирования (Uniform, PrioritizedReward, Recent, FilteredByType)
-- Reward accumulation для Appraisers
-- 11 unit тестов (100% coverage)
-- Async runtime (tokio)
-- UUID v4 для event_id
-- Спецификации: ADNA v1.0 MVP + ExperienceStream v2.0
-- Roadmap Phase 1-5 (13 releases)
-
-### v0.21.0 - Desktop UI v2.0 (Cyberpunk Edition)
-
-**Native Desktop UI на Iced 0.12:**
-- Киберпанк эстетика (неоновые цвета #00ffcc, #3399ff, #9966ff)
-- Unity-style layout: левый Dock (80px) с ASCII иконками `[≈] [◐] [⚙] [◉] [⬡] [!]`
-- Dual-mode система: User/Root режимы с визуальным разделением
-- 6 Workspaces: Welcome, Chat, Settings, Status, Modules, Admin
-- Система метрик (CPU, Memory, Temperature, Disk I/O, Network)
-- Module Manager для управления системными модулями
-- Direct FFI интеграция с Rust core (низкая латентность)
-- Аутентификация Argon2id для User/Root режимов
-- Custom StyleSheet для всех компонентов
-
-### v0.20.1 - Project Cleanup
-
-**Документация и рефакторинг:**
-- Обновлена структура проекта
-- Чистая архитектура Rust core
-- Подготовка к Desktop UI v2.0
-
-### Hielo - Total Clean (v0.19)
-
-**Крупная очистка и рефакторинг:**
-- Удалены все устаревшие Python модули (DNA, Events, Graph, Spatial)
-- Удалена старая инфраструктура и слои персистентности
-- Удалены устаревшие конфиги и спецификации
-- Очищена реализация UI v0.18
-- **Результат**: Чистая, минималистичная кодовая база (832KB, 13 Python файлов)
-- Остались только актуальные спецификации Rust модулей
-- **Фокус**: Активное Rust ядро + минимальный Python API
-
-### v0.18.0 - CDNA Dashboard UI
-
-- React дашборд с glassmorphism дизайном
-- Панель конфигурации CDNA
-- *(Удалено в v0.19 для редизайна)*
-
-### v0.17.0 - Guardian & CDNA
-
-- Guardian V1.0 координатор
-- CDNA V2.1 конституционный фреймворк (384 байта)
-- Система событий (3.5M событий/сек)
-- Система профилей с эволюцией
-- 70+ unit тестов
-
-### v0.16.0 - Graph V2.0
-
-- Топологическая навигация
-- BFS/DFS обход
-- Алгоритмы поиска путей
-- Извлечение подграфов
-- 10+ unit тестов
-
-### v0.15.0 - Grid V2.0
-
-- 8D пространственная индексация
-- KNN и range запросы
-- Физика полей
-- Python FFI биндинги
-- 6+ unit тестов
-
-### v0.14.0 - FFI Integration
-
-- PyO3 Python биндинги
-- Ускорение в 10-100×
-- Полный Python API
-
-### v0.13.0 - Connection V1.0
-
-- 40+ типов связей
-- Модель физических сил
-- 10+ unit тестов
-
-### v0.12.0 - Token V2.0 Rust
-
-- Чистая Rust реализация
-- В 100× быстрее Python
-- Нулевые зависимости
-- 12+ unit тестов
+📜 **Полная история проекта:** [docs/specs/PROJECT_HISTORY.md](docs/specs/PROJECT_HISTORY.md) (v0.3 → v0.25.0)
 
 ---
 
-## Roadmap к v1.0.0
+## Roadmap
 
-### Текущий статус (Hielo)
+**Текущая фаза:** KEY Architecture Implementation
 
-**Завершено:**
-- Token V2.0: полная Rust реализация + Python FFI обертки
-- Connection V1.0, Grid V2.0, Graph V2.0 - полное Rust ядро
-- Guardian + CDNA V2.1 конституционный слой
-- Комплексное покрытие тестами (100+ unit tests)
-- Чистая архитектура кодовой базы
+**Ближайшие релизы:**
+- v0.26.0: Learner Module (Hebbian Learning)
+- v0.27.0: Attention Module (Salience)
+- v0.28.0: Policy Executor (ADNA → Actions)
 
-**Следующие шаги:**
-
-### Следующее - Интеграция и эволюция (Запланировано)
-
-- Python FFI биндинги для всех модулей (PyO3)
-- Интеграция и оптимизация системы
-- Продвинутые алгоритмы эволюции
-- Новая спецификация и реализация UI
-
-### v1.0.0 - Production (Видение)
-
+**Долгосрочное видение (v1.0.0):**
 - TypeScript биндинги (NAPI-RS)
-- Слой персистентности PostgreSQL
-- WebSocket обновления в реальном времени
+- PostgreSQL persistence
 - Production deployment
-- CLI инструменты
-- Полное покрытие тестами (>95% интеграционных)
-- Профилирование производительности
-- Production hardening
-- Полная документация API
+- >95% test coverage
+- Full API documentation
 
 ---
 
@@ -439,5 +312,9 @@ MIT License - см. [LICENSE](LICENSE)
 ---
 
 **NeuroGraph OS** - Экспериментальная когнитивная архитектура для пространственных вычислений на основе токенов
+
+**NeuroGraph Team:**
+- Denys Chernov - Lead Developer & Architect
+- Claude (Anthropic AI) - AI Co-Developer & Design Partner
 
 Сделано с ⚡ и 🦀

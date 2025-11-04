@@ -5,7 +5,6 @@
 /// - HotBuffer: Circular buffer for in-memory storage (1M events)
 /// - ExperienceStream: Pub-sub event distribution
 /// - Sampling strategies for batch processing
-
 use parking_lot::RwLock;
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -379,11 +378,7 @@ impl ExperienceStream {
     }
 
     /// Sample batch of events with given strategy
-    pub fn sample_batch(
-        &self,
-        size: usize,
-        strategy: SamplingStrategy,
-    ) -> Vec<ExperienceEvent> {
+    pub fn sample_batch(&self, size: usize, strategy: SamplingStrategy) -> Vec<ExperienceEvent> {
         let total = self.buffer.size();
 
         match strategy {

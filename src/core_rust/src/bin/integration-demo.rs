@@ -3,11 +3,9 @@
 /// Demonstrates how all three core components work together.
 ///
 /// Run with: cargo run --release --bin integration-demo
-
 use neurograph_core::{
-    Token, Connection, Grid, GridConfig,
-    CoordinateSpace, EntityType, ConnectionType,
-    token_flags, connection_flags, active_levels,
+    active_levels, connection_flags, token_flags, Connection, ConnectionType, CoordinateSpace,
+    EntityType, Grid, GridConfig, Token,
 };
 use std::collections::HashMap;
 
@@ -47,8 +45,7 @@ fn demo_1_semantic_network() {
         token.weight = 100; // 1.0 * 100
         token.set_flag(token_flags::ACTIVE);
 
-        println!("  [{}] {:8} at ({:4.1}, {:4.1}, {:4.1})",
-                 id, name, x, y, z);
+        println!("  [{}] {:8} at ({:4.1}, {:4.1}, {:4.1})", id, name, x, y, z);
 
         grid.add(token).unwrap();
         token_map.insert(*id, *name);
@@ -79,8 +76,12 @@ fn demo_1_semantic_network() {
         let source_name = token_map.get(&source_id).unwrap_or(&"?");
         let target_name = token_map.get(&target_id).unwrap_or(&"?");
 
-        println!("  {:8} --[Hypernym]-> {:8} (strength: {:.2})",
-                 source_name, target_name, strength as f32 / 255.0);
+        println!(
+            "  {:8} --[Hypernym]-> {:8} (strength: {:.2})",
+            source_name,
+            target_name,
+            strength as f32 / 255.0
+        );
 
         connections.push(conn);
     }
@@ -115,7 +116,13 @@ fn demo_1_semantic_network() {
     // Range query around "animal"
     let animal_token = grid.get(3).unwrap();
     let coords = animal_token.get_coordinates(CoordinateSpace::L8Abstract);
-    let nearby = grid.range_query(CoordinateSpace::L8Abstract, coords.0, coords.1, coords.2, 3.0);
+    let nearby = grid.range_query(
+        CoordinateSpace::L8Abstract,
+        coords.0,
+        coords.1,
+        coords.2,
+        3.0,
+    );
 
     println!("\n  Concepts within 3.0 units of 'animal':");
     for (token_id, distance) in nearby {
@@ -151,8 +158,10 @@ fn demo_2_emotional_landscape() {
         token.field_strength = (field_s * 255.0) as u8;
         token.set_flag(token_flags::ACTIVE);
 
-        println!("  [{}] {:8} VAD=({:5.2}, {:5.2}, {:5.2}) field_radius={:.2} field_strength={:.2}",
-                 id, name, v, a, d, field_r, field_s);
+        println!(
+            "  [{}] {:8} VAD=({:5.2}, {:5.2}, {:5.2}) field_radius={:.2} field_strength={:.2}",
+            id, name, v, a, d, field_r, field_s
+        );
 
         grid.add(token).unwrap();
         emotion_map.insert(*id, *name);
@@ -169,20 +178,14 @@ fn demo_2_emotional_landscape() {
     ];
 
     for (name, x, y, z) in test_points {
-        let influence = grid.calculate_field_influence(
-            CoordinateSpace::L4Emotional,
-            x, y, z,
-            3.0
-        );
+        let influence = grid.calculate_field_influence(CoordinateSpace::L4Emotional, x, y, z, 3.0);
 
-        let density = grid.calculate_density(
-            CoordinateSpace::L4Emotional,
-            x, y, z,
-            1.0
-        );
+        let density = grid.calculate_density(CoordinateSpace::L4Emotional, x, y, z, 1.0);
 
-        println!("  {:15} ({:5.2}, {:5.2}, {:5.2}): influence={:.3}, density={:.4}",
-                 name, x, y, z, influence, density);
+        println!(
+            "  {:15} ({:5.2}, {:5.2}, {:5.2}): influence={:.3}, density={:.4}",
+            name, x, y, z, influence, density
+        );
     }
 
     // Find emotionally similar states
@@ -247,8 +250,10 @@ fn demo_3_physical_network() {
                 conn.rigidity = 178; // 0.7
                 conn.set_flag(connection_flags::ACTIVE);
 
-                println!("  Node {} <-> Node {} (distance={:.2}, preferred={:.2})",
-                         id, neighbor_id, distance, distance);
+                println!(
+                    "  Node {} <-> Node {} (distance={:.2}, preferred={:.2})",
+                    id, neighbor_id, distance, distance
+                );
 
                 connections.push(conn);
             }
@@ -262,7 +267,10 @@ fn demo_3_physical_network() {
 
     if let Some(conn) = connections.first() {
         let preferred = conn.preferred_distance as f32 / 100.0;
-        println!("\n  Sample connection (preferred distance: {:.2}m):", preferred);
+        println!(
+            "\n  Sample connection (preferred distance: {:.2}m):",
+            preferred
+        );
 
         for d in &[3.0, 5.0, 7.0, 10.0] {
             let force = conn.calculate_force(*d);
@@ -288,15 +296,23 @@ fn demo_3_physical_network() {
     let center_y = positions.iter().map(|(_, _, y, _)| y).sum::<f32>() / positions.len() as f32;
     let center_z = positions.iter().map(|(_, _, _, z)| z).sum::<f32>() / positions.len() as f32;
 
-    println!("  Center of mass: ({:.2}, {:.2}, {:.2})", center_x, center_y, center_z);
+    println!(
+        "  Center of mass: ({:.2}, {:.2}, {:.2})",
+        center_x, center_y, center_z
+    );
 
     for radius in &[5.0, 10.0, 15.0] {
         let density = grid.calculate_density(
             CoordinateSpace::L1Physical,
-            center_x, center_y, center_z,
-            *radius
+            center_x,
+            center_y,
+            center_z,
+            *radius,
         );
-        println!("    Density within {:5.2}m radius: {:.6} nodes/m³", radius, density);
+        println!(
+            "    Density within {:5.2}m radius: {:.6} nodes/m³",
+            radius, density
+        );
     }
 
     println!("\n✓ Demo 3 complete");
@@ -354,7 +370,11 @@ fn demo_4_multi_level_activation() {
 
     for (name, level) in levels {
         let is_active = conn.is_level_active(level);
-        let status = if is_active { "✓ ACTIVE" } else { "  inactive" };
+        let status = if is_active {
+            "✓ ACTIVE"
+        } else {
+            "  inactive"
+        };
         println!("  {:12}: {}", name, status);
     }
 

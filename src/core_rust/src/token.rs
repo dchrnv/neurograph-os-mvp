@@ -11,21 +11,20 @@
 /// - field_radius: 1 byte (u8)
 /// - field_strength: 1 byte (u8)
 /// - timestamp: 4 bytes (u32)
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Coordinate space identifiers
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CoordinateSpace {
-    L1Physical = 0,    // Physical 3D space
-    L2Sensory = 1,     // Sensory perception
-    L3Motor = 2,       // Motor control
-    L4Emotional = 3,   // Emotional state (VAD model)
-    L5Cognitive = 4,   // Cognitive processing
-    L6Social = 5,      // Social interaction
-    L7Temporal = 6,    // Temporal localization
-    L8Abstract = 7,    // Abstract semantics
+    L1Physical = 0,  // Physical 3D space
+    L2Sensory = 1,   // Sensory perception
+    L3Motor = 2,     // Motor control
+    L4Emotional = 3, // Emotional state (VAD model)
+    L5Cognitive = 4, // Cognitive processing
+    L6Social = 5,    // Social interaction
+    L7Temporal = 6,  // Temporal localization
+    L8Abstract = 7,  // Abstract semantics
 }
 
 /// Entity types (stored in flags, bits 8-11)
@@ -52,14 +51,14 @@ pub enum EntityType {
 
 /// System flags (bits 0-7)
 pub mod flags {
-    pub const ACTIVE: u16 = 0x0001;        // Bit 0: Token is active
-    pub const PERSISTENT: u16 = 0x0002;     // Bit 1: Token should be persisted
-    pub const MUTABLE: u16 = 0x0004;        // Bit 2: Token can be modified
-    pub const SYNCHRONIZED: u16 = 0x0008;   // Bit 3: Token is synchronized
-    pub const COMPRESSED: u16 = 0x0010;     // Bit 4: Referenced data is compressed
-    pub const ENCRYPTED: u16 = 0x0020;      // Bit 5: Referenced data is encrypted
-    pub const DIRTY: u16 = 0x0040;          // Bit 6: Token modified but not saved
-    pub const LOCKED: u16 = 0x0080;         // Bit 7: Token is locked
+    pub const ACTIVE: u16 = 0x0001; // Bit 0: Token is active
+    pub const PERSISTENT: u16 = 0x0002; // Bit 1: Token should be persisted
+    pub const MUTABLE: u16 = 0x0004; // Bit 2: Token can be modified
+    pub const SYNCHRONIZED: u16 = 0x0008; // Bit 3: Token is synchronized
+    pub const COMPRESSED: u16 = 0x0010; // Bit 4: Referenced data is compressed
+    pub const ENCRYPTED: u16 = 0x0020; // Bit 5: Referenced data is encrypted
+    pub const DIRTY: u16 = 0x0040; // Bit 6: Token modified but not saved
+    pub const LOCKED: u16 = 0x0080; // Bit 7: Token is locked
 
     /// Mask for entity type bits (8-11)
     pub const ENTITY_TYPE_MASK: u16 = 0x0F00;
@@ -73,14 +72,14 @@ pub mod flags {
 
 /// Coordinate scaling factors for each space
 pub const SCALE_FACTORS: [f32; 8] = [
-    100.0,    // L1: Physical (±327.67m)
-    10000.0,  // L2: Sensory (±3.27)
-    1000.0,   // L3: Motor (±32.7 m/s)
-    10000.0,  // L4: Emotional (±3.27 VAD)
-    10000.0,  // L5: Cognitive (±3.27)
-    10000.0,  // L6: Social (±3.27)
-    100.0,    // L7: Temporal (±327s for X,Y; 1000 for Z)
-    10000.0,  // L8: Abstract (±3.27)
+    100.0,   // L1: Physical (±327.67m)
+    10000.0, // L2: Sensory (±3.27)
+    1000.0,  // L3: Motor (±32.7 m/s)
+    10000.0, // L4: Emotional (±3.27 VAD)
+    10000.0, // L5: Cognitive (±3.27)
+    10000.0, // L6: Social (±3.27)
+    100.0,   // L7: Temporal (±327s for X,Y; 1000 for Z)
+    10000.0, // L8: Abstract (±3.27)
 ];
 
 /// Token V2.0 structure (64 bytes, packed)
@@ -394,8 +393,8 @@ mod tests {
     fn test_create_id() {
         let id = Token::create_id(12345, 5, 3);
         assert_eq!(id & 0x00FFFFFF, 12345); // local_id
-        assert_eq!((id >> 24) & 0x0F, 5);   // entity_type
-        assert_eq!((id >> 28) & 0x0F, 3);   // domain
+        assert_eq!((id >> 24) & 0x0F, 5); // entity_type
+        assert_eq!((id >> 28) & 0x0F, 3); // domain
     }
 
     #[test]

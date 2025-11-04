@@ -20,7 +20,6 @@
 /// - **Zero-copy**: Direct memory mapping
 /// - **Versioned**: History tracking with rollback support
 /// - **Validated**: All parameters have strict bounds
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// CDNA magic number: "CDNA" in ASCII
@@ -35,10 +34,10 @@ pub const CDNA_VERSION_MINOR: u16 = 1;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProfileId {
     Default = 0,
-    Explorer = 1,    // High connectivity, low constraints
-    Analyst = 2,     // Strict validation, high precision
-    Creative = 3,    // Loose constraints, high mutation
-    Custom = 255,    // User-defined profile
+    Explorer = 1, // High connectivity, low constraints
+    Analyst = 2,  // Strict validation, high precision
+    Creative = 3, // Loose constraints, high mutation
+    Custom = 255, // User-defined profile
 }
 
 impl From<u32> for ProfileId {
@@ -312,7 +311,7 @@ impl CDNA {
 
             // Grid Physics defaults
             dimension_ids: [0, 1, 2, 3, 4, 5, 6, 7], // L1-L8
-            dimension_flags: [0xFF; 8],               // All enabled
+            dimension_flags: [0xFF; 8],              // All enabled
             dimension_scales: [1.0; 8],
             bucket_sizes: [10.0; 8],
             field_strength_limits: [1.0; 8],
@@ -423,10 +422,7 @@ impl CDNA {
 
         // Check version
         if self.version_major != CDNA_VERSION_MAJOR {
-            return Err(format!(
-                "Unsupported major version: {}",
-                self.version_major
-            ));
+            return Err(format!("Unsupported major version: {}", self.version_major));
         }
 
         // Validate checksum

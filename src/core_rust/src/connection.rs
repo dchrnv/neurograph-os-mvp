@@ -15,7 +15,6 @@
 /// - preferred_distance: 4 bytes (f32)
 /// - created_at: 4 bytes (u32)
 /// - last_activation: 4 bytes (u32)
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Connection types organized in hierarchical categories
@@ -163,24 +162,24 @@ pub mod active_levels {
     pub const ALL: u8 = 0xFF;
 
     // Predefined combinations
-    pub const PHYSICAL_MOTOR: u8 = 0x05;          // L1 + L3
-    pub const EMOTIONAL_SOCIAL: u8 = 0x28;        // L4 + L6
-    pub const COGNITIVE_ABSTRACT: u8 = 0x90;      // L5 + L8
-    pub const TEMPORAL_ABSTRACT: u8 = 0xC0;       // L7 + L8
-    pub const LOWER_LEVELS: u8 = 0x0F;            // L1-L4
-    pub const UPPER_LEVELS: u8 = 0xF0;            // L5-L8
+    pub const PHYSICAL_MOTOR: u8 = 0x05; // L1 + L3
+    pub const EMOTIONAL_SOCIAL: u8 = 0x28; // L4 + L6
+    pub const COGNITIVE_ABSTRACT: u8 = 0x90; // L5 + L8
+    pub const TEMPORAL_ABSTRACT: u8 = 0xC0; // L7 + L8
+    pub const LOWER_LEVELS: u8 = 0x0F; // L1-L4
+    pub const UPPER_LEVELS: u8 = 0xF0; // L5-L8
 }
 
 /// Connection flags
 pub mod flags {
-    pub const ACTIVE: u8 = 0x01;           // Connection is active
-    pub const BIDIRECTIONAL: u8 = 0x02;    // Can traverse in both directions
-    pub const PERSISTENT: u8 = 0x04;       // Should be saved
-    pub const MUTABLE: u8 = 0x08;          // Can be modified
-    pub const REINFORCED: u8 = 0x10;       // Recently reinforced
-    pub const DECAYING: u8 = 0x20;         // Losing strength over time
-    pub const USER_1: u8 = 0x40;           // User-defined flag 1
-    pub const USER_2: u8 = 0x80;           // User-defined flag 2
+    pub const ACTIVE: u8 = 0x01; // Connection is active
+    pub const BIDIRECTIONAL: u8 = 0x02; // Can traverse in both directions
+    pub const PERSISTENT: u8 = 0x04; // Should be saved
+    pub const MUTABLE: u8 = 0x08; // Can be modified
+    pub const REINFORCED: u8 = 0x10; // Recently reinforced
+    pub const DECAYING: u8 = 0x20; // Losing strength over time
+    pub const USER_1: u8 = 0x40; // User-defined flag 1
+    pub const USER_2: u8 = 0x80; // User-defined flag 2
 }
 
 /// Connection V1.0 structure (32 bytes, naturally aligned)

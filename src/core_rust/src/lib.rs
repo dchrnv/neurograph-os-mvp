@@ -1,3 +1,12 @@
+pub mod adna;
+pub mod appraisers;
+pub mod cdna;
+pub mod connection;
+pub mod experience_stream;
+pub mod graph;
+pub mod grid;
+pub mod guardian;
+pub mod learner;
 /// NeuroGraph OS Core - Rust Implementation
 ///
 /// This is the core Rust implementation of NeuroGraph OS
@@ -10,107 +19,54 @@
 /// - Binary-compatible format for cross-language interop
 /// - Python FFI bindings via PyO3 (optional)
 /// - Zero core dependencies (pure Rust)
-
 pub mod token;
-pub mod connection;
-pub mod grid;
-pub mod graph;
-pub mod cdna;
-pub mod guardian;
-pub mod experience_stream;
-pub mod adna;
-pub mod appraisers;
 
 #[cfg(feature = "python")]
 pub mod ffi;
 
-pub use token::{
-    Token,
-    CoordinateSpace,
-    EntityType,
-    flags as token_flags,
-    SCALE_FACTORS,
-};
+pub use token::{flags as token_flags, CoordinateSpace, EntityType, Token, SCALE_FACTORS};
 
-pub use connection::{
-    Connection,
-    ConnectionType,
-    active_levels,
-    flags as connection_flags,
-};
+pub use connection::{active_levels, flags as connection_flags, Connection, ConnectionType};
 
-pub use grid::{
-    Grid,
-    GridConfig,
-};
+pub use grid::{Grid, GridConfig};
 
-pub use graph::{
-    Graph,
-    GraphConfig,
-    NodeId,
-    EdgeId,
-    Direction,
-    Path,
-    Subgraph,
-    EdgeInfo,
-};
+pub use graph::{Direction, EdgeId, EdgeInfo, Graph, GraphConfig, NodeId, Path, Subgraph};
 
 pub use cdna::{
-    CDNA,
-    ProfileId,
-    ProfileState,
-    CDNAFlags,
-    CDNA_MAGIC,
-    CDNA_VERSION_MAJOR,
-    CDNA_VERSION_MINOR,
+    CDNAFlags, ProfileId, ProfileState, CDNA, CDNA_MAGIC, CDNA_VERSION_MAJOR, CDNA_VERSION_MINOR,
 };
 
-pub use guardian::{
-    Guardian,
-    GuardianConfig,
-    Event,
-    EventType,
-    Subscription,
-    ValidationError,
-};
+pub use guardian::{Event, EventType, Guardian, GuardianConfig, Subscription, ValidationError};
 
 pub use experience_stream::{
-    ExperienceStream,
-    ExperienceEvent,
-    EventType as StreamEventType,
-    EventFlags,
-    HotBuffer,
-    SamplingStrategy,
-    StreamError,
+    EventFlags, EventType as StreamEventType, ExperienceEvent, ExperienceStream, HotBuffer,
+    SamplingStrategy, StreamError,
 };
 
 pub use adna::{
-    ADNA,
-    ADNAHeader,
-    ADNAParameters,
-    EvolutionMetrics,
-    PolicyPointer,
-    PolicyType,
-    ADNAProfile,
-    ADNAError,
-    ADNA_MAGIC,
-    ADNA_VERSION_MAJOR,
-    ADNA_VERSION_MINOR,
+    ADNAError, ADNAHeader, ADNAParameters, ADNAProfile, EvolutionMetrics, PolicyPointer,
+    PolicyType, ADNA, ADNA_MAGIC, ADNA_VERSION_MAJOR, ADNA_VERSION_MINOR,
 };
 
 pub use appraisers::{
-    Appraiser,
-    AppraisersManager,
+    Appraiser, AppraisersManager, CuriosityAppraiser, EfficiencyAppraiser, GoalDirectedAppraiser,
     HomeostasisAppraiser,
-    CuriosityAppraiser,
-    EfficiencyAppraiser,
-    GoalDirectedAppraiser,
+};
+
+pub use learner::{
+    EdgeId as LearnerEdgeId, // Alias to avoid conflict with graph::EdgeId
+    HebbianRule,
+    Learner,
+    LearnerMetrics,
+    LearningConfig,
+    LearningMode,
+    WeightUpdate,
 };
 
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 25;
+pub const VERSION_MINOR: u8 = 26;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -119,6 +75,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.25.0");
+        assert_eq!(VERSION, "0.26.0");
     }
 }

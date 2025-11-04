@@ -1,3 +1,5 @@
+use crate::Connection;
+use std::cmp::Ordering;
 /// Graph V2.0 - Topological navigation for NeuroGraph OS
 ///
 /// Graph provides topological indexing and navigation over Token connections.
@@ -25,10 +27,7 @@
 /// - edge_map: HashMap<EdgeId, EdgeInfo> - edge metadata
 ///
 /// Total memory: ~50 bytes per node + ~40 bytes per edge
-
-use std::collections::{HashMap, HashSet, VecDeque, BinaryHeap};
-use std::cmp::Ordering;
-use crate::Connection;
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
 /// Node identifier (Token.id)
 pub type NodeId = u32;
@@ -39,9 +38,9 @@ pub type EdgeId = u64;
 /// Direction for neighbor queries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
-    Outgoing,  // Only outgoing edges
-    Incoming,  // Only incoming edges
-    Both,      // Both directions
+    Outgoing, // Only outgoing edges
+    Incoming, // Only incoming edges
+    Both,     // Both directions
 }
 
 /// Edge metadata stored in graph
@@ -49,8 +48,8 @@ pub enum Direction {
 pub struct EdgeInfo {
     pub from_id: NodeId,
     pub to_id: NodeId,
-    pub edge_type: u8,      // Connection type
-    pub weight: f32,        // Connection weight (for pathfinding)
+    pub edge_type: u8,       // Connection type
+    pub weight: f32,         // Connection weight (for pathfinding)
     pub bidirectional: bool, // Whether edge can be traversed both ways
 }
 
@@ -60,7 +59,7 @@ pub struct Path {
     pub nodes: Vec<NodeId>,
     pub edges: Vec<EdgeId>,
     pub total_cost: f32,
-    pub length: usize,  // Number of hops
+    pub length: usize, // Number of hops
 }
 
 impl Path {
@@ -164,7 +163,9 @@ struct DijkstraState {
 impl Ord for DijkstraState {
     fn cmp(&self, other: &Self) -> Ordering {
         // Reverse order: lower cost = higher priority
-        other.cost.partial_cmp(&self.cost)
+        other
+            .cost
+            .partial_cmp(&self.cost)
             .unwrap_or(Ordering::Equal)
             .then_with(|| self.node.cmp(&other.node))
     }
@@ -357,15 +358,9 @@ impl Graph {
         self.edge_map.insert(edge_id, edge_info);
 
         // Add to adjacency lists
-        self.adjacency_out
-            .get_mut(&from_id)
-            .unwrap()
-            .push(edge_id);
+        self.adjacency_out.get_mut(&from_id).unwrap().push(edge_id);
 
-        self.adjacency_in
-            .get_mut(&to_id)
-            .unwrap()
-            .push(edge_id);
+        self.adjacency_in.get_mut(&to_id).unwrap().push(edge_id);
 
         Ok(true)
     }
@@ -456,18 +451,19 @@ impl Graph {
     /// Get degree of a node (number of edges)
     pub fn get_degree(&self, node_id: NodeId, direction: Direction) -> usize {
         match direction {
-            Direction::Outgoing => {
-                self.adjacency_out.get(&node_id).map_or(0, |e| e.len())
-            }
-            Direction::Incoming => {
-                self.adjacency_in.get(&node_id).map_or(0, |e| e.len())
-            }
+            Direction::Outgoing => self.adjacency_out.get(&node_id).map_or(0, |e| e.len()),
+            Direction::Incoming => self.adjacency_in.get(&node_id).map_or(0, |e| e.len()),
             Direction::Both => {
                 let out = self.adjacency_out.get(&node_id).map_or(0, |e| e.len());
                 let in_count = self.adjacency_in.get(&node_id).map_or(0, |edges| {
-                    edges.iter().filter(|&&e| {
-                        self.edge_map.get(&e).map_or(false, |info| info.bidirectional)
-                    }).count()
+                    edges
+                        .iter()
+                        .filter(|&&e| {
+                            self.edge_map
+                                .get(&e)
+                                .map_or(false, |info| info.bidirectional)
+                        })
+                        .count()
                 });
                 out + in_count
             }
@@ -1167,10 +1163,18 @@ mod tests {
         }
 
         // Create tree: 1 -> 2, 1 -> 3, 2 -> 4, 2 -> 5
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 5, 0), 2, 5, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 5, 0), 2, 5, 0, 1.0, false)
+            .unwrap();
 
         // DFS from node 1
         let mut visited = Vec::new();
@@ -1190,10 +1194,18 @@ mod tests {
         }
 
         // Chain: 1 -> 2 -> 3 -> 4 -> 5
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, false)
+            .unwrap();
 
         // Find path 1 -> 5
         let path = graph.find_path(1, 5).unwrap();
@@ -1224,10 +1236,18 @@ mod tests {
         // 2 -> 4 (weight 1.0)
         // 3 -> 4 (weight 1.0)
         // Best path: 1 -> 3 -> 4 (cost = 1.0 + 1.0 = 2.0)
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 2.0, false).unwrap(); // Higher weight = lower cost
-        graph.add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 2.0, false)
+            .unwrap(); // Higher weight = lower cost
+        graph
+            .add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false)
+            .unwrap();
 
         let path = graph.dijkstra(1, 4).unwrap();
         assert!(path.is_valid());
@@ -1243,10 +1263,18 @@ mod tests {
         }
 
         // Chain: 1 -> 2 -> 3 -> 4 -> 5
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, false)
+            .unwrap();
 
         // Extract subgraph with nodes 2, 3, 4
         let mut nodes = HashSet::new();
@@ -1267,10 +1295,18 @@ mod tests {
         }
 
         // Chain: 1 -> 2 -> 3 -> 4 -> 5
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, true).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, true).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, true).unwrap();
-        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, true).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, true)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, true)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, true)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 1.0, true)
+            .unwrap();
 
         // 2-hop neighborhood around node 3 (bidirectional edges)
         let neighborhood = graph.extract_neighborhood(3, 2);
@@ -1284,9 +1320,15 @@ mod tests {
             graph.add_node(i);
         }
 
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false)
+            .unwrap();
 
         let visited: Vec<_> = graph.bfs_iter(1, Some(2)).collect();
         assert!(visited.len() >= 1);
@@ -1300,8 +1342,12 @@ mod tests {
             graph.add_node(i);
         }
 
-        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
-        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false).unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false)
+            .unwrap();
+        graph
+            .add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 1.0, false)
+            .unwrap();
 
         let visited: Vec<_> = graph.dfs_iter(1, None).collect();
         assert!(visited.len() >= 1);

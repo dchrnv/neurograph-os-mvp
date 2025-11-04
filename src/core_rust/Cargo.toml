@@ -1,9 +1,9 @@
 [package]
 name = "neurograph-core"
-version = "0.25.0"
+version = "0.26.0"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
-description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian v1.1/CDNA + ExperienceStream v2.0 + ADNA v1.0 MVP + 4 Appraisers with Python FFI"
+description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian v1.1/CDNA + ExperienceStream v2.0 + ADNA v1.0 MVP + 4 Appraisers + Learner Module v1.0 (Hebbian Learning) with Python FFI"
 
 [dependencies]
 # PyO3 for Python FFI bindings

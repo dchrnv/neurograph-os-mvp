@@ -30,7 +30,7 @@
 
 use super::Appraiser;
 use crate::adna::ADNA;
-use crate::experience_stream::{ExperienceEvent, EventType};
+use crate::experience_stream::{EventType, ExperienceEvent};
 
 /// HomeostasisAppraiser - maintains system stability
 pub struct HomeostasisAppraiser {
@@ -141,8 +141,7 @@ mod tests {
     #[test]
     fn test_cognitive_load_within_target() {
         let appraiser = HomeostasisAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[3] = 0.5; // Within [0.3, 0.7]
 
         let penalty = appraiser.cognitive_load_penalty(&event);
@@ -152,8 +151,7 @@ mod tests {
     #[test]
     fn test_cognitive_load_too_high() {
         let appraiser = HomeostasisAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[3] = 0.9; // Above 0.7
 
         let penalty = appraiser.cognitive_load_penalty(&event);
@@ -164,8 +162,7 @@ mod tests {
     #[test]
     fn test_cognitive_load_too_low() {
         let appraiser = HomeostasisAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[3] = 0.1; // Below 0.3
 
         let penalty = appraiser.cognitive_load_penalty(&event);
@@ -175,8 +172,7 @@ mod tests {
     #[test]
     fn test_certainty_within_target() {
         let appraiser = HomeostasisAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[5] = 0.7; // Within [0.5, 0.9]
 
         let penalty = appraiser.certainty_penalty(&event);
@@ -186,8 +182,7 @@ mod tests {
     #[test]
     fn test_certainty_too_low() {
         let appraiser = HomeostasisAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[5] = 0.2; // Below 0.5
 
         let penalty = appraiser.certainty_penalty(&event);
@@ -199,8 +194,7 @@ mod tests {
         let appraiser = HomeostasisAppraiser::new();
         let adna = ADNA::from_profile(ADNAProfile::Balanced);
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[3] = 0.9; // High cognitive load
         event.state[5] = 0.2; // Low certainty
 
@@ -222,13 +216,11 @@ mod tests {
         let appraiser = HomeostasisAppraiser::new();
 
         // Small deviation
-        let mut event1 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event1 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event1.state[3] = 0.8; // deviation = 0.1
 
         // Large deviation
-        let mut event2 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event2 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event2.state[3] = 1.0; // deviation = 0.3
 
         let penalty1 = appraiser.cognitive_load_penalty(&event1);

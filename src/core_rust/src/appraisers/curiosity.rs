@@ -29,7 +29,7 @@
 
 use super::Appraiser;
 use crate::adna::ADNA;
-use crate::experience_stream::{ExperienceEvent, EventType};
+use crate::experience_stream::{EventType, ExperienceEvent};
 
 /// CuriosityAppraiser - encourages exploration and novelty
 pub struct CuriosityAppraiser {
@@ -93,8 +93,7 @@ mod tests {
     #[test]
     fn test_novelty_zero() {
         let appraiser = CuriosityAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[1] = 0.0; // No novelty
 
         let reward = appraiser.novelty_reward(&event);
@@ -104,8 +103,7 @@ mod tests {
     #[test]
     fn test_novelty_high() {
         let appraiser = CuriosityAppraiser::new();
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[1] = 0.9; // High novelty
 
         let reward = appraiser.novelty_reward(&event);
@@ -117,12 +115,10 @@ mod tests {
     fn test_novelty_linear_scaling() {
         let appraiser = CuriosityAppraiser::new();
 
-        let mut event1 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event1 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event1.state[1] = 0.3;
 
-        let mut event2 = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event2 = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event2.state[1] = 0.6;
 
         let reward1 = appraiser.novelty_reward(&event1);
@@ -137,8 +133,7 @@ mod tests {
         let appraiser = CuriosityAppraiser::new();
         let adna = ADNA::from_profile(ADNAProfile::Curious);
 
-        let mut event = ExperienceEvent::new(EventType::SystemStartup)
-            .with_state([0.0; 8]);
+        let mut event = ExperienceEvent::new(EventType::SystemStartup).with_state([0.0; 8]);
         event.state[1] = 0.8; // High novelty
 
         let reward = appraiser.calculate_reward(&event, &adna);

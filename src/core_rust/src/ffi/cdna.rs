@@ -1,6 +1,6 @@
 //! Python bindings for CDNA V2.1 structure
 
-use crate::cdna::{CDNA, ProfileId, ProfileState, CDNAFlags};
+use crate::cdna::{CDNAFlags, ProfileId, ProfileState, CDNA};
 use pyo3::prelude::*;
 
 /// Python wrapper for ProfileId
@@ -26,27 +26,37 @@ impl PyProfileId {
 
     #[staticmethod]
     fn default() -> Self {
-        PyProfileId { inner: ProfileId::Default }
+        PyProfileId {
+            inner: ProfileId::Default,
+        }
     }
 
     #[staticmethod]
     fn explorer() -> Self {
-        PyProfileId { inner: ProfileId::Explorer }
+        PyProfileId {
+            inner: ProfileId::Explorer,
+        }
     }
 
     #[staticmethod]
     fn analyst() -> Self {
-        PyProfileId { inner: ProfileId::Analyst }
+        PyProfileId {
+            inner: ProfileId::Analyst,
+        }
     }
 
     #[staticmethod]
     fn creative() -> Self {
-        PyProfileId { inner: ProfileId::Creative }
+        PyProfileId {
+            inner: ProfileId::Creative,
+        }
     }
 
     #[staticmethod]
     fn custom(value: u32) -> Self {
-        PyProfileId { inner: ProfileId::Custom(value) }
+        PyProfileId {
+            inner: ProfileId::Custom(value),
+        }
     }
 
     fn to_u32(&self) -> u32 {
@@ -79,9 +89,7 @@ impl PyCDNA {
     /// Create a new CDNA with default profile
     #[new]
     fn new() -> Self {
-        PyCDNA {
-            inner: CDNA::new(),
-        }
+        PyCDNA { inner: CDNA::new() }
     }
 
     /// Create CDNA with specific profile
@@ -150,7 +158,7 @@ impl PyCDNA {
     fn set_dimension_ids(&mut self, value: Vec<u8>) -> PyResult<()> {
         if value.len() != 8 {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "dimension_ids must have exactly 8 elements"
+                "dimension_ids must have exactly 8 elements",
             ));
         }
         self.inner.dimension_ids.copy_from_slice(&value);
@@ -167,7 +175,7 @@ impl PyCDNA {
     fn set_dimension_flags(&mut self, value: Vec<u8>) -> PyResult<()> {
         if value.len() != 8 {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "dimension_flags must have exactly 8 elements"
+                "dimension_flags must have exactly 8 elements",
             ));
         }
         self.inner.dimension_flags.copy_from_slice(&value);
@@ -184,7 +192,7 @@ impl PyCDNA {
     fn set_dimension_scales(&mut self, value: Vec<f32>) -> PyResult<()> {
         if value.len() != 8 {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "dimension_scales must have exactly 8 elements"
+                "dimension_scales must have exactly 8 elements",
             ));
         }
         self.inner.dimension_scales.copy_from_slice(&value);
@@ -201,7 +209,7 @@ impl PyCDNA {
     fn set_bucket_sizes(&mut self, value: Vec<f32>) -> PyResult<()> {
         if value.len() != 8 {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "bucket_sizes must have exactly 8 elements"
+                "bucket_sizes must have exactly 8 elements",
             ));
         }
         self.inner.bucket_sizes.copy_from_slice(&value);
@@ -218,7 +226,7 @@ impl PyCDNA {
     fn set_field_strength_limits(&mut self, value: Vec<f32>) -> PyResult<()> {
         if value.len() != 8 {
             return Err(pyo3::exceptions::PyValueError::new_err(
-                "field_strength_limits must have exactly 8 elements"
+                "field_strength_limits must have exactly 8 elements",
             ));
         }
         self.inner.field_strength_limits.copy_from_slice(&value);
@@ -436,7 +444,8 @@ impl PyCDNA {
 
     /// Validate CDNA structure
     fn validate(&self) -> PyResult<()> {
-        self.inner.validate()
+        self.inner
+            .validate()
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
     }
 
@@ -462,7 +471,11 @@ impl PyCDNA {
             1 => ProfileState::Frozen,
             2 => ProfileState::Evolving,
             3 => ProfileState::Deprecated,
-            _ => return Err(pyo3::exceptions::PyValueError::new_err("Invalid profile state")),
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(
+                    "Invalid profile state",
+                ))
+            }
         };
         self.inner.set_profile_state(profile_state);
         Ok(())
@@ -510,6 +523,6 @@ impl PyCDNA {
     }
 
     fn __len__(&self) -> usize {
-        384  // Size in bytes
+        384 // Size in bytes
     }
 }

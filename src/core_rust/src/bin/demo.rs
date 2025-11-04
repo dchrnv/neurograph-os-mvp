@@ -1,8 +1,7 @@
 /// Token V2.0 Demo Application
 ///
 /// Demonstrates the core functionality of NeuroGraph OS Token V2.0
-
-use neurograph_core::{Token, CoordinateSpace, EntityType, flags};
+use neurograph_core::{flags, CoordinateSpace, EntityType, Token};
 
 fn main() {
     println!("=== NeuroGraph OS Token V2.0 Demo ===\n");
@@ -22,15 +21,24 @@ fn main() {
 
     // L1: Physical space (meters, scale 100 → precision 0.01)
     token.set_coordinates(CoordinateSpace::L1Physical, 10.50, 20.30, 5.20);
-    println!("   L1 Physical: {:?}", token.get_coordinates(CoordinateSpace::L1Physical));
+    println!(
+        "   L1 Physical: {:?}",
+        token.get_coordinates(CoordinateSpace::L1Physical)
+    );
 
     // L4: Emotional space (VAD model, scale 10000 → precision 0.0001)
     token.set_coordinates(CoordinateSpace::L4Emotional, 0.80, 0.60, 0.50);
-    println!("   L4 Emotional (VAD): {:?}", token.get_coordinates(CoordinateSpace::L4Emotional));
+    println!(
+        "   L4 Emotional (VAD): {:?}",
+        token.get_coordinates(CoordinateSpace::L4Emotional)
+    );
 
     // L8: Abstract space (scale 10000 → precision 0.0001)
     token.set_coordinates(CoordinateSpace::L8Abstract, 0.90, 0.30, 0.70);
-    println!("   L8 Abstract: {:?}\n", token.get_coordinates(CoordinateSpace::L8Abstract));
+    println!(
+        "   L8 Abstract: {:?}\n",
+        token.get_coordinates(CoordinateSpace::L8Abstract)
+    );
 
     // Set entity type and flags
     println!("3. Setting entity type and flags...");

@@ -8,7 +8,7 @@
 //!
 //! Version: 2.0 (MVP implementation)
 
-use crate::token::{Token, CoordinateSpace};
+use crate::token::{CoordinateSpace, Token};
 use std::collections::HashMap;
 
 /// Grid configuration
@@ -457,12 +457,7 @@ mod tests {
 
         for i in 0..10 {
             let mut token = Token::new(i);
-            token.set_coordinates(
-                CoordinateSpace::L1Physical,
-                i as f32,
-                0.00,
-                0.00
-            );
+            token.set_coordinates(CoordinateSpace::L1Physical, i as f32, 0.00, 0.00);
             grid.add(token).unwrap();
         }
 
@@ -483,19 +478,13 @@ mod tests {
         grid.add(token).unwrap();
 
         // At center, should be max influence
-        let influence_center = grid.calculate_field_influence(
-            CoordinateSpace::L1Physical,
-            0.00, 0.00, 0.00,
-            2.00
-        );
+        let influence_center =
+            grid.calculate_field_influence(CoordinateSpace::L1Physical, 0.00, 0.00, 0.00, 2.00);
         assert!(influence_center > 0.9);
 
         // At edge, should be minimal influence
-        let influence_edge = grid.calculate_field_influence(
-            CoordinateSpace::L1Physical,
-            1.00, 0.00, 0.00,
-            2.00
-        );
+        let influence_edge =
+            grid.calculate_field_influence(CoordinateSpace::L1Physical, 1.00, 0.00, 0.00, 2.00);
         assert!(influence_edge < 0.1);
     }
 
@@ -506,12 +495,7 @@ mod tests {
         // Add 5 tokens in a cluster
         for i in 0..5 {
             let mut token = Token::new(i);
-            token.set_coordinates(
-                CoordinateSpace::L1Physical,
-                (i as f32) * 0.1,
-                0.00,
-                0.00
-            );
+            token.set_coordinates(CoordinateSpace::L1Physical, (i as f32) * 0.1, 0.00, 0.00);
             grid.add(token).unwrap();
         }
 

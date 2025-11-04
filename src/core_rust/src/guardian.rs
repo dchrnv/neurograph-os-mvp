@@ -1,3 +1,4 @@
+use crate::adna::ADNA;
 /// Guardian V1.1 - System Coordinator for NeuroGraph OS
 ///
 /// Guardian is the central orchestrator that:
@@ -22,10 +23,8 @@
 /// - **Delegation**: Modules validate their own frequent operations
 /// - **Transparency**: All actions are logged and tracked
 /// - **Immutability**: CDNA changes are versioned and reversible
-
-use crate::cdna::{CDNA, ProfileId};
-use crate::adna::ADNA;
-use crate::{Token, Connection};
+use crate::cdna::{ProfileId, CDNA};
+use crate::{Connection, Token};
 use std::collections::{HashMap, VecDeque};
 
 /// Event types that can be emitted by Guardian
@@ -418,7 +417,10 @@ impl Guardian {
     }
 
     /// Validate Connection against CDNA rules
-    pub fn validate_connection(&mut self, connection: &Connection) -> Result<(), Vec<ValidationError>> {
+    pub fn validate_connection(
+        &mut self,
+        connection: &Connection,
+    ) -> Result<(), Vec<ValidationError>> {
         if !self.config.enable_validation || !self.cdna.validation_enabled() {
             return Ok(());
         }
@@ -440,7 +442,10 @@ impl Guardian {
             errors.push(ValidationError::new(
                 "pull_strength",
                 "Connection pull_strength below minimum",
-                &format!("{} < {}", connection.pull_strength, self.cdna.min_connection_weight),
+                &format!(
+                    "{} < {}",
+                    connection.pull_strength, self.cdna.min_connection_weight
+                ),
             ));
         }
 
@@ -448,7 +453,10 @@ impl Guardian {
             errors.push(ValidationError::new(
                 "pull_strength",
                 "Connection pull_strength above maximum",
-                &format!("{} > {}", connection.pull_strength, self.cdna.max_connection_weight),
+                &format!(
+                    "{} > {}",
+                    connection.pull_strength, self.cdna.max_connection_weight
+                ),
             ));
         }
 
@@ -480,7 +488,10 @@ impl Guardian {
             if self.config.enable_events {
                 let event = Event::new(EventType::ValidationFailed)
                     .with_connection(connection.token_a_id, connection.token_b_id)
-                    .with_data(format!("Connection validation failed: {} errors", errors.len()));
+                    .with_data(format!(
+                        "Connection validation failed: {} errors",
+                        errors.len()
+                    ));
                 self.emit_event(event);
             }
         }
@@ -565,9 +576,7 @@ impl Guardian {
     /// * `Ok(())` if parameter updated successfully
     /// * `Err(String)` if ADNA not loaded or parameter invalid
     pub fn update_adna_parameter(&mut self, param_name: &str, value: f32) -> Result<(), String> {
-        let current_adna = self.adna
-            .as_ref()
-            .ok_or("No ADNA loaded")?;
+        let current_adna = self.adna.as_ref().ok_or("No ADNA loaded")?;
 
         // Create evolved version
         let mut new_adna = current_adna.evolve();
@@ -586,7 +595,8 @@ impl Guardian {
         new_adna.update_hash();
 
         // Validate new ADNA
-        new_adna.validate()
+        new_adna
+            .validate()
             .map_err(|e| format!("ADNA validation failed: {:?}", e))?;
 
         // Validate against CDNA
@@ -605,8 +615,8 @@ impl Guardian {
 
         // Emit event
         if self.config.enable_events {
-            let event = Event::new(EventType::ADNAUpdated)
-                .with_data(format!("{} = {}", param_name, value));
+            let event =
+                Event::new(EventType::ADNAUpdated).with_data(format!("{} = {}", param_name, value));
             self.emit_event(event);
         }
 
@@ -667,10 +677,7 @@ impl Guardian {
         }
 
         if weights.goal_weight < 0.0 || weights.goal_weight > 1.0 {
-            return Err(format!(
-                "goal_weight out of range: {}",
-                weights.goal_weight
-            ));
+            return Err(format!("goal_weight out of range: {}", weights.goal_weight));
         }
 
         // Check exploration rate
@@ -708,7 +715,11 @@ impl Guardian {
     // ==================== EVENT SYSTEM ====================
 
     /// Subscribe module to events
-    pub fn subscribe(&mut self, module_id: ModuleId, event_types: Vec<EventType>) -> Result<(), String> {
+    pub fn subscribe(
+        &mut self,
+        module_id: ModuleId,
+        event_types: Vec<EventType>,
+    ) -> Result<(), String> {
         if !self.config.enable_events {
             return Err("Event system is disabled".to_string());
         }
@@ -881,10 +892,12 @@ mod tests {
         let mut guardian = Guardian::new();
 
         // Subscribe to events
-        guardian.subscribe(
-            "test_module".to_string(),
-            vec![EventType::TokenCreated, EventType::CDNAUpdated],
-        ).unwrap();
+        guardian
+            .subscribe(
+                "test_module".to_string(),
+                vec![EventType::TokenCreated, EventType::CDNAUpdated],
+            )
+            .unwrap();
 
         assert!(guardian.is_subscribed(&"test_module".to_string()));
         assert_eq!(guardian.subscriber_count(), 1);
@@ -898,10 +911,9 @@ mod tests {
     fn test_event_emission() {
         let mut guardian = Guardian::new();
 
-        guardian.subscribe(
-            "test_module".to_string(),
-            vec![EventType::TokenCreated],
-        ).unwrap();
+        guardian
+            .subscribe("test_module".to_string(), vec![EventType::TokenCreated])
+            .unwrap();
 
         // Emit event
         let event = Event::new(EventType::TokenCreated).with_token(42);
@@ -989,7 +1001,9 @@ mod tests {
         let generation_before = guardian.adna().unwrap().metrics.generation;
 
         // Update parameter
-        assert!(guardian.update_adna_parameter("curiosity_weight", 0.8).is_ok());
+        assert!(guardian
+            .update_adna_parameter("curiosity_weight", 0.8)
+            .is_ok());
 
         // Check updated value
         let updated_adna = guardian.adna().unwrap();
@@ -1037,7 +1051,9 @@ mod tests {
         guardian.load_adna(adna).unwrap();
 
         // Update parameter
-        guardian.update_adna_parameter("curiosity_weight", 0.8).unwrap();
+        guardian
+            .update_adna_parameter("curiosity_weight", 0.8)
+            .unwrap();
         assert_eq!(guardian.adna().unwrap().parameters.curiosity_weight, 0.8);
 
         // Rollback
@@ -1071,9 +1087,15 @@ mod tests {
         guardian.load_adna(adna).unwrap();
 
         // Multiple updates
-        guardian.update_adna_parameter("curiosity_weight", 0.3).unwrap();
-        guardian.update_adna_parameter("exploration_rate", 0.5).unwrap();
-        guardian.update_adna_parameter("homeostasis_weight", 0.4).unwrap();
+        guardian
+            .update_adna_parameter("curiosity_weight", 0.3)
+            .unwrap();
+        guardian
+            .update_adna_parameter("exploration_rate", 0.5)
+            .unwrap();
+        guardian
+            .update_adna_parameter("homeostasis_weight", 0.4)
+            .unwrap();
 
         let current = guardian.adna().unwrap();
         assert_eq!(current.parameters.curiosity_weight, 0.3);
@@ -1115,10 +1137,16 @@ mod tests {
         let mut guardian = Guardian::new();
 
         // Subscribe to ADNA events
-        guardian.subscribe(
-            "test_module".to_string(),
-            vec![EventType::ADNALoaded, EventType::ADNAUpdated, EventType::ADNARolledBack],
-        ).unwrap();
+        guardian
+            .subscribe(
+                "test_module".to_string(),
+                vec![
+                    EventType::ADNALoaded,
+                    EventType::ADNAUpdated,
+                    EventType::ADNARolledBack,
+                ],
+            )
+            .unwrap();
 
         // Load ADNA - should emit ADNALoaded event
         let adna = ADNA::from_profile(ADNAProfile::Balanced);
@@ -1130,7 +1158,9 @@ mod tests {
         guardian.clear_events();
 
         // Update parameter - should emit ADNAUpdated event
-        guardian.update_adna_parameter("curiosity_weight", 0.8).unwrap();
+        guardian
+            .update_adna_parameter("curiosity_weight", 0.8)
+            .unwrap();
 
         let events = guardian.poll_events(&"test_module".to_string());
         assert_eq!(events.len(), 1);
@@ -1160,7 +1190,9 @@ mod tests {
         // Make 10 updates
         for i in 0..10 {
             let value = 0.1 + (i as f32 * 0.05);
-            guardian.update_adna_parameter("curiosity_weight", value).unwrap();
+            guardian
+                .update_adna_parameter("curiosity_weight", value)
+                .unwrap();
         }
 
         // History should be limited to 5

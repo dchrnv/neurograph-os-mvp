@@ -30,10 +30,10 @@ pub const ADNA_VERSION_MINOR: u16 = 0;
 #[repr(C, align(64))]
 #[derive(Debug, Clone, Copy)]
 pub struct ADNA {
-    pub header: ADNAHeader,           // 64 bytes (offset 0-63)
-    pub metrics: EvolutionMetrics,    // 64 bytes (offset 64-127)
-    pub pointer: PolicyPointer,       // 64 bytes (offset 128-191)
-    pub parameters: ADNAParameters,   // 64 bytes (offset 192-255)
+    pub header: ADNAHeader,         // 64 bytes (offset 0-63)
+    pub metrics: EvolutionMetrics,  // 64 bytes (offset 64-127)
+    pub pointer: PolicyPointer,     // 64 bytes (offset 128-191)
+    pub parameters: ADNAParameters, // 64 bytes (offset 192-255)
 }
 
 // ============================================================================
@@ -162,18 +162,18 @@ pub struct ADNAParameters {
     /// Weight for GoalDirectedAppraiser (0.0 - 1.0)
     pub goal_weight: f32,
 
-    // === System Behavior (16 bytes) ===
+    // === System Behavior (20 bytes) ===
     /// Exploration rate (0.0 = exploit only, 1.0 = explore only)
     pub exploration_rate: f32,
+
+    /// Learning rate for Hebbian learning (0.001 - 0.1)
+    pub learning_rate: f32,
 
     /// Decision timeout (milliseconds)
     pub decision_timeout_ms: u32,
 
     /// Max actions per cycle
     pub max_actions_per_cycle: u32,
-
-    /// Reserved
-    pub _reserved1: u32,
 
     // === Reserved for future (32 bytes) ===
     pub _reserved2: [u8; 32],
@@ -365,9 +365,9 @@ impl ADNAParameters {
                 efficiency_weight: 0.25,
                 goal_weight: 0.25,
                 exploration_rate: 0.3,
+                learning_rate: 0.01, // Moderate learning
                 decision_timeout_ms: 1000,
                 max_actions_per_cycle: 10,
-                _reserved1: 0,
                 _reserved2: [0; 32],
             },
             ADNAProfile::Cautious => Self {
@@ -376,9 +376,9 @@ impl ADNAParameters {
                 efficiency_weight: 0.2,
                 goal_weight: 0.2,
                 exploration_rate: 0.1,
+                learning_rate: 0.005, // Slow learning (cautious)
                 decision_timeout_ms: 500,
                 max_actions_per_cycle: 5,
-                _reserved1: 0,
                 _reserved2: [0; 32],
             },
             ADNAProfile::Curious => Self {
@@ -387,9 +387,9 @@ impl ADNAParameters {
                 efficiency_weight: 0.2,
                 goal_weight: 0.2,
                 exploration_rate: 0.7,
+                learning_rate: 0.02, // Fast learning (curious)
                 decision_timeout_ms: 2000,
                 max_actions_per_cycle: 20,
-                _reserved1: 0,
                 _reserved2: [0; 32],
             },
             ADNAProfile::Adaptive => Self {
@@ -398,9 +398,9 @@ impl ADNAParameters {
                 efficiency_weight: 0.2,
                 goal_weight: 0.2,
                 exploration_rate: 0.4,
+                learning_rate: 0.015, // Adaptive learning
                 decision_timeout_ms: 1000,
                 max_actions_per_cycle: 15,
-                _reserved1: 0,
                 _reserved2: [0; 32],
             },
         }
@@ -410,29 +410,50 @@ impl ADNAParameters {
     pub fn validate(&self) -> Result<(), ADNAError> {
         // Check weight ranges [0.0, 1.0]
         if !(0.0..=1.0).contains(&self.homeostasis_weight) {
-            return Err(ADNAError::InvalidParameter("homeostasis_weight out of range [0, 1]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "homeostasis_weight out of range [0, 1]".into(),
+            ));
         }
         if !(0.0..=1.0).contains(&self.curiosity_weight) {
-            return Err(ADNAError::InvalidParameter("curiosity_weight out of range [0, 1]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "curiosity_weight out of range [0, 1]".into(),
+            ));
         }
         if !(0.0..=1.0).contains(&self.efficiency_weight) {
-            return Err(ADNAError::InvalidParameter("efficiency_weight out of range [0, 1]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "efficiency_weight out of range [0, 1]".into(),
+            ));
         }
         if !(0.0..=1.0).contains(&self.goal_weight) {
-            return Err(ADNAError::InvalidParameter("goal_weight out of range [0, 1]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "goal_weight out of range [0, 1]".into(),
+            ));
         }
         if !(0.0..=1.0).contains(&self.exploration_rate) {
-            return Err(ADNAError::InvalidParameter("exploration_rate out of range [0, 1]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "exploration_rate out of range [0, 1]".into(),
+            ));
+        }
+
+        // Check learning rate [0.001, 0.1]
+        if !(0.001..=0.1).contains(&self.learning_rate) {
+            return Err(ADNAError::InvalidParameter(
+                "learning_rate out of range [0.001, 0.1]".into(),
+            ));
         }
 
         // Check reasonable timeout
         if self.decision_timeout_ms == 0 || self.decision_timeout_ms > 60000 {
-            return Err(ADNAError::InvalidParameter("decision_timeout_ms out of range (0, 60000]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "decision_timeout_ms out of range (0, 60000]".into(),
+            ));
         }
 
         // Check reasonable action limit
         if self.max_actions_per_cycle == 0 || self.max_actions_per_cycle > 1000 {
-            return Err(ADNAError::InvalidParameter("max_actions_per_cycle out of range (0, 1000]".into()));
+            return Err(ADNAError::InvalidParameter(
+                "max_actions_per_cycle out of range (0, 1000]".into(),
+            ));
         }
 
         Ok(())
@@ -514,11 +535,18 @@ impl std::fmt::Display for ADNAError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ADNAError::InvalidMagic(magic) => {
-                write!(f, "Invalid ADNA magic number: 0x{:08X} (expected 0x{:08X})", magic, ADNA_MAGIC)
+                write!(
+                    f,
+                    "Invalid ADNA magic number: 0x{:08X} (expected 0x{:08X})",
+                    magic, ADNA_MAGIC
+                )
             }
             ADNAError::IncompatibleVersion { found, expected } => {
-                write!(f, "Incompatible ADNA version: {}.{} (expected {}.{})",
-                    found.0, found.1, expected.0, expected.1)
+                write!(
+                    f,
+                    "Incompatible ADNA version: {}.{} (expected {}.{})",
+                    found.0, found.1, expected.0, expected.1
+                )
             }
             ADNAError::InvalidParameter(msg) => write!(f, "Invalid parameter: {}", msg),
             ADNAError::HashMismatch => write!(f, "ADNA hash mismatch"),
@@ -534,11 +562,26 @@ impl std::error::Error for ADNAError {}
 // ============================================================================
 
 const _: () = {
-    assert!(std::mem::size_of::<ADNA>() == 256, "ADNA must be exactly 256 bytes");
-    assert!(std::mem::size_of::<ADNAHeader>() == 64, "ADNAHeader must be 64 bytes");
-    assert!(std::mem::size_of::<EvolutionMetrics>() == 64, "EvolutionMetrics must be 64 bytes");
-    assert!(std::mem::size_of::<PolicyPointer>() == 64, "PolicyPointer must be 64 bytes");
-    assert!(std::mem::size_of::<ADNAParameters>() == 64, "ADNAParameters must be 64 bytes");
+    assert!(
+        std::mem::size_of::<ADNA>() == 256,
+        "ADNA must be exactly 256 bytes"
+    );
+    assert!(
+        std::mem::size_of::<ADNAHeader>() == 64,
+        "ADNAHeader must be 64 bytes"
+    );
+    assert!(
+        std::mem::size_of::<EvolutionMetrics>() == 64,
+        "EvolutionMetrics must be 64 bytes"
+    );
+    assert!(
+        std::mem::size_of::<PolicyPointer>() == 64,
+        "PolicyPointer must be 64 bytes"
+    );
+    assert!(
+        std::mem::size_of::<ADNAParameters>() == 64,
+        "ADNAParameters must be 64 bytes"
+    );
 };
 
 // ============================================================================
@@ -683,6 +726,9 @@ mod tests {
 
         let result = adna.validate();
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), ADNAError::IncompatibleVersion { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            ADNAError::IncompatibleVersion { .. }
+        ));
     }
 }

@@ -1,6 +1,6 @@
 //! Python bindings for Graph V2.0 structure
 
-use crate::graph::{Graph, GraphConfig, NodeId, EdgeId, Direction, Path, Subgraph};
+use crate::graph::{Direction, EdgeId, Graph, GraphConfig, NodeId, Path, Subgraph};
 use pyo3::prelude::*;
 use std::collections::HashSet;
 
@@ -20,7 +20,7 @@ impl PyGraphConfig {
             inner: GraphConfig {
                 deduplicate_edges,
                 initial_capacity,
-            }
+            },
         }
     }
 
@@ -47,8 +47,7 @@ impl PyGraphConfig {
     fn __repr__(&self) -> String {
         format!(
             "GraphConfig(deduplicate_edges={}, initial_capacity={})",
-            self.inner.deduplicate_edges,
-            self.inner.initial_capacity
+            self.inner.deduplicate_edges, self.inner.initial_capacity
         )
     }
 }
@@ -183,7 +182,7 @@ impl PyGraph {
             inner: match config {
                 Some(cfg) => Graph::with_config(cfg.inner),
                 None => Graph::new(),
-            }
+            },
         }
     }
 
@@ -232,7 +231,8 @@ impl PyGraph {
         weight: f32,
         bidirectional: bool,
     ) -> PyResult<bool> {
-        self.inner.add_edge(edge_id, from_id, to_id, edge_type, weight, bidirectional)
+        self.inner
+            .add_edge(edge_id, from_id, to_id, edge_type, weight, bidirectional)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
     }
 
@@ -299,13 +299,15 @@ impl PyGraph {
 
     /// Find shortest path (unweighted BFS)
     fn find_path(&self, from_id: NodeId, to_id: NodeId) -> Option<PyPath> {
-        self.inner.find_path(from_id, to_id)
+        self.inner
+            .find_path(from_id, to_id)
             .map(|path| PyPath { inner: path })
     }
 
     /// Find shortest weighted path (Dijkstra)
     fn dijkstra(&self, from_id: NodeId, to_id: NodeId) -> Option<PyPath> {
-        self.inner.dijkstra(from_id, to_id)
+        self.inner
+            .dijkstra(from_id, to_id)
             .map(|path| PyPath { inner: path })
     }
 

@@ -5,7 +5,7 @@
 //! Usage:
 //!   cargo run --bin grid-demo --release
 
-use neurograph_core::{Token, Grid, GridConfig, CoordinateSpace, EntityType};
+use neurograph_core::{CoordinateSpace, EntityType, Grid, GridConfig, Token};
 
 fn main() {
     println!("NeuroGraph Grid V2.0 - Rust Demo");
@@ -92,7 +92,7 @@ fn demo_range_query() {
                 CoordinateSpace::L1Physical,
                 x as f32 * 10.0,
                 y as f32 * 10.0,
-                0.00
+                0.00,
             );
             grid.add(token).unwrap();
             id += 1;
@@ -143,11 +143,7 @@ fn demo_field_influence() {
     ];
 
     for (x, y, z, desc) in points {
-        let influence = grid.calculate_field_influence(
-            CoordinateSpace::L1Physical,
-            x, y, z,
-            10.00
-        );
+        let influence = grid.calculate_field_influence(CoordinateSpace::L1Physical, x, y, z, 10.00);
         println!("  {}: influence = {:.3}", desc, influence);
     }
 
@@ -186,11 +182,7 @@ fn demo_density() {
     ];
 
     for (x, y, z, radius, desc) in areas {
-        let density = grid.calculate_density(
-            CoordinateSpace::L1Physical,
-            x, y, z,
-            radius
-        );
+        let density = grid.calculate_density(CoordinateSpace::L1Physical, x, y, z, radius);
         println!("  {}: density = {:.6} tokens/unit³", desc, density);
     }
 
