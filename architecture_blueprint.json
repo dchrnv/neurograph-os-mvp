@@ -18,12 +18,7 @@
       ],
       "in_progress": [],
       "planned": [
-        "📋 Learner Module - first mini-neuron (Hebbian learning)",
-        "📋 Attention Module - salience-based token activation",
-        "📋 Pattern Detector - subgraph pattern mining",
-        "📋 Memory Consolidation - token lifetime management",
-        "📋 Inference Engine - logical reasoning",
-        "📋 3D Visualization - L1 Physical space rendering"
+                 
       ]
     },
 
@@ -50,7 +45,7 @@
 
     "architecture_layers": {
       "desktop_ui": {
-        "status": "✅ v2.0 COMPLETE (Cyberpunk Edition)",
+        "status": "✅ v2.0 COMPLETE ",
         "version": "0.21.0",
         "location": "src/desktop/",
         "framework": "iced 0.12 (Elm architecture)",
@@ -63,7 +58,6 @@
           "Unity-style layout (80px left dock + workspace)",
           "Cyberpunk theme (neon colors: #00ffcc, #3399ff, #9966ff)",
           "Dual-mode visual system (User: rounded/cyan, Root: sharp/orange)",
-          "ASCII icon navigation [≈] [◐] [⚙] [◉] [⬡] [!]",
           "Real-time system metrics visualization",
           "Custom StyleSheet for all components"
         ],
@@ -84,12 +78,12 @@
           "metrics": "src/desktop/src/metrics.rs - system metrics visualization (progress bars)"
         },
         "workspaces": {
-          "welcome": "[≈] Home screen with ASCII logo and system status",
-          "chat": "[◐] Interactive dialog with dual-mode UI (User/Root visual difference)",
-          "status": "[◉] Real-time metrics (CPU, Memory, Temperature, Disk I/O, Network)",
-          "modules": "[⬡] Module Manager (Token, Connection, Grid, Graph, Guardian status)",
-          "settings": "[⚙] Module configuration",
-          "admin": "[!] Admin Panel (Root mode only, CDNA editing)",
+          "welcome": "HOME - Home screen with ASCII logo and system status",
+          "chat": "CHAT - Interactive dialog with dual-mode UI (User/Root visual difference)",
+          "status": " Real-time metrics (CPU, Memory, Temperature, Disk I/O, Network)",
+          "modules": " Module Manager (Token, Connection, Grid, Graph, Guardian status)",
+          "settings": " Module configuration",
+          "admin": " Admin Panel (Root mode only, CDNA editing)",
           "lock": "Screen lock"
         },
         "core_bridge": {
@@ -363,80 +357,10 @@
           "src/core/dna/ - replaced by CDNA Rust"
         ]
       }
-    },
+    }
 
-    "planned_modules": {
-      "description": "Мининейронки - модули когнитивных функций",
-      "learner": {
-        "status": "📋 PLANNED - v0.22",
-        "description": "Hebbian learning - автоматическое создание connections",
-        "mechanism": "Coactivation detection: tokens activated together get connected",
-        "api": {
-          "register_activation": "Track token activation timestamps",
-          "detect_coactivation": "Find tokens activated together",
-          "reinforce_connections": "Strengthen frequently used connections"
-        },
-        "demo": "System learns to associate tokens based on usage patterns"
-      },
-      "attention": {
-        "status": "📋 PLANNED - v0.23",
-        "description": "Salience-based token activation (L2 Sensory)",
-        "mechanism": "Dynamic weight adjustment based on context",
-        "api": {
-          "calculate_salience": "Compute token importance",
-          "focus": "Activate/deactivate tokens based on attention",
-          "shift_attention": "Move focus to new tokens"
-        },
-        "demo": "System focuses on important tokens, ignores noise"
-      },
-      "pattern_detector": {
-        "status": "📋 PLANNED - v0.24",
-        "description": "Subgraph pattern mining and abstraction",
-        "mechanism": "Find frequent subgraphs, create abstract tokens",
-        "api": {
-          "mine_patterns": "Find frequent subgraph patterns",
-          "abstract_pattern": "Create abstract token for pattern",
-          "match_pattern": "Find pattern instances in graph"
-        },
-        "demo": "System discovers repeating structures, creates concepts"
-      },
-      "memory_consolidation": {
-        "status": "📋 PLANNED - v0.25",
-        "description": "Token lifetime management and forgetting",
-        "mechanism": "Decay unused tokens, strengthen important ones",
-        "api": {
-          "decay": "Reduce field_strength over time",
-          "consolidate": "Strengthen important tokens",
-          "prune": "Remove forgotten tokens"
-        },
-        "demo": "System forgets unimportant info, retains useful knowledge"
-      },
-      "inference_engine": {
-        "status": "📋 PLANNED - v0.30",
-        "description": "Logical reasoning and rule application",
-        "mechanism": "Transitive closure, rule-based deduction",
-        "api": {
-          "infer": "Derive new connections from existing",
-          "apply_rule": "Execute logical rules",
-          "transitive_closure": "Find indirect connections"
-        },
-        "demo": "System makes logical deductions, infers new facts"
-      },
-      "visualization_3d": {
-        "status": "📋 PLANNED - v0.26",
-        "description": "3D rendering of L1 Physical space",
-        "framework": "iced + wgpu or separate viewer",
-        "features": [
-          "Render tokens as spheres (field_radius)",
-          "Connections as lines (pull_strength = color)",
-          "Grid buckets as wireframe",
-          "Camera navigation (orbit, pan, zoom)"
-        ],
-        "demo": "Visual spatial memory for embodied AI"
-      }
-    },
-
-    "roadmap": {
+    ,"roadmap":
+    {
       "v0_20_1_hielo": {
         "status": "✅ COMPLETED (2025-10-29)",
         "description": "Project cleanup and Desktop UI foundation",
@@ -464,64 +388,7 @@
           "✅ Complete specification documentation (DESKTOP_UI_SPEC_V2.md)"
         ],
         "result": "Production-ready cyberpunk UI with dual-mode system"
-      },
-      "v0_22_learner": {
-        "status": "📋 PLANNED",
-        "estimated": "2025-11 (1-2 weeks)",
-        "description": "Learner Module - First Mini-Neuron",
-        "tasks": [
-          "📋 Hebbian learning implementation",
-          "📋 Coactivation tracking",
-          "📋 Automatic connection creation",
-          "📋 Connection reinforcement",
-          "📋 Integration with Desktop UI chat"
-        ],
-        "result": "System learns to associate tokens"
-      },
-      "v0_23_attention": {
-        "status": "📋 PLANNED",
-        "estimated": "2025-12 (1-2 weeks)",
-        "description": "Attention Module",
-        "result": "System prioritizes important tokens"
-      },
-      "v0_24_patterns": {
-        "status": "📋 PLANNED",
-        "estimated": "2025-12 (2 weeks)",
-        "description": "Pattern Detector Module",
-        "result": "System discovers repeating structures"
-      },
-      "v0_25_memory": {
-        "status": "📋 PLANNED",
-        "estimated": "2026-01 (1 week)",
-        "description": "Memory Consolidation Module",
-        "result": "System manages token lifetime"
-      },
-      "v0_26_visualization": {
-        "status": "📋 PLANNED",
-        "estimated": "2026-01 (2-3 weeks)",
-        "description": "3D Visualization of L1 Physical space",
-        "result": "Visual spatial memory interface"
-      },
-      "v0_30_inference": {
-        "status": "📋 PLANNED",
-        "estimated": "2026-02 (2-3 weeks)",
-        "description": "Inference Engine",
-        "result": "System makes logical deductions"
-      },
-      "v1_0_cognitive_loop": {
-        "status": "🎯 VISION",
-        "estimated": "2026 Q2-Q3",
-        "description": "Complete Cognitive Loop",
-        "features": [
-          "All mini-neurons integrated",
-          "Autonomous learning cycle",
-          "CDNA evolution based on experience",
-          "Self-monitoring and adaptation",
-          "Persistence layer (save/load state)",
-          "Performance profiling and optimization",
-          "Full documentation and examples"
-        ],
-        "result": "Self-learning cognitive system"
+      
       }
     },
 
