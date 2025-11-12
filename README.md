@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.22.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.23.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -16,9 +16,7 @@
 - **Connection V1.0**: 32-байтные типизированные связи с моделью физических сил
 - **Grid V2.0**: 8-мерная пространственная индексация с KNN-поиском
 - **Graph V2.0**: Топологическая навигация с BFS/DFS поиском путей
-- **Guardian & CDNA V2.1**: Конституционный слой с валидацией и эволюцией
-- **ADNA v3.0**: 256-байтный Policy Engine для обучения с подкреплением
-- **ExperienceToken**: 128-байтные state-action-reward кортежи для RL
+- **Guardian & CDNA V2.1**: Конституционный слой
 
 **Основная философия**: Чистая, минималистичная, производительная Rust-реализация.
 
@@ -88,7 +86,46 @@ cd src/core_rust
 
 ## История версий
 
-### v0.22.0 - ADNA v3.0 Policy Engine (Текущая)
+### v0.23.0 - Intuition Module v2.2 (Текущая)
+
+**Система оценки и вознаграждения:**
+
+- **Intuition Module v2.2**: Полная реализация модуля интуиции
+  - **L1-L8 Coordinate System**: 8-мерное семантическое пространство
+    - `CoordinateIndex` enum: L1 Existence, L2 Novelty, L3 Velocity, L4 Attention, L5 Cognitive Load, L6 Certainty, L7 Valence, L8 Coherence
+    - `CoordinateExt` trait: Типизированные геттеры для ExperienceEvent (100% тестовое покрытие)
+  - **ADNA v3.0 → v3.1**: Расширение Policy Engine с параметрами апрейзеров
+    - `HomeostasisParams`: Целевые диапазоны для L5/L6/L8 (cognitive_load, certainty, coherence)
+    - `CuriosityParams`: Порог новизны (novelty_threshold) для L2
+    - `EfficiencyParams`: Пороги ресурсов для L3/L5 (motor_threshold, cognitive_threshold)
+    - `GoalDirectedParams`: Порог позитивной валентности для L7 (positive_valence_threshold)
+    - `ADNAReader` trait: Async интерфейс для чтения параметров
+    - `InMemoryADNAReader`: RwLock-based реализация с defaults
+  - **4 Reward Appraisers** работающих параллельно (tokio async):
+    - `HomeostasisAppraiser`: Штрафует отклонения L5/L6/L8 от целевых диапазонов
+    - `CuriosityAppraiser`: Награждает за новизну (L2 > порога)
+    - `EfficiencyAppraiser`: Штрафует расход ресурсов (L3 Velocity + L5 Cognitive Load)
+    - `GoalDirectedAppraiser`: Награждает достижение целей (L7 Valence > порога)
+  - **AppraiserSet**: Координатор для управления всеми апрейзерами
+    - Запускает 4 параллельных задачи (tokio::spawn)
+    - Graceful shutdown через wait_all()
+  - **ExperienceStream v2.1**: Event-based память с pub-sub
+    - 128-byte events в circular buffer
+    - Lock-free rewards: каждый апрейзер пишет в dedicated slot
+    - Broadcast channels для real-time delivery
+    - Sequence numbers для отслеживания событий
+  - **2 Demos**:
+    - `experience-stream-demo`: Базовая функциональность ExperienceStream
+    - `intuition-demo`: Полная интеграция (6 тестовых сценариев)
+- **Новые зависимости**:
+  - `async-trait = "0.1"` - async trait support
+  - `thiserror = "1.0"` - error handling
+  - `tokio = { version = "1.42", features = ["sync", "macros", "rt"] }` - async runtime
+- **Полная документация**:
+  - [IntuitionModule_v2.2_Implementation.md](docs/specs/IntuitionModule_v2.2_Implementation.md)
+  - [ExperienceStream_v2.1.md](docs/specs/ExperienceStream_v2.1.md)
+
+### v0.22.0 - ADNA v3.0 Policy Engine
 
 **Reinforcement Learning ядро:**
 

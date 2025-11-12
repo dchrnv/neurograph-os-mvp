@@ -142,7 +142,7 @@ pub use policy::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 22;
+pub const VERSION_MINOR: u8 = 23;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -151,6 +151,6 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.22.0");
+        assert_eq!(VERSION, "0.23.0");
     }
 }
