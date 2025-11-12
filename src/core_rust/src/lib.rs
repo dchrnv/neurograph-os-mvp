@@ -8,7 +8,8 @@
 /// - Connection V1.0: 32-byte link between tokens
 /// - 8-dimensional semantic space (L1-L8)
 /// - ADNA v3.0: 256-byte Policy Engine
-/// - ExperienceToken: 128-byte state-action-reward tuples
+/// - ExperienceStream v2.1: Event-based memory system (128-byte events)
+/// - Archive: Long-term compressed storage (ExperienceToken 128-byte)
 /// - Binary-compatible format for cross-language interop
 /// - Python FFI bindings via PyO3 (optional)
 /// - Zero core dependencies (pure Rust)
@@ -20,8 +21,11 @@ pub mod graph;
 pub mod cdna;
 pub mod guardian;
 pub mod adna;
-pub mod experience;
+pub mod coordinates;
+pub mod experience_stream;
+pub mod archive;
 pub mod policy;
+pub mod appraisers;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -86,11 +90,43 @@ pub use adna::{
     ADNA_MAGIC,
     ADNA_VERSION_MAJOR,
     ADNA_VERSION_MINOR,
+    // Appraiser configuration
+    HomeostasisParams,
+    CuriosityParams,
+    EfficiencyParams,
+    GoalDirectedParams,
+    AppraiserConfig,
+    ADNAReader,
+    ADNAError,
+    InMemoryADNAReader,
 };
 
-pub use experience::{
+pub use coordinates::{
+    CoordinateIndex,
+    CoordinateExt,
+};
+
+pub use appraisers::{
+    HomeostasisAppraiser,
+    CuriosityAppraiser,
+    EfficiencyAppraiser,
+    GoalDirectedAppraiser,
+    AppraiserSet,
+};
+
+pub use experience_stream::{
+    ExperienceEvent,
+    EventType as ExperienceEventType,
+    EventFlags,
+    AppraiserType,
+    HotBuffer,
+    ExperienceStream,
+    ExperienceWriter,
+    ExperienceReader,
+};
+
+pub use archive::{
     ExperienceToken,
-    ExperienceFlags,
     InfoFlags,
     EXPERIENCE_TOKEN_MAGIC,
 };

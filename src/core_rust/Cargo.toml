@@ -9,9 +9,22 @@ description = "Core Rust implementation of NeuroGraph OS: Token + Connection + G
 # PyO3 for Python FFI bindings
 pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
 
+# Parking lot for efficient RwLock
+parking_lot = "0.12"
+
+# Tokio for async runtime
+tokio = { version = "1.42", features = ["sync", "macros", "rt"] }
+
+# Async trait support
+async-trait = "0.1"
+
+# Error handling
+thiserror = "1.0"
+
 [dev-dependencies]
 # Testing dependencies
 rand = "0.8"
+tokio = { version = "1.42", features = ["rt", "macros", "time"] }
 
 [lib]
 name = "neurograph_core"
@@ -21,6 +34,7 @@ crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
 [features]
 default = []
 python = ["pyo3"]  # Enable Python bindings with --features python
+demo-tokio = ["tokio/rt-multi-thread", "tokio/time"]
 
 [[bin]]
 name = "token-demo"
@@ -41,3 +55,13 @@ path = "src/bin/integration-demo.rs"
 [[bin]]
 name = "graph-demo"
 path = "src/bin/graph-demo.rs"
+
+[[bin]]
+name = "experience-stream-demo"
+path = "src/bin/experience-stream-demo.rs"
+required-features = ["demo-tokio"]
+
+[[bin]]
+name = "intuition-demo"
+path = "src/bin/intuition-demo.rs"
+required-features = ["demo-tokio"]

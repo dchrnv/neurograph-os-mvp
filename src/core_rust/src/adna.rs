@@ -1,7 +1,7 @@
-//! ADNA v3.0 - Active DNA (Policy Engine)
+//! ADNA v3.1 - Active DNA (Policy Engine + Appraiser Configuration)
 //!
-//! **Version:** 3.0.0
-//! **Size:** 256 bytes core + variable policy storage
+//! **Version:** 3.1.0
+//! **Size:** 256 bytes core + variable policy storage + appraiser config
 //!
 //! ADNA is the Policy Engine - a dynamic decision-making system that maps
 //! environmental states to actions. This represents the "learned knowledge" layer
@@ -14,6 +14,7 @@
 //! - **Gradient-based updates**: Changes driven by Intuition Engine analyzing experience
 //! - **CDNA constraint satisfaction**: All mutations validated against constitutional rules
 //! - **Asynchronous learning**: Policy updates happen in dedicated learning phases
+//! - **Appraiser configuration**: Parameters for all 4 reward appraisers (v3.1+)
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -22,7 +23,7 @@ pub const ADNA_MAGIC: u32 = 0x41444E41;
 
 /// Current ADNA version
 pub const ADNA_VERSION_MAJOR: u16 = 3;
-pub const ADNA_VERSION_MINOR: u16 = 0;
+pub const ADNA_VERSION_MINOR: u16 = 1;
 
 // ============================================================================
 // Core ADNA Structure (256 bytes total)
@@ -286,6 +287,268 @@ impl Default for ADNA {
 }
 
 // ============================================================================
+// Appraiser Configuration (v3.1+)
+// ============================================================================
+
+/// Parameters for HomeostasisAppraiser
+///
+/// Controls penalties for deviations from target ranges in L1-L8 coordinates.
+#[derive(Debug, Clone, Copy)]
+pub struct HomeostasisParams {
+    /// Overall weight/importance of homeostasis rewards
+    pub weight: f32,
+
+    /// Target range for L5 Cognitive Load [min, max]
+    pub cognitive_load_range: (f32, f32),
+
+    /// Target range for L6 Certainty [min, max]
+    pub certainty_range: (f32, f32),
+
+    /// Target range for L8 Coherence [min, max]
+    pub coherence_range: (f32, f32),
+
+    /// Multiplier for penalty calculation (default: 1.0)
+    pub penalty_multiplier: f32,
+}
+
+impl Default for HomeostasisParams {
+    fn default() -> Self {
+        Self {
+            weight: 0.3,
+            cognitive_load_range: (0.2, 0.7),
+            certainty_range: (0.4, 0.9),
+            coherence_range: (0.5, 1.0),
+            penalty_multiplier: 1.0,
+        }
+    }
+}
+
+/// Parameters for CuriosityAppraiser
+///
+/// Controls rewards for novelty and exploration.
+#[derive(Debug, Clone, Copy)]
+pub struct CuriosityParams {
+    /// Overall weight/importance of curiosity rewards
+    pub weight: f32,
+
+    /// Minimum L2 Novelty to trigger reward (threshold)
+    pub novelty_threshold: f32,
+
+    /// Reward multiplier for novelty above threshold
+    pub reward_multiplier: f32,
+
+    /// Decay factor for repeated exposure (0.0 - 1.0)
+    pub habituation_rate: f32,
+}
+
+impl Default for CuriosityParams {
+    fn default() -> Self {
+        Self {
+            weight: 0.2,
+            novelty_threshold: 0.3,
+            reward_multiplier: 1.0,
+            habituation_rate: 0.95,
+        }
+    }
+}
+
+/// Parameters for EfficiencyAppraiser
+///
+/// Controls penalties for resource usage.
+#[derive(Debug, Clone, Copy)]
+pub struct EfficiencyParams {
+    /// Overall weight/importance of efficiency penalties
+    pub weight: f32,
+
+    /// Cost factor for L3 Motor activity (velocity/acceleration)
+    pub motor_cost_factor: f32,
+
+    /// Cost factor for L5 Cognitive Load
+    pub cognitive_cost_factor: f32,
+
+    /// Cost factor for creating new tokens/connections
+    pub creation_cost_factor: f32,
+}
+
+impl Default for EfficiencyParams {
+    fn default() -> Self {
+        Self {
+            weight: 0.1,
+            motor_cost_factor: 0.01,
+            cognitive_cost_factor: 0.02,
+            creation_cost_factor: 0.05,
+        }
+    }
+}
+
+/// Parameters for GoalDirectedAppraiser
+///
+/// Controls retroactive reward distribution for goal achievement.
+#[derive(Debug, Clone, Copy)]
+pub struct GoalDirectedParams {
+    /// Overall weight/importance of goal-directed rewards
+    pub weight: f32,
+
+    /// Temporal discount factor (0.0 - 1.0, higher = more patient)
+    pub gamma: f32,
+
+    /// Minimum trajectory length to apply discounting
+    pub min_trajectory_length: u32,
+}
+
+impl Default for GoalDirectedParams {
+    fn default() -> Self {
+        Self {
+            weight: 0.4,
+            gamma: 0.99,
+            min_trajectory_length: 2,
+        }
+    }
+}
+
+/// Complete appraiser configuration
+///
+/// This structure holds all parameters for the 4 reward appraisers.
+#[derive(Debug, Clone, Copy)]
+pub struct AppraiserConfig {
+    pub homeostasis: HomeostasisParams,
+    pub curiosity: CuriosityParams,
+    pub efficiency: EfficiencyParams,
+    pub goal_directed: GoalDirectedParams,
+}
+
+impl Default for AppraiserConfig {
+    fn default() -> Self {
+        Self {
+            homeostasis: HomeostasisParams::default(),
+            curiosity: CuriosityParams::default(),
+            efficiency: EfficiencyParams::default(),
+            goal_directed: GoalDirectedParams::default(),
+        }
+    }
+}
+
+// ============================================================================
+// ADNAReader Trait
+// ============================================================================
+
+/// Trait for reading ADNA configuration
+///
+/// This provides async access to appraiser parameters. Implementations can
+/// store config in memory, on disk, or load from remote sources.
+#[async_trait::async_trait]
+pub trait ADNAReader: Send + Sync {
+    /// Get homeostasis appraiser parameters
+    async fn get_homeostasis_params(&self) -> Result<HomeostasisParams, ADNAError>;
+
+    /// Get curiosity appraiser parameters
+    async fn get_curiosity_params(&self) -> Result<CuriosityParams, ADNAError>;
+
+    /// Get efficiency appraiser parameters
+    async fn get_efficiency_params(&self) -> Result<EfficiencyParams, ADNAError>;
+
+    /// Get goal-directed appraiser parameters
+    async fn get_goal_directed_params(&self) -> Result<GoalDirectedParams, ADNAError>;
+
+    /// Get complete appraiser configuration
+    async fn get_appraiser_config(&self) -> Result<AppraiserConfig, ADNAError>;
+}
+
+/// Error type for ADNA operations
+#[derive(Debug, thiserror::Error)]
+pub enum ADNAError {
+    #[error("ADNA not found")]
+    NotFound,
+
+    #[error("Invalid ADNA structure")]
+    InvalidStructure,
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
+}
+
+// ============================================================================
+// In-Memory ADNAReader Implementation
+// ============================================================================
+
+/// Simple in-memory implementation of ADNAReader
+///
+/// Stores appraiser config in memory with atomic updates support.
+pub struct InMemoryADNAReader {
+    config: std::sync::Arc<tokio::sync::RwLock<AppraiserConfig>>,
+}
+
+impl InMemoryADNAReader {
+    pub fn new(config: AppraiserConfig) -> Self {
+        Self {
+            config: std::sync::Arc::new(tokio::sync::RwLock::new(config)),
+        }
+    }
+
+    pub fn with_defaults() -> Self {
+        Self::new(AppraiserConfig::default())
+    }
+
+    /// Update appraiser configuration
+    pub async fn update_config(&self, config: AppraiserConfig) {
+        let mut lock = self.config.write().await;
+        *lock = config;
+    }
+
+    /// Update specific appraiser parameters
+    pub async fn update_homeostasis(&self, params: HomeostasisParams) {
+        let mut lock = self.config.write().await;
+        lock.homeostasis = params;
+    }
+
+    pub async fn update_curiosity(&self, params: CuriosityParams) {
+        let mut lock = self.config.write().await;
+        lock.curiosity = params;
+    }
+
+    pub async fn update_efficiency(&self, params: EfficiencyParams) {
+        let mut lock = self.config.write().await;
+        lock.efficiency = params;
+    }
+
+    pub async fn update_goal_directed(&self, params: GoalDirectedParams) {
+        let mut lock = self.config.write().await;
+        lock.goal_directed = params;
+    }
+}
+
+#[async_trait::async_trait]
+impl ADNAReader for InMemoryADNAReader {
+    async fn get_homeostasis_params(&self) -> Result<HomeostasisParams, ADNAError> {
+        let config = self.config.read().await;
+        Ok(config.homeostasis)
+    }
+
+    async fn get_curiosity_params(&self) -> Result<CuriosityParams, ADNAError> {
+        let config = self.config.read().await;
+        Ok(config.curiosity)
+    }
+
+    async fn get_efficiency_params(&self) -> Result<EfficiencyParams, ADNAError> {
+        let config = self.config.read().await;
+        Ok(config.efficiency)
+    }
+
+    async fn get_goal_directed_params(&self) -> Result<GoalDirectedParams, ADNAError> {
+        let config = self.config.read().await;
+        Ok(config.goal_directed)
+    }
+
+    async fn get_appraiser_config(&self) -> Result<AppraiserConfig, ADNAError> {
+        let config = self.config.read().await;
+        Ok(*config)
+    }
+}
+
+// ============================================================================
 // Tests
 // ============================================================================
 
@@ -307,8 +570,11 @@ mod tests {
         let adna = ADNA::new(PolicyType::Linear);
         assert!(adna.is_valid());
         assert_eq!(adna.policy_type(), PolicyType::Linear);
-        assert_eq!(adna.evolution.generation, 0);
-        assert_eq!(adna.evolution.exploration_rate, 0.9);
+        // Copy packed fields to avoid alignment issues
+        let generation = adna.evolution.generation;
+        let exploration_rate = adna.evolution.exploration_rate;
+        assert_eq!(generation, 0);
+        assert_eq!(exploration_rate, 0.9);
     }
 
     #[test]
@@ -330,19 +596,117 @@ mod tests {
         let mut adna = ADNA::new(PolicyType::Linear);
 
         adna.record_trajectory(true);
-        assert_eq!(adna.evolution.trajectory_count, 1);
-        assert!(adna.evolution.success_rate > 0.0);
+        // Copy packed fields to avoid alignment issues
+        let count = adna.evolution.trajectory_count;
+        let rate = adna.evolution.success_rate;
+        assert_eq!(count, 1);
+        assert!(rate > 0.0);
 
         adna.record_trajectory(false);
-        assert_eq!(adna.evolution.trajectory_count, 2);
+        let count2 = adna.evolution.trajectory_count;
+        assert_eq!(count2, 2);
     }
 
     #[test]
     fn test_generation_increment() {
         let mut adna = ADNA::new(PolicyType::Linear);
-        assert_eq!(adna.evolution.generation, 0);
+        // Copy packed field to avoid alignment issues
+        let gen = adna.evolution.generation;
+        assert_eq!(gen, 0);
 
         adna.increment_generation();
-        assert_eq!(adna.evolution.generation, 1);
+        let gen2 = adna.evolution.generation;
+        assert_eq!(gen2, 1);
+    }
+
+    #[test]
+    fn test_appraiser_config_defaults() {
+        let config = AppraiserConfig::default();
+
+        assert_eq!(config.homeostasis.weight, 0.3);
+        assert_eq!(config.curiosity.weight, 0.2);
+        assert_eq!(config.efficiency.weight, 0.1);
+        assert_eq!(config.goal_directed.weight, 0.4);
+
+        // Sum of weights should be 1.0
+        let total_weight = config.homeostasis.weight
+            + config.curiosity.weight
+            + config.efficiency.weight
+            + config.goal_directed.weight;
+        assert!((total_weight - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_homeostasis_params() {
+        let params = HomeostasisParams::default();
+        assert_eq!(params.cognitive_load_range, (0.2, 0.7));
+        assert_eq!(params.certainty_range, (0.4, 0.9));
+        assert_eq!(params.coherence_range, (0.5, 1.0));
+        assert_eq!(params.penalty_multiplier, 1.0);
+    }
+
+    #[test]
+    fn test_curiosity_params() {
+        let params = CuriosityParams::default();
+        assert_eq!(params.novelty_threshold, 0.3);
+        assert_eq!(params.reward_multiplier, 1.0);
+        assert_eq!(params.habituation_rate, 0.95);
+    }
+
+    #[test]
+    fn test_efficiency_params() {
+        let params = EfficiencyParams::default();
+        assert_eq!(params.motor_cost_factor, 0.01);
+        assert_eq!(params.cognitive_cost_factor, 0.02);
+        assert_eq!(params.creation_cost_factor, 0.05);
+    }
+
+    #[test]
+    fn test_goal_directed_params() {
+        let params = GoalDirectedParams::default();
+        assert_eq!(params.gamma, 0.99);
+        assert_eq!(params.min_trajectory_length, 2);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_adna_reader() {
+        let reader = InMemoryADNAReader::with_defaults();
+
+        // Test reading default config
+        let config = reader.get_appraiser_config().await.unwrap();
+        assert_eq!(config.homeostasis.weight, 0.3);
+
+        // Test reading individual params
+        let homeostasis = reader.get_homeostasis_params().await.unwrap();
+        assert_eq!(homeostasis.weight, 0.3);
+
+        let curiosity = reader.get_curiosity_params().await.unwrap();
+        assert_eq!(curiosity.weight, 0.2);
+
+        let efficiency = reader.get_efficiency_params().await.unwrap();
+        assert_eq!(efficiency.weight, 0.1);
+
+        let goal_directed = reader.get_goal_directed_params().await.unwrap();
+        assert_eq!(goal_directed.weight, 0.4);
+    }
+
+    #[tokio::test]
+    async fn test_in_memory_adna_reader_update() {
+        let reader = InMemoryADNAReader::with_defaults();
+
+        // Update homeostasis params
+        let new_homeostasis = HomeostasisParams {
+            weight: 0.5,
+            ..Default::default()
+        };
+        reader.update_homeostasis(new_homeostasis).await;
+
+        // Verify update
+        let params = reader.get_homeostasis_params().await.unwrap();
+        assert_eq!(params.weight, 0.5);
+
+        // Other params should remain unchanged
+        let curiosity = reader.get_curiosity_params().await.unwrap();
+        assert_eq!(curiosity.weight, 0.2);
     }
 }

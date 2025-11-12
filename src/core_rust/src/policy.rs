@@ -5,7 +5,7 @@
 //! Policies map states to actions. This module defines the Policy trait
 //! and provides basic implementations (Linear, Neural, TreeBased, etc.)
 
-use crate::experience::ExperienceToken;
+use crate::archive::ExperienceToken;
 use std::fmt::Debug;
 
 // ============================================================================
