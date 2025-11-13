@@ -26,6 +26,8 @@ pub mod experience_stream;
 pub mod archive;
 pub mod policy;
 pub mod appraisers;
+pub mod intuition_engine;
+pub mod evolution_manager;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -99,6 +101,10 @@ pub use adna::{
     ADNAReader,
     ADNAError,
     InMemoryADNAReader,
+    // Learning loop structures
+    Proposal,
+    Intent,
+    ActionPolicy,
 };
 
 pub use coordinates::{
@@ -123,6 +129,9 @@ pub use experience_stream::{
     ExperienceStream,
     ExperienceWriter,
     ExperienceReader,
+    // Sampling for IntuitionEngine
+    SamplingStrategy,
+    ExperienceBatch,
 };
 
 pub use archive::{
@@ -137,6 +146,11 @@ pub use policy::{
     Gradient,
     GradientSource,
     PolicyError,
+};
+
+pub use intuition_engine::{
+    IntuitionEngine,
+    IntuitionConfig,
 };
 
 /// Version information
@@ -154,3 +168,10 @@ mod tests {
         assert_eq!(VERSION, "0.23.0");
     }
 }
+
+pub use evolution_manager::{
+    EvolutionManager,
+    EvolutionConfig,
+    ADNAState,
+    ValidationResult,
+};

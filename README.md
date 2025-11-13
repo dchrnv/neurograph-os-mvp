@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.23.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.24.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -86,7 +86,70 @@ cd src/core_rust
 
 ## История версий
 
-### v0.23.0 - Intuition Module v2.2 (Текущая)
+### v0.24.0 - Learning Loop Integration (Текущая)
+
+**Полный цикл обучения через опыт:**
+
+- **IntuitionEngine v2.1**: Анализ паттернов и генерация предложений
+  - **Статистический анализ (v1.0)**: Корреляция действий и вознаграждений
+    - Квантизация 8D пространства состояний (4 бина на измерение = 65,536 состояний)
+    - Агрегация action-reward по state bins
+    - Статистическая значимость через упрощённый t-test
+    - Генерация Proposals для улучшения ADNA политик
+  - **SamplingStrategy**: 4 стратегии выборки опыта
+    - `Uniform`: Равномерная случайная выборка
+    - `PrioritizedByReward`: Приоритет высоким вознаграждениям
+    - `RecencyWeighted`: Приоритет недавним событиям
+    - `Mixed`: Комбинация reward + recency
+  - **IntuitionConfig**: Настраиваемые параметры анализа
+    - Интервал анализа, размер батча, минимальные пороги
+    - Confidence threshold для proposal acceptance
+  - **Pattern Detection**: Идентификация значимых корреляций
+    - Минимальная разница вознаграждений, минимум сэмплов
+    - Confidence scoring на основе variance и sample size
+- **EvolutionManager v1.0**: Безопасная эволюция ADNA
+  - **Validation Pipeline**: Многоступенчатая проверка Proposals
+    - Confidence threshold: минимальная уверенность в изменении
+    - Expected impact: минимальное ожидаемое улучшение
+    - CDNA validation: соответствие конституционным правилам
+    - Format validation: корректность структуры данных
+  - **ADNAState**: In-memory хранилище политик
+    - `HashMap<String, ActionPolicy>`: state_bin_id → policy mapping
+    - Атомарное применение изменений через RwLock
+    - Version tracking для rollback capability
+  - **Audit Trail**: Полное логирование решений
+    - ProposalAccepted / ProposalRejected events в ExperienceStream
+    - Meta-learning feedback loop для самооптимизации
+  - **Rate Limiting**: Контроль скорости изменений
+    - Максимум proposals в секунду (default: 10/sec)
+- **Learning Loop Demo** (`learning-loop-demo`):
+  - Полная интеграция всех компонентов
+  - 100 событий с 3 чёткими паттернами
+  - Автоматическое обнаружение: action 100 > action 200 в state [0.5, ...]
+  - Успешное обучение: 1 ADNA политика за 3 цикла анализа
+  - Демонстрация: Events → Rewards → Analysis → Proposals → Validation → ADNA Updates
+- **Новые структуры ADNA**:
+  - `Proposal`: Предложение изменения политики (JSON Patch format)
+    - UUID идентификатор, target entity, confidence, expected impact
+  - `Intent`: Абстрактное высокоуровневое описание действия
+  - `ActionPolicy`: Веса действий для принятия решений
+    - `HashMap<u16, f64>`: action_type → weight mapping
+  - `ExperienceBatch`: Batch событий для анализа
+- **Расширение ExperienceStream**:
+  - `sample_batch()`: Выборка событий по стратегии
+  - Поддержка prioritized replay для обучения
+- **Обновлённые зависимости**:
+  - `serde = { version = "1.0", features = ["derive"] }` - сериализация
+  - `serde_json = "1.0"` - JSON поддержка для Proposals
+  - `uuid = { version = "1.0", features = ["v4"] }` - уникальные ID
+  - `rand = "0.8"` - probabilistic sampling
+  - `tokio = { version = "1.42", features = ["sync", "macros", "rt", "time"] }` - добавлен "time" feature
+- **Полная документация**:
+  - [IntuitionEngine_v2.1.md](docs/specs/IntuitionEngine_v2.1.md)
+
+**Результат**: Полный замкнутый цикл обучения от сырого опыта до автоматического улучшения ADNA политик с конституционными гарантиями CDNA.
+
+### v0.23.0 - Intuition Module v2.2
 
 **Система оценки и вознаграждения:**
 

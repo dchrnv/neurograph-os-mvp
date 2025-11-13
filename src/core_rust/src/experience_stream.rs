@@ -514,6 +514,247 @@ impl ExperienceReader for ExperienceStream {
     }
 }
 
+// ============================================================================
+// Sampling Strategy for IntuitionEngine
+// ============================================================================
+
+/// Sampling strategy for selecting "interesting" experience events
+#[derive(Debug, Clone)]
+pub enum SamplingStrategy {
+    /// Random uniform sampling
+    Uniform,
+
+    /// Prioritized by absolute total reward
+    PrioritizedByReward {
+        /// Probability exponent (higher = more biased toward high |reward|)
+        alpha: f64,
+    },
+
+    /// Recency-weighted (prefer recent experience)
+    RecencyWeighted {
+        /// Decay factor [0.0, 1.0]
+        decay: f64,
+    },
+
+    /// Mixed strategy
+    Mixed {
+        reward_weight: f64,
+        recency_weight: f64,
+    },
+}
+
+/// Batch of sampled experience events
+pub struct ExperienceBatch {
+    pub events: Vec<ExperienceEvent>,
+    pub sampled_at: std::time::SystemTime,
+}
+
+impl ExperienceStream {
+    /// Sample batch of events using specified strategy
+    ///
+    /// This is used by IntuitionEngine to select "interesting" events for analysis.
+    pub fn sample_batch(&self, size: usize, strategy: SamplingStrategy) -> ExperienceBatch {
+        use rand::Rng;
+        use rand::seq::SliceRandom;
+
+        let total = self.total_written();
+        let available = self.size();
+
+        if available == 0 {
+            return ExperienceBatch {
+                events: Vec::new(),
+                sampled_at: std::time::SystemTime::now(),
+            };
+        }
+
+        // Get start sequence for available events
+        let start_seq = if total > available as u64 {
+            total - available as u64
+        } else {
+            0
+        };
+
+        // Collect all available events
+        let all_events: Vec<_> = (start_seq..total)
+            .filter_map(|seq| self.get_event(seq))
+            .collect();
+
+        if all_events.is_empty() {
+            return ExperienceBatch {
+                events: Vec::new(),
+                sampled_at: std::time::SystemTime::now(),
+            };
+        }
+
+        let sample_size = std::cmp::min(size, all_events.len());
+        let mut rng = rand::thread_rng();
+
+        let sampled_events = match strategy {
+            SamplingStrategy::Uniform => {
+                // Simple uniform random sampling
+                let mut events = all_events.clone();
+                events.shuffle(&mut rng);
+                events.into_iter().take(sample_size).collect()
+            }
+
+            SamplingStrategy::PrioritizedByReward { alpha } => {
+                // Prioritized sampling based on absolute total reward
+                let mut indices_with_priority: Vec<_> = all_events
+                    .iter()
+                    .enumerate()
+                    .map(|(i, event)| {
+                        let total_reward = event.total_reward().abs();
+                        let priority = total_reward.powf(alpha as f32);
+                        (i, priority)
+                    })
+                    .collect();
+
+                // Calculate total priority
+                let total_priority: f32 = indices_with_priority
+                    .iter()
+                    .map(|(_, p)| p)
+                    .sum();
+
+                if total_priority == 0.0 {
+                    // Fall back to uniform if all rewards are zero
+                    let mut events = all_events.clone();
+                    events.shuffle(&mut rng);
+                    events.into_iter().take(sample_size).collect()
+                } else {
+                    // Sample proportional to priority
+                    let mut selected = Vec::with_capacity(sample_size);
+                    let mut remaining = indices_with_priority;
+
+                    for _ in 0..sample_size {
+                        if remaining.is_empty() {
+                            break;
+                        }
+
+                        // Calculate cumulative probabilities
+                        let current_total: f32 = remaining.iter().map(|(_, p)| p).sum();
+                        let mut rand_val = rng.gen::<f32>() * current_total;
+
+                        // Select based on probability
+                        let mut selected_idx = 0;
+                        for (j, (_, priority)) in remaining.iter().enumerate() {
+                            rand_val -= priority;
+                            if rand_val <= 0.0 {
+                                selected_idx = j;
+                                break;
+                            }
+                        }
+
+                        let (event_idx, _) = remaining.remove(selected_idx);
+                        selected.push(all_events[event_idx]);
+                    }
+
+                    selected
+                }
+            }
+
+            SamplingStrategy::RecencyWeighted { decay } => {
+                // Weight events by recency
+                let mut indices_with_weight: Vec<_> = all_events
+                    .iter()
+                    .enumerate()
+                    .map(|(i, _event)| {
+                        // More recent = higher index = higher weight
+                        let recency_factor = i as f64 / all_events.len().max(1) as f64;
+                        let weight = decay.powf(1.0 - recency_factor);
+                        (i, weight)
+                    })
+                    .collect();
+
+                // Similar weighted sampling as PrioritizedByReward
+                let total_weight: f64 = indices_with_weight.iter().map(|(_, w)| w).sum();
+
+                let mut selected = Vec::with_capacity(sample_size);
+                let mut remaining = indices_with_weight;
+
+                for _ in 0..sample_size {
+                    if remaining.is_empty() {
+                        break;
+                    }
+
+                    let current_total: f64 = remaining.iter().map(|(_, w)| w).sum();
+                    let mut rand_val = rng.gen::<f64>() * current_total;
+
+                    let mut selected_idx = 0;
+                    for (j, (_, weight)) in remaining.iter().enumerate() {
+                        rand_val -= weight;
+                        if rand_val <= 0.0 {
+                            selected_idx = j;
+                            break;
+                        }
+                    }
+
+                    let (event_idx, _) = remaining.remove(selected_idx);
+                    selected.push(all_events[event_idx]);
+                }
+
+                selected
+            }
+
+            SamplingStrategy::Mixed {
+                reward_weight,
+                recency_weight,
+            } => {
+                // Combine reward and recency
+                let mut indices_with_weight: Vec<_> = all_events
+                    .iter()
+                    .enumerate()
+                    .map(|(i, event)| {
+                        let reward_factor = event.total_reward().abs() as f64;
+                        let recency_factor = i as f64 / all_events.len().max(1) as f64;
+                        let combined_weight =
+                            reward_factor * reward_weight + recency_factor * recency_weight;
+                        (i, combined_weight.max(0.0))
+                    })
+                    .collect();
+
+                let total_weight: f64 = indices_with_weight.iter().map(|(_, w)| w).sum();
+
+                if total_weight == 0.0 {
+                    let mut events = all_events.clone();
+                    events.shuffle(&mut rng);
+                    events.into_iter().take(sample_size).collect()
+                } else {
+                    let mut selected = Vec::with_capacity(sample_size);
+                    let mut remaining = indices_with_weight;
+
+                    for _ in 0..sample_size {
+                        if remaining.is_empty() {
+                            break;
+                        }
+
+                        let current_total: f64 = remaining.iter().map(|(_, w)| w).sum();
+                        let mut rand_val = rng.gen::<f64>() * current_total;
+
+                        let mut selected_idx = 0;
+                        for (j, (_, weight)) in remaining.iter().enumerate() {
+                            rand_val -= weight;
+                            if rand_val <= 0.0 {
+                                selected_idx = j;
+                                break;
+                            }
+                        }
+
+                        let (event_idx, _) = remaining.remove(selected_idx);
+                        selected.push(all_events[event_idx]);
+                    }
+
+                    selected
+                }
+            }
+        };
+
+        ExperienceBatch {
+            events: sampled_events,
+            sampled_at: std::time::SystemTime::now(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -716,5 +957,49 @@ mod tests {
         let reader: &dyn ExperienceReader = &stream;
         assert_eq!(reader.size(), 1);
         assert!(reader.get_event(0).is_some());
+    }
+
+    #[test]
+    fn test_sampling_uniform() {
+        let stream = ExperienceStream::new(1000, 100);
+
+        // Write some events
+        for i in 0..50 {
+            let mut event = ExperienceEvent::default();
+            event.reward_homeostasis = i as f32;
+            stream.write_event(event).unwrap();
+        }
+
+        // Sample 10 events uniformly
+        let batch = stream.sample_batch(10, SamplingStrategy::Uniform);
+        assert_eq!(batch.events.len(), 10);
+    }
+
+    #[test]
+    fn test_sampling_prioritized() {
+        let stream = ExperienceStream::new(1000, 100);
+
+        // Write events with different rewards
+        for i in 0..50 {
+            let mut event = ExperienceEvent::default();
+            // Some high rewards, some low
+            event.reward_homeostasis = if i % 10 == 0 { 10.0 } else { 0.1 };
+            stream.write_event(event).unwrap();
+        }
+
+        // Sample prioritized by reward
+        let batch = stream.sample_batch(
+            10,
+            SamplingStrategy::PrioritizedByReward { alpha: 1.0 }
+        );
+        assert_eq!(batch.events.len(), 10);
+
+        // Most events should have higher rewards (statistical test with tolerance)
+        let avg_reward: f32 = batch.events.iter()
+            .map(|e| e.reward_homeostasis)
+            .sum::<f32>() / batch.events.len() as f32;
+
+        // Should be > 1.0 due to prioritization (some high-reward events selected)
+        assert!(avg_reward > 0.5);
     }
 }

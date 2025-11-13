@@ -1,6 +1,6 @@
 [package]
 name = "neurograph-core"
-version = "0.23.0"
+version = "0.24.0"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
 description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian/CDNA + ADNA v3.0 Policy Engine with Python FFI"
@@ -13,13 +13,23 @@ pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
 parking_lot = "0.12"
 
 # Tokio for async runtime
-tokio = { version = "1.42", features = ["sync", "macros", "rt"] }
+tokio = { version = "1.42", features = ["sync", "macros", "rt", "time"] }
 
 # Async trait support
 async-trait = "0.1"
 
 # Error handling
 thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# UUID generation
+uuid = { version = "1.0", features = ["v4"] }
+
+# Random number generation (for sampling strategies)
+rand = "0.8"
 
 [dev-dependencies]
 # Testing dependencies
@@ -64,4 +74,9 @@ required-features = ["demo-tokio"]
 [[bin]]
 name = "intuition-demo"
 path = "src/bin/intuition-demo.rs"
+required-features = ["demo-tokio"]
+
+[[bin]]
+name = "learning-loop-demo"
+path = "src/bin/learning-loop-demo.rs"
 required-features = ["demo-tokio"]
