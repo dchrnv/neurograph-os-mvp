@@ -590,4 +590,323 @@ impl PersistenceBackend for PostgresBackend {
 
         Ok(())
     }
+
+    // ==================== ADNA Policy Management ====================
+
+    async fn save_policy(
+        &self,
+        state_bin_id: &str,
+        rule_id: &str,
+        action_weights: &std::collections::HashMap<u16, f64>,
+        metadata: Option<serde_json::Value>,
+        parent_policy_id: Option<i32>,
+    ) -> Result<i32, PersistenceError> {
+        // Serialize action_weights to JSONB
+        let weights_json = serde_json::to_value(action_weights)
+            .map_err(|e| PersistenceError::SerializationError(e.to_string()))?;
+
+        // Start transaction
+        let mut tx = self.pool.begin()
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        // Deactivate old policy for this state_bin if exists
+        sqlx::query(
+            "UPDATE adna_policies SET is_active = FALSE WHERE state_bin_id = $1 AND is_active = TRUE"
+        )
+        .bind(state_bin_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        // Get next version number
+        let version_row = sqlx::query(
+            "SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM adna_policies WHERE state_bin_id = $1"
+        )
+        .bind(state_bin_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let version: i32 = version_row.get("next_version");
+
+        // Insert new policy
+        let result = sqlx::query(
+            r#"
+            INSERT INTO adna_policies (
+                state_bin_id, rule_id, action_weights, metadata,
+                version, parent_policy_id, is_active
+            ) VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+            RETURNING policy_id
+            "#
+        )
+        .bind(state_bin_id)
+        .bind(rule_id)
+        .bind(&weights_json)
+        .bind(&metadata)
+        .bind(version)
+        .bind(parent_policy_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let policy_id: i32 = result.get("policy_id");
+
+        // Commit transaction
+        tx.commit()
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        Ok(policy_id)
+    }
+
+    async fn get_active_policy(
+        &self,
+        state_bin_id: &str,
+    ) -> Result<Option<super::backend::ADNAPolicy>, PersistenceError> {
+        let row = sqlx::query(
+            r#"
+            SELECT policy_id, state_bin_id, rule_id, action_weights, metadata,
+                   version, parent_policy_id, total_executions, avg_reward
+            FROM adna_policies
+            WHERE state_bin_id = $1 AND is_active = TRUE
+            "#
+        )
+        .bind(state_bin_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        if let Some(row) = row {
+            let weights_json: serde_json::Value = row.get("action_weights");
+            let action_weights: std::collections::HashMap<u16, f64> =
+                serde_json::from_value(weights_json)
+                    .map_err(|e| PersistenceError::SerializationError(e.to_string()))?;
+
+            Ok(Some(super::backend::ADNAPolicy {
+                policy_id: row.get("policy_id"),
+                state_bin_id: row.get("state_bin_id"),
+                rule_id: row.get("rule_id"),
+                action_weights,
+                metadata: row.get("metadata"),
+                version: row.get("version"),
+                parent_policy_id: row.get("parent_policy_id"),
+                total_executions: row.get("total_executions"),
+                avg_reward: row.get("avg_reward"),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn get_all_active_policies(&self) -> Result<Vec<super::backend::ADNAPolicy>, PersistenceError> {
+        let rows = sqlx::query(
+            r#"
+            SELECT policy_id, state_bin_id, rule_id, action_weights, metadata,
+                   version, parent_policy_id, total_executions, avg_reward
+            FROM adna_policies
+            WHERE is_active = TRUE
+            ORDER BY avg_reward DESC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let mut policies = Vec::new();
+        for row in rows {
+            let weights_json: serde_json::Value = row.get("action_weights");
+            let action_weights: std::collections::HashMap<u16, f64> =
+                serde_json::from_value(weights_json)
+                    .map_err(|e| PersistenceError::SerializationError(e.to_string()))?;
+
+            policies.push(super::backend::ADNAPolicy {
+                policy_id: row.get("policy_id"),
+                state_bin_id: row.get("state_bin_id"),
+                rule_id: row.get("rule_id"),
+                action_weights,
+                metadata: row.get("metadata"),
+                version: row.get("version"),
+                parent_policy_id: row.get("parent_policy_id"),
+                total_executions: row.get("total_executions"),
+                avg_reward: row.get("avg_reward"),
+            });
+        }
+
+        Ok(policies)
+    }
+
+    async fn deactivate_policy(&self, policy_id: i32) -> Result<(), PersistenceError> {
+        sqlx::query("UPDATE adna_policies SET is_active = FALSE WHERE policy_id = $1")
+            .bind(policy_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        Ok(())
+    }
+
+    async fn update_policy_metrics(
+        &self,
+        policy_id: i32,
+        total_executions: i64,
+        avg_reward: f32,
+    ) -> Result<(), PersistenceError> {
+        sqlx::query(
+            r#"
+            UPDATE adna_policies
+            SET total_executions = $1, avg_reward = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE policy_id = $3
+            "#
+        )
+        .bind(total_executions)
+        .bind(avg_reward)
+        .bind(policy_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        Ok(())
+    }
+
+    // ==================== Configuration Management ====================
+
+    async fn save_config(
+        &self,
+        component_name: &str,
+        config_key: &str,
+        config_value: serde_json::Value,
+        parent_config_id: Option<i32>,
+    ) -> Result<i32, PersistenceError> {
+        // Start transaction
+        let mut tx = self.pool.begin()
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        // Deactivate old config for this component/key if exists
+        sqlx::query(
+            "UPDATE configuration_store SET is_active = FALSE WHERE component_name = $1 AND config_key = $2 AND is_active = TRUE"
+        )
+        .bind(component_name)
+        .bind(config_key)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        // Get next version number
+        let version_row = sqlx::query(
+            "SELECT COALESCE(MAX(version), 0) + 1 as next_version FROM configuration_store WHERE component_name = $1 AND config_key = $2"
+        )
+        .bind(component_name)
+        .bind(config_key)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let version: i32 = version_row.get("next_version");
+
+        // Insert new config
+        let result = sqlx::query(
+            r#"
+            INSERT INTO configuration_store (
+                component_name, config_key, config_value,
+                version, parent_config_id, is_active
+            ) VALUES ($1, $2, $3, $4, $5, TRUE)
+            RETURNING config_id
+            "#
+        )
+        .bind(component_name)
+        .bind(config_key)
+        .bind(&config_value)
+        .bind(version)
+        .bind(parent_config_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let config_id: i32 = result.get("config_id");
+
+        // Commit transaction
+        tx.commit()
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        Ok(config_id)
+    }
+
+    async fn get_config(
+        &self,
+        component_name: &str,
+        config_key: &str,
+    ) -> Result<Option<super::backend::Configuration>, PersistenceError> {
+        let row = sqlx::query(
+            r#"
+            SELECT config_id, component_name, config_key, config_value,
+                   version, parent_config_id
+            FROM configuration_store
+            WHERE component_name = $1 AND config_key = $2 AND is_active = TRUE
+            "#
+        )
+        .bind(component_name)
+        .bind(config_key)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        if let Some(row) = row {
+            Ok(Some(super::backend::Configuration {
+                config_id: row.get("config_id"),
+                component_name: row.get("component_name"),
+                config_key: row.get("config_key"),
+                config_value: row.get("config_value"),
+                version: row.get("version"),
+                parent_config_id: row.get("parent_config_id"),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn get_component_configs(
+        &self,
+        component_name: &str,
+    ) -> Result<Vec<super::backend::Configuration>, PersistenceError> {
+        let rows = sqlx::query(
+            r#"
+            SELECT config_id, component_name, config_key, config_value,
+                   version, parent_config_id
+            FROM configuration_store
+            WHERE component_name = $1 AND is_active = TRUE
+            ORDER BY config_key
+            "#
+        )
+        .bind(component_name)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        let mut configs = Vec::new();
+        for row in rows {
+            configs.push(super::backend::Configuration {
+                config_id: row.get("config_id"),
+                component_name: row.get("component_name"),
+                config_key: row.get("config_key"),
+                config_value: row.get("config_value"),
+                version: row.get("version"),
+                parent_config_id: row.get("parent_config_id"),
+            });
+        }
+
+        Ok(configs)
+    }
+
+    async fn deactivate_config(&self, config_id: i32) -> Result<(), PersistenceError> {
+        sqlx::query("UPDATE configuration_store SET is_active = FALSE WHERE config_id = $1")
+            .bind(config_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| PersistenceError::QueryError(e.to_string()))?;
+
+        Ok(())
+    }
 }

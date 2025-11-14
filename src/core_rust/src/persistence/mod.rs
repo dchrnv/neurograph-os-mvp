@@ -11,7 +11,7 @@ pub mod backend;
 #[cfg(feature = "persistence")]
 pub mod postgres;
 
-pub use backend::{PersistenceBackend, PersistenceError, QueryOptions};
+pub use backend::{PersistenceBackend, PersistenceError, QueryOptions, ADNAPolicy, Configuration};
 
 #[cfg(feature = "persistence")]
 pub use postgres::{PostgresBackend, PostgresConfig};

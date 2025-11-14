@@ -9,6 +9,12 @@ use neurograph_core::{
 };
 
 #[cfg(feature = "persistence")]
+use neurograph_core::persistence::{ADNAPolicy, Configuration};
+
+#[cfg(feature = "persistence")]
+use std::collections::HashMap;
+
+#[cfg(feature = "persistence")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== PostgreSQL Persistence Demo v0.26.0 ===\n");
@@ -126,6 +132,110 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let archived = backend.archive_old_events(365).await?;
     println!("   ✓ Would archive {} events older than 365 days", archived);
 
+    // 9. ADNA Policy Persistence
+    println!("\n[9] Testing ADNA policy persistence...");
+
+    // Create a policy with action weights
+    let mut action_weights = HashMap::new();
+    action_weights.insert(1000, 0.4); // send_message
+    action_weights.insert(1001, 0.35); // read_data
+    action_weights.insert(1002, 0.25); // process_task
+
+    let policy_metadata = serde_json::json!({
+        "description": "Initial policy for state bin A",
+        "created_by": "learning_loop",
+        "strategy": "epsilon_greedy"
+    });
+
+    let policy_id = backend.save_policy(
+        "state_bin_A",
+        "rule_homeostasis_high",
+        &action_weights,
+        Some(policy_metadata),
+        None, // no parent, initial version
+    ).await?;
+    println!("   ✓ Created ADNA policy (ID: {}, version 1)", policy_id);
+
+    // Read the active policy
+    let active_policy = backend.get_active_policy("state_bin_A").await?;
+    if let Some(policy) = &active_policy {
+        println!("   ✓ Retrieved active policy:");
+        println!("      - State bin: {}", policy.state_bin_id);
+        println!("      - Rule: {}", policy.rule_id);
+        println!("      - Version: {}", policy.version);
+        println!("      - Action weights: {} actions", policy.action_weights.len());
+    }
+
+    // Update policy (create new version)
+    let mut updated_weights = HashMap::new();
+    updated_weights.insert(1000, 0.5);  // increased
+    updated_weights.insert(1001, 0.3);  // decreased
+    updated_weights.insert(1002, 0.2);  // decreased
+
+    let policy_id_v2 = backend.save_policy(
+        "state_bin_A",
+        "rule_homeostasis_high",
+        &updated_weights,
+        Some(serde_json::json!({"description": "Updated after learning"})),
+        Some(policy_id), // parent policy ID
+    ).await?;
+    println!("   ✓ Created policy version 2 (ID: {})", policy_id_v2);
+
+    // Update metrics
+    backend.update_policy_metrics(policy_id_v2, 100, 0.75).await?;
+    println!("   ✓ Updated policy metrics (100 executions, avg reward 0.75)");
+
+    // Get all active policies
+    let all_policies = backend.get_all_active_policies().await?;
+    println!("   ✓ Total active policies: {}", all_policies.len());
+
+    // 10. Configuration Persistence
+    println!("\n[10] Testing configuration persistence...");
+
+    // Save configuration
+    let config_value = serde_json::json!({
+        "learning_rate": 0.01,
+        "epsilon": 0.1,
+        "batch_size": 32
+    });
+
+    let config_id = backend.save_config(
+        "learning_loop",
+        "hyperparameters",
+        config_value,
+        None, // initial version
+    ).await?;
+    println!("   ✓ Created configuration (ID: {}, version 1)", config_id);
+
+    // Read configuration
+    let config = backend.get_config("learning_loop", "hyperparameters").await?;
+    if let Some(cfg) = &config {
+        println!("   ✓ Retrieved configuration:");
+        println!("      - Component: {}", cfg.component_name);
+        println!("      - Key: {}", cfg.config_key);
+        println!("      - Version: {}", cfg.version);
+        println!("      - Value: {}", cfg.config_value);
+    }
+
+    // Update configuration (new version)
+    let updated_config = serde_json::json!({
+        "learning_rate": 0.005,  // decreased
+        "epsilon": 0.05,         // decreased
+        "batch_size": 64         // increased
+    });
+
+    let config_id_v2 = backend.save_config(
+        "learning_loop",
+        "hyperparameters",
+        updated_config,
+        Some(config_id), // parent config
+    ).await?;
+    println!("   ✓ Created configuration version 2 (ID: {})", config_id_v2);
+
+    // Get all configs for component
+    let component_configs = backend.get_component_configs("learning_loop").await?;
+    println!("   ✓ Total active configs for 'learning_loop': {}", component_configs.len());
+
     // Summary
     println!("\n=== Demo Complete ===");
     println!("Demonstrated:");
@@ -136,7 +246,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  • Querying events with metadata joins");
     println!("  • Counting events");
     println!("  • Archive retention policy function");
-    println!("\nPostgreSQL Persistence Layer v0.26.0 is working! 🚀\n");
+    println!("  • ADNA policy persistence with versioning");
+    println!("  • Configuration persistence with versioning");
+    println!("\nPostgreSQL Persistence Layer v0.26.0 is FULLY working! 🚀\n");
 
     Ok(())
 }

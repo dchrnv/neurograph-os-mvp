@@ -115,4 +115,88 @@ pub trait PersistenceBackend: Send + Sync {
 
     /// Health check - verify connection and schema
     async fn health_check(&self) -> Result<(), PersistenceError>;
+
+    // ==================== ADNA Policy Management ====================
+
+    /// Save an ADNA policy (creates new version or updates existing)
+    async fn save_policy(
+        &self,
+        state_bin_id: &str,
+        rule_id: &str,
+        action_weights: &std::collections::HashMap<u16, f64>,
+        metadata: Option<serde_json::Value>,
+        parent_policy_id: Option<i32>,
+    ) -> Result<i32, PersistenceError>;
+
+    /// Get active policy for a state bin
+    async fn get_active_policy(
+        &self,
+        state_bin_id: &str,
+    ) -> Result<Option<ADNAPolicy>, PersistenceError>;
+
+    /// Get all active policies
+    async fn get_all_active_policies(&self) -> Result<Vec<ADNAPolicy>, PersistenceError>;
+
+    /// Deactivate a policy (soft delete)
+    async fn deactivate_policy(&self, policy_id: i32) -> Result<(), PersistenceError>;
+
+    /// Update policy performance metrics
+    async fn update_policy_metrics(
+        &self,
+        policy_id: i32,
+        total_executions: i64,
+        avg_reward: f32,
+    ) -> Result<(), PersistenceError>;
+
+    // ==================== Configuration Management ====================
+
+    /// Save a configuration value (creates new version)
+    async fn save_config(
+        &self,
+        component_name: &str,
+        config_key: &str,
+        config_value: serde_json::Value,
+        parent_config_id: Option<i32>,
+    ) -> Result<i32, PersistenceError>;
+
+    /// Get active configuration value
+    async fn get_config(
+        &self,
+        component_name: &str,
+        config_key: &str,
+    ) -> Result<Option<Configuration>, PersistenceError>;
+
+    /// Get all active configurations for a component
+    async fn get_component_configs(
+        &self,
+        component_name: &str,
+    ) -> Result<Vec<Configuration>, PersistenceError>;
+
+    /// Deactivate a configuration (soft delete)
+    async fn deactivate_config(&self, config_id: i32) -> Result<(), PersistenceError>;
+}
+
+/// ADNA Policy representation
+#[derive(Debug, Clone)]
+pub struct ADNAPolicy {
+    pub policy_id: i32,
+    pub state_bin_id: String,
+    pub rule_id: String,
+    pub action_weights: std::collections::HashMap<u16, f64>,
+    pub metadata: Option<serde_json::Value>,
+    pub version: i32,
+    pub parent_policy_id: Option<i32>,
+    pub total_executions: i64,
+    pub avg_reward: f32,
+}
+
+/// Configuration representation
+#[derive(Debug, Clone)]
+pub struct Configuration {
+    pub config_id: i32,
+    pub component_name: String,
+    pub config_key: String,
+    pub config_value: serde_json::Value,
+    pub version: i32,
+    pub parent_config_id: Option<i32>,
 }
