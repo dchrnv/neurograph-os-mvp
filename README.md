@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.24.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.25.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -86,7 +86,37 @@ cd src/core_rust
 
 ## История версий
 
-### v0.24.0 - Learning Loop Integration (Текущая)
+### v0.25.0 - ActionController + E2E Integration (Текущая)
+
+**Замыкание цикла восприятие-действие:**
+
+- **ActionController v1.0**: Центральный диспетчер действий
+  - Intent → ADNA Policy → Executor Selection → Action Execution
+  - Epsilon-greedy exploration/exploitation (default: 10% exploration)
+  - Timeout для выполнения действий (default: 30 секунд)
+  - Полное логирование в ExperienceStream (action_started + action_finished events)
+- **ActionExecutor trait**: Общий интерфейс для всех исполнителей
+  - `execute()`: Асинхронное выполнение действия
+  - `validate_params()`: Валидация параметров перед выполнением
+  - `id()` и `description()`: Метаданные исполнителя
+- **Базовые Executors**:
+  - `NoOpExecutor`: Пустое действие (для тестирования)
+  - `MessageSenderExecutor`: Отправка лог-сообщений с приоритетами
+- **ADNA Integration**: Расширение ADNAReader
+  - `get_action_policy()`: Получение политики для текущего состояния
+  - State quantization (4 бина на измерение → 65,536 состояний)
+  - Default policies для неизвестных состояний
+- **ActionController Demo** (`action-controller-demo`):
+  - 5 тестовых Intents с различными параметрами
+  - Демонстрация exploration/exploitation
+  - Parameter validation
+  - Error handling
+- **Полная документация**:
+  - [ActionController_v1.0.md](docs/specs/ActionController_v1.0.md)
+
+**Результат**: Полный E2E цикл: Perception → Appraisal → Learning → Action Selection → Execution → Feedback
+
+### v0.24.0 - Learning Loop Integration
 
 **Полный цикл обучения через опыт:**
 

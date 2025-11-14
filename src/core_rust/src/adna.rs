@@ -452,6 +452,12 @@ pub trait ADNAReader: Send + Sync {
 
     /// Get complete appraiser configuration
     async fn get_appraiser_config(&self) -> Result<AppraiserConfig, ADNAError>;
+
+    /// Get action policy for a given state
+    ///
+    /// Returns the ActionPolicy that should be used for action selection
+    /// in the given L1-L8 coordinate state.
+    async fn get_action_policy(&self, state: &[i16; 8]) -> Result<ActionPolicy, ADNAError>;
 }
 
 /// Error type for ADNA operations
@@ -479,17 +485,33 @@ pub enum ADNAError {
 /// Stores appraiser config in memory with atomic updates support.
 pub struct InMemoryADNAReader {
     config: std::sync::Arc<tokio::sync::RwLock<AppraiserConfig>>,
+    /// Action policies indexed by state_bin_id
+    /// This is filled by EvolutionManager when proposals are applied
+    policies: std::sync::Arc<tokio::sync::RwLock<std::collections::HashMap<String, ActionPolicy>>>,
 }
 
 impl InMemoryADNAReader {
     pub fn new(config: AppraiserConfig) -> Self {
         Self {
             config: std::sync::Arc::new(tokio::sync::RwLock::new(config)),
+            policies: std::sync::Arc::new(tokio::sync::RwLock::new(HashMap::new())),
         }
     }
 
     pub fn with_defaults() -> Self {
         Self::new(AppraiserConfig::default())
+    }
+
+    /// Set action policy for a state (used by EvolutionManager)
+    pub async fn set_action_policy(&self, state_bin_id: String, policy: ActionPolicy) {
+        let mut policies = self.policies.write().await;
+        policies.insert(state_bin_id, policy);
+    }
+
+    /// Get action policy by state_bin_id (internal helper)
+    pub async fn get_policy_by_bin(&self, state_bin_id: &str) -> Option<ActionPolicy> {
+        let policies = self.policies.read().await;
+        policies.get(state_bin_id).cloned()
     }
 
     /// Update appraiser configuration
@@ -546,6 +568,43 @@ impl ADNAReader for InMemoryADNAReader {
         let config = self.config.read().await;
         Ok(*config)
     }
+
+    async fn get_action_policy(&self, state: &[i16; 8]) -> Result<ActionPolicy, ADNAError> {
+        // Quantize state to bin_id (same logic as IntuitionEngine)
+        let state_bin_id = quantize_state_to_bin(state, 4); // 4 bins per dimension
+
+        // Look up policy for this state bin
+        let policies = self.policies.read().await;
+        if let Some(policy) = policies.get(&state_bin_id) {
+            Ok(policy.clone())
+        } else {
+            // Return default policy: uniform weights across common action types
+            let mut default_policy = ActionPolicy::new(format!("default_{}", state_bin_id));
+            // Common action types with equal weights
+            default_policy.set_weight(1, 1.0); // action type 1
+            default_policy.set_weight(2, 1.0); // action type 2
+            default_policy.set_weight(3, 1.0); // action type 3
+            Ok(default_policy)
+        }
+    }
+}
+
+/// Quantize 8D state into a string bin ID
+///
+/// This uses the same quantization logic as IntuitionEngine for consistency.
+fn quantize_state_to_bin(state: &[i16; 8], bins_per_dim: u32) -> String {
+    let mut bin_id: u64 = 0;
+    let bins_per_dim_u64 = bins_per_dim as u64;
+
+    for &value in state.iter() {
+        // Convert i16 to normalized f32 [-1.0, 1.0] → [0.0, 1.0]
+        let normalized = ((value as f32 / 32767.0) + 1.0) / 2.0;
+        let clamped = normalized.clamp(0.0, 0.999);
+        let bin = (clamped * bins_per_dim as f32) as u64;
+        bin_id = bin_id * bins_per_dim_u64 + bin;
+    }
+
+    format!("adna_state_bin_{}", bin_id)
 }
 
 // ============================================================================

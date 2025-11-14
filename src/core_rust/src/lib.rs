@@ -28,6 +28,9 @@ pub mod policy;
 pub mod appraisers;
 pub mod intuition_engine;
 pub mod evolution_manager;
+pub mod action_executor;
+pub mod action_controller;
+pub mod executors;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -156,7 +159,7 @@ pub use intuition_engine::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 23;
+pub const VERSION_MINOR: u8 = 25;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -165,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.23.0");
+        assert_eq!(VERSION, "0.25.0");
     }
 }
 
@@ -174,4 +177,20 @@ pub use evolution_manager::{
     EvolutionConfig,
     ADNAState,
     ValidationResult,
+};
+
+pub use action_executor::{
+    ActionExecutor,
+    ActionResult,
+    ActionError,
+};
+
+pub use action_controller::{
+    ActionController,
+    ActionControllerConfig,
+};
+
+pub use executors::{
+    NoOpExecutor,
+    MessageSenderExecutor,
 };
