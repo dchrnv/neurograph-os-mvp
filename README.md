@@ -86,7 +86,7 @@ cd src/core_rust
 
 ## История версий
 
-### v0.26.0 - Persistence Layer (PostgreSQL) (Текущая)
+### v0.26.0 - Persistence Layer (PostgreSQL) ✅ ПОЛНОСТЬЮ ЗАВЕРШЁН
 
 **Production-ready персистентность для когнитивной памяти:**
 
@@ -109,6 +109,29 @@ cd src/core_rust
   - JSONB storage для гибких параметров (GIN index)
   - intent_type, executor_id, parameters (serde_json::Value)
   - Транзакционная запись event + metadata (atomicity guarantee)
+- **ADNA Policy Persistence** ✅ NEW:
+  - Таблица `adna_policies` с versioned state management
+  - Транзакционное версионирование: deactivate old → create new → commit
+  - Soft delete pattern (is_active flag)
+  - Action weights как JSONB HashMap<u16, f64>
+  - Parent/child lineage tracking (version, parent_policy_id)
+  - Performance metrics (total_executions, avg_reward)
+  - 5 методов PersistenceBackend:
+    - `save_policy()` - создание новой версии политики
+    - `get_active_policy()` - получение активной политики для state_bin
+    - `get_all_active_policies()` - все активные политики (сортировка по avg_reward)
+    - `deactivate_policy()` - soft delete политики
+    - `update_policy_metrics()` - обновление метрик (executions, reward)
+- **Configuration Store** ✅ NEW:
+  - Таблица `configuration_store` с версионированием
+  - Component-based organization (component_name + config_key)
+  - Flexible JSONB storage для произвольных конфигов
+  - Versioned evolution с parent_config_id lineage
+  - 4 метода PersistenceBackend:
+    - `save_config()` - создание новой версии конфига
+    - `get_config()` - получение активного конфига
+    - `get_component_configs()` - все конфиги компонента
+    - `deactivate_config()` - soft delete конфига
 - **QueryOptions - Мощный интерфейс запросов**:
   - Фильтрация: event_type, episode_id, timestamp_range, min_reward
   - Пагинация: limit, offset
@@ -130,11 +153,15 @@ cd src/core_rust
   - Загрузка из .env файла (dotenv support)
   - Environment variable overrides (DATABASE_URL, DB_MAX_CONNECTIONS, etc.)
   - Health check для проверки схемы и соединения
-- **Persistence Demo** (`persistence-demo`):
-  - Полный workflow: connect → health_check → write → read → query → archive
-  - Демонстрация всех операций PersistenceBackend trait
+- **Persistence Demo** (`persistence-demo`) - РАСШИРЕН:
+  - Секция 9: ADNA policy persistence (create → read → update → metrics)
+  - Секция 10: Configuration persistence (create → read → update → query)
+  - Полный workflow: connect → health_check → write → read → query → archive → policies → configs
+  - Демонстрация всех 19 методов PersistenceBackend trait
   - Примеры с metadata и без
   - Query filtering и pagination
+  - Policy versioning и metrics updates
+  - Configuration management lifecycle
 - **Setup Documentation**:
   - [PERSISTENCE_SETUP.md](src/core_rust/PERSISTENCE_SETUP.md): Полный гайд по настройке PostgreSQL
   - [Persistence_v0.26.0.md](docs/specs/Persistence_v0.26.0.md): Техническая спецификация
@@ -146,7 +173,7 @@ cd src/core_rust
   - `cargo run --bin persistence-demo --features "demo-tokio persistence"`
   - Обратная совместимость: компиляция без persistence feature
 
-**Результат**: Полная персистентность когнитивного опыта с мощными запросами, retention policies, и production-ready инфраструктурой. Готов к долгосрочному обучению и аналитике.
+**Результат**: ПОЛНАЯ персистентность когнитивного опыта, ADNA политик и конфигураций с мощными запросами, retention policies, versioned state management, и production-ready инфраструктурой. Готов к долгосрочному обучению, эволюции политик и аналитике. ВСЕ требования ROADMAP выполнены.
 
 ### v0.25.1 - ExperienceEvent v2 + JSON Config
 
