@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.25.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.25.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -86,7 +86,53 @@ cd src/core_rust
 
 ## История версий
 
-### v0.25.0 - ActionController + E2E Integration (Текущая)
+### v0.25.1 - ExperienceEvent v2 + JSON Config (Текущая)
+
+**Метаданные для обучения и внешняя конфигурация:**
+
+- **ExperienceStream v2.1 - ActionMetadata Support**:
+  - Новая структура `ActionMetadata`:
+    - `intent_type`: String - тип намерения
+    - `executor_id`: String - ID исполнителя
+    - `parameters`: serde_json::Value - полные параметры действия
+  - Архитектурное решение: раздельное хранилище
+    - **Hot path**: 128-byte ExperienceEvent в circular buffer (cache-efficient)
+    - **Cold path**: HashMap<u128, ActionMetadata> для переменной длины данных
+  - Новые методы:
+    - `write_event_with_metadata()` - запись события с метаданными
+    - `get_metadata(event_id)` - получение метаданных по ID
+    - `get_event_with_metadata(seq)` - событие + метаданные одним вызовом
+  - Расширен trait `ExperienceWriter` с default implementation (backward compatibility)
+  - **Преимущества**:
+    - Сохранена cache efficiency для апрейзеров
+    - IntuitionEngine теперь видит полный контекст: какое действие, кто выполнял, с какими параметрами
+    - Анализ причинно-следственных связей: action→result causality
+    - Готовность к персистентности (v0.26.0 PostgreSQL)
+- **ActionController - JSON Configuration**:
+  - Внешний конфиг `action_controller_config.json`:
+    - `exploration_rate`: динамический epsilon для exploration/exploitation
+    - `log_all_actions`: вкл/выкл логирования
+    - `timeout_ms`: таймаут выполнения действий
+  - Методы загрузки:
+    - `ActionControllerConfig::from_file(path)` - из JSON
+    - `ActionControllerConfig::from_file_or_default(path)` - с fallback
+  - Обновлен `action-controller-demo` для загрузки из файла
+  - **Преимущества**:
+    - Изменение параметров без перекомпиляции
+    - A/B тестирование разных конфигов
+    - Путь к UI управлению (v0.29.0): JSON → PostgreSQL (v0.26.0) → UI
+- **Roadmap Updates**:
+  - Реорганизация будущих релизов:
+    - v0.27.0: Testing & Benchmarking (baseline metrics)
+    - v0.28.0: Neural IntuitionEngine [EXPERIMENTAL] с A/B testing
+  - Расширен v0.26.0 Persistence:
+    - ActionMetadata persistence
+    - Configuration store table
+    - Versioned configuration management
+
+**Результат**: Богатый контекст для обучения + гибкая конфигурация без перекомпиляции
+
+### v0.25.0 - ActionController + E2E Integration
 
 **Замыкание цикла восприятие-действие:**
 
@@ -316,7 +362,7 @@ cargo run --example graph_demo
 
 ## Технологии
 
-| Категория                     | Технология                              |
+| Категория                     | Техноло��ия                              |
 | -------------------------------------- | ------------------------------------------------- |
 | **Ядро**                     | Rust 2021 (нулевые зависимости) |
 | **Desktop UI**                   | Iced 0.12 (Rust native GUI)                       |
