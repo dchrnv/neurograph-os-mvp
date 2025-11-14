@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.25.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.26.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -86,7 +86,69 @@ cd src/core_rust
 
 ## История версий
 
-### v0.25.1 - ExperienceEvent v2 + JSON Config (Текущая)
+### v0.26.0 - Persistence Layer (PostgreSQL) (Текущая)
+
+**Production-ready персистентность для когнитивной памяти:**
+
+- **PostgreSQL Backend для ExperienceStream**:
+  - Асинхронный драйвер `sqlx` с connection pooling
+  - Полная персистентность 128-byte ExperienceEvents:
+    - event_id (BYTEA, u128), timestamp (BIGINT, microseconds), episode_id, step_number
+    - state_l1...state_l8 (REAL[8]), action_l1...action_l8 (REAL[8])
+    - reward_homeostasis, reward_curiosity, reward_efficiency, reward_goal
+    - adna_version_hash, sequence_number, archived flag
+  - Оптимизированные индексы:
+    - idx_events_timestamp (DESC), idx_events_episode, idx_events_type
+    - idx_events_total_reward (computed column для сортировки по сумме)
+  - Архитектурный trait `PersistenceBackend`:
+    - `write_event()`, `write_event_with_metadata()`, `write_batch()`
+    - `read_event()`, `read_event_with_metadata()`, `query_events()`
+    - `archive_old_events()`, `count_events()`, `health_check()`
+- **ActionMetadata Persistence**:
+  - Отдельная таблица `action_metadata` с CASCADE delete
+  - JSONB storage для гибких параметров (GIN index)
+  - intent_type, executor_id, parameters (serde_json::Value)
+  - Транзакционная запись event + metadata (atomicity guarantee)
+- **QueryOptions - Мощный интерфейс запросов**:
+  - Фильтрация: event_type, episode_id, timestamp_range, min_reward
+  - Пагинация: limit, offset
+  - Сортировка: order_asc / desc
+  - include_archived опция
+  - SQL query builder для динамических WHERE clauses
+- **Retention Policy**:
+  - SQL функция `archive_old_events(days_threshold)` для автоархивирования
+  - Обновляет archived flag вместо удаления (soft delete)
+  - Cutoff расчёт в Unix epoch microseconds
+  - Поддержка pg_cron для автоматического выполнения
+- **Production-ready схема** (`schema.sql`):
+  - 5 таблиц: experience_events, action_metadata, adna_policies, configuration_store, learning_metrics
+  - Helper views: recent_valuable_events, active_policies_performance, latest_configurations
+  - UNIQUE constraints для active policies/configs
+  - Parent/child versioning с lineage tracking
+- **Configuration Management**:
+  - PostgresConfig: database_url, max_connections, timeouts
+  - Загрузка из .env файла (dotenv support)
+  - Environment variable overrides (DATABASE_URL, DB_MAX_CONNECTIONS, etc.)
+  - Health check для проверки схемы и соединения
+- **Persistence Demo** (`persistence-demo`):
+  - Полный workflow: connect → health_check → write → read → query → archive
+  - Демонстрация всех операций PersistenceBackend trait
+  - Примеры с metadata и без
+  - Query filtering и pagination
+- **Setup Documentation**:
+  - [PERSISTENCE_SETUP.md](src/core_rust/PERSISTENCE_SETUP.md): Полный гайд по настройке PostgreSQL
+  - [Persistence_v0.26.0.md](docs/specs/Persistence_v0.26.0.md): Техническая спецификация
+  - Инструкции для Ubuntu/Debian, macOS, Arch Linux
+  - Docker setup для быстрого старта
+  - Performance tuning рекомендации
+- **Опциональная зависимость**:
+  - Feature flag `persistence` для изоляции PostgreSQL зависимостей
+  - `cargo run --bin persistence-demo --features "demo-tokio persistence"`
+  - Обратная совместимость: компиляция без persistence feature
+
+**Результат**: Полная персистентность когнитивного опыта с мощными запросами, retention policies, и production-ready инфраструктурой. Готов к долгосрочному обучению и аналитике.
+
+### v0.25.1 - ExperienceEvent v2 + JSON Config
 
 **Метаданные для обучения и внешняя конфигурация:**
 
@@ -369,7 +431,7 @@ cargo run --example graph_demo
 | **Аутентификация** | Argon2id password hashing                         |
 | **Архитектура UI**    | Elm Architecture (Model-View-Update)              |
 | **FFI**                          | Direct Rust-to-Rust (zero overhead)               |
-| **Хранение**             | In-memory (PostgreSQL запланирован)   |
+| **Хранение**             | In-memory + PostgreSQL (optional persistence feature) |
 | **Тестирование**     | Rust test framework                               |
 
 ---

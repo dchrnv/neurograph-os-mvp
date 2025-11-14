@@ -31,6 +31,7 @@ pub mod evolution_manager;
 pub mod action_executor;
 pub mod action_controller;
 pub mod executors;
+pub mod persistence;
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -161,8 +162,8 @@ pub use intuition_engine::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 25;
-pub const VERSION_PATCH: u8 = 1;
+pub const VERSION_MINOR: u8 = 26;
+pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
 mod tests {
@@ -170,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.25.1");
+        assert_eq!(VERSION, "0.26.0");
     }
 }
 
@@ -195,4 +196,16 @@ pub use action_controller::{
 pub use executors::{
     NoOpExecutor,
     MessageSenderExecutor,
+};
+
+// Persistence exports (only available with 'persistence' feature)
+pub use persistence::{
+    PersistenceBackend,
+    PersistenceError,
+    QueryOptions,
+};
+
+#[cfg(feature = "persistence")]
+pub use persistence::{
+    PostgresBackend,
 };
