@@ -1,6 +1,6 @@
 [package]
 name = "neurograph-core"
-version = "0.25.0"
+version = "0.25.1"
 edition = "2021"
 authors = ["NeuroGraph OS Team"]
 description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian/CDNA + ADNA v3.0 Policy Engine with Python FFI"

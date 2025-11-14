@@ -6,14 +6,14 @@
 
 use crate::action_executor::{ActionExecutor, ActionResult, ActionError};
 use crate::adna::{ADNAReader, Intent, ActionPolicy};
-use crate::experience_stream::{ExperienceWriter, ExperienceEvent};
+use crate::experience_stream::{ExperienceWriter, ExperienceEvent, ActionMetadata, ExperienceStream};
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// Configuration for ActionController
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ActionControllerConfig {
     /// Epsilon for epsilon-greedy exploration (0.0 - 1.0)
     pub exploration_rate: f64,
@@ -32,6 +32,23 @@ impl Default for ActionControllerConfig {
             log_all_actions: true,
             timeout_ms: 30000,      // 30 seconds
         }
+    }
+}
+
+impl ActionControllerConfig {
+    /// Load configuration from JSON file
+    pub fn from_file(path: &str) -> Result<Self, std::io::Error> {
+        let content = std::fs::read_to_string(path)?;
+        serde_json::from_str(&content)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+
+    /// Load configuration from JSON file, or use default if file doesn't exist
+    pub fn from_file_or_default(path: &str) -> Self {
+        Self::from_file(path).unwrap_or_else(|_| {
+            eprintln!("[ActionController] Config file '{}' not found, using defaults", path);
+            Self::default()
+        })
     }
 }
 

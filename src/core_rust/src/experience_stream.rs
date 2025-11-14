@@ -12,8 +12,10 @@
 //! - Optional cold storage for long-term persistence
 
 use std::sync::Arc;
+use std::collections::HashMap;
 use parking_lot::RwLock;
 use tokio::sync::broadcast;
+use serde_json::Value;
 
 /// ExperienceEvent - unified structure for all events (128 bytes)
 #[repr(C, align(16))]
@@ -343,6 +345,14 @@ impl HotBuffer {
 // ExperienceStream - Main API with Pub-Sub
 // ============================================================================
 
+/// Metadata for action events (intent_type, executor_id, parameters)
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ActionMetadata {
+    pub intent_type: String,
+    pub executor_id: String,
+    pub parameters: Value,
+}
+
 /// Main ExperienceStream structure with pub-sub capabilities
 pub struct ExperienceStream {
     /// Hot buffer for storage
@@ -350,6 +360,10 @@ pub struct ExperienceStream {
 
     /// Broadcast channel for real-time distribution
     tx: broadcast::Sender<ExperienceEvent>,
+
+    /// Metadata store for action events (event_id → metadata)
+    /// Separate from hot buffer to maintain cache-friendly 128-byte events
+    metadata: Arc<RwLock<HashMap<u128, ActionMetadata>>>,
 }
 
 impl ExperienceStream {
@@ -361,8 +375,9 @@ impl ExperienceStream {
     pub fn new(capacity: usize, channel_size: usize) -> Self {
         let buffer = Arc::new(HotBuffer::new(capacity));
         let (tx, _rx) = broadcast::channel(channel_size);
+        let metadata = Arc::new(RwLock::new(HashMap::new()));
 
-        Self { buffer, tx }
+        Self { buffer, tx, metadata }
     }
 
     /// Write event to stream and broadcast to subscribers
@@ -427,6 +442,41 @@ impl ExperienceStream {
     pub fn buffer(&self) -> &Arc<HotBuffer> {
         &self.buffer
     }
+
+    /// Write event with associated action metadata
+    ///
+    /// This is a convenience method for ActionController to write events
+    /// with rich metadata (intent_type, executor_id, parameters).
+    pub fn write_event_with_metadata(
+        &self,
+        event: ExperienceEvent,
+        metadata: ActionMetadata,
+    ) -> Result<u64, &'static str> {
+        // Store metadata before writing event
+        self.metadata.write().insert(event.event_id, metadata);
+
+        // Write event to stream
+        self.write_event(event)
+    }
+
+    /// Get action metadata for an event by event_id
+    ///
+    /// Returns None if no metadata exists for this event.
+    pub fn get_metadata(&self, event_id: u128) -> Option<ActionMetadata> {
+        self.metadata.read().get(&event_id).cloned()
+    }
+
+    /// Get event with its metadata by sequence number
+    ///
+    /// Returns (event, Option<metadata>) tuple.
+    pub fn get_event_with_metadata(&self, seq: u64) -> Option<(ExperienceEvent, Option<ActionMetadata>)> {
+        if let Some(event) = self.get_event(seq) {
+            let metadata = self.get_metadata(event.event_id);
+            Some((event, metadata))
+        } else {
+            None
+        }
+    }
 }
 
 // ============================================================================
@@ -437,6 +487,16 @@ impl ExperienceStream {
 pub trait ExperienceWriter: Send + Sync {
     /// Write new event and return sequence number
     fn write_event(&self, event: ExperienceEvent) -> Result<u64, &'static str>;
+
+    /// Write event with associated action metadata (optional, default implementation does nothing)
+    fn write_event_with_metadata(
+        &self,
+        event: ExperienceEvent,
+        _metadata: ActionMetadata,
+    ) -> Result<u64, &'static str> {
+        // Default implementation ignores metadata (for backwards compatibility)
+        self.write_event(event)
+    }
 
     /// Write multiple events
     fn write_batch(&self, events: Vec<ExperienceEvent>) -> Result<Vec<u64>, &'static str> {

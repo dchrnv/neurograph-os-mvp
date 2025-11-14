@@ -23,22 +23,18 @@ async fn main() {
     println!("   ✓ ExperienceStream created (capacity: 1000)");
     println!("   ✓ ADNA reader with default config\n");
 
-    // 2. Create ActionController with custom config
+    // 2. Create ActionController with config from JSON file
     println!("[2] Creating ActionController...");
-    let config = ActionControllerConfig {
-        exploration_rate: 0.2,  // 20% exploration
-        log_all_actions: true,
-        timeout_ms: 5000,       // 5 second timeout
-    };
+    let config = ActionControllerConfig::from_file_or_default("action_controller_config.json");
     let controller = ActionController::new(
         adna_reader.clone() as Arc<dyn ADNAReader>,
         experience_stream.clone() as Arc<dyn ExperienceWriter>,
-        config,
+        config.clone(),
     );
-    println!("   ✓ ActionController configured");
-    println!("   - Exploration rate: 20%");
-    println!("   - Timeout: 5000ms");
-    println!("   - Logging: enabled\n");
+    println!("   ✓ ActionController configured from JSON file");
+    println!("   - Exploration rate: {}%", config.exploration_rate * 100.0);
+    println!("   - Timeout: {}ms", config.timeout_ms);
+    println!("   - Logging: {}\n", if config.log_all_actions { "enabled" } else { "disabled" });
 
     // 3. Register executors
     println!("[3] Registering executors...");

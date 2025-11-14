@@ -1,0 +1,6 @@
+{
+  "exploration_rate": 0.1,
+  "log_all_actions": true,
+  "timeout_ms": 30000,
+  "description": "ActionController configuration - can be modified without recompilation"
+}
