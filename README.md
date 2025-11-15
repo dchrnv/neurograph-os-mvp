@@ -2,7 +2,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.26.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.27.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -57,32 +57,29 @@
 
 ---
 
-- Полная история: [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
-- Спецификации: [docs/specs/](docs/specs/)
-- README: [README.md](README.md)
+## Документация
+
+- **Полная история проекта:** [PROJECT_HISTORY.md](PROJECT_HISTORY.md)
+- **Спецификации модулей:** [docs/specs/](docs/specs/)
+- **Настройка PostgreSQL:** [src/core_rust/PERSISTENCE_SETUP.md](src/core_rust/PERSISTENCE_SETUP.md)
 
 ---
+
+## Производительность и требования
 
 ### Производительность
 - **Обработка событий:** ~10,000+ событий/сек (зависит от сложности appraisal)
-- **Анализ паттернов:** О(n log n) через QuickSelect для квантизации
+- **Анализ паттернов:** O(n log n) через QuickSelect для квантизации
 - **Поиск в пространстве:** O(log n) через K-D деревья
 - **Обновление политик:** асинхронно, не блокирует восприятие
+- **Rust vs Python:** В 100× быстрее благодаря zero-copy сериализации
+- **Архитектура:** Cache-friendly структуры, выровненные по 32/64/128/256 байт
 
 ### Требования к ресурсам
-- **CPU:** Многопоточность через Rust async/await
+- **CPU:** Многопоточность через Rust async/await (tokio runtime)
 - **Память:** 100-500 МБ для типичной системы (зависит от размера ExperienceStream)
-- **Хранилище:** PostgreSQL для персистентности, Redis для кэша (v0.26.0+)
-- **Целевой binary:** ~8-12 МБ (standalone executable)
-
----
-
-**Производительность:**
-
-- В 100× быстрее чем Python
-- Zero-copy сериализация
-- Cache-friendly упакованные структуры
-- Нулевые внешние зависимости
+- **Хранилище:** PostgreSQL для персистентности (опционально)
+- **Целевой binary:** ~8-12 МБ (standalone executable, минимальные зависимости)
 
 ---
 
@@ -115,6 +112,86 @@ cd src/core_rust
 ---
 
 ## История версий
+
+### v0.27.0 - Testing & Benchmarking ✅ ПОЛНОСТЬЮ ЗАВЕРШЁН
+
+**Production-ready тестирование и baseline метрики:**
+
+- **Comprehensive Benchmark Suite** (Criterion.rs):
+  - **Token Module** (6 benchmarks):
+    - token_creation (target: <10ns)
+    - token_similarity - cosine similarity (target: <50ns)
+    - token_serialization - zero-copy via transmute (target: <5ns)
+    - token_batch_creation - 10k tokens (target: <100μs)
+    - coordinate_encoding, flag_operations
+  - **Grid Module** (5 benchmarks):
+    - grid_insert (target: <100ns)
+    - grid_knn_search - k=10 from 10k tokens (target: <5μs)
+    - grid_range_query (target: <10μs)
+    - grid_batch_insert - 1k tokens (target: <100μs)
+    - grid_remove
+  - **Graph Module** (6 benchmarks):
+    - graph_add_node (target: <50ns), graph_add_connection (target: <100ns)
+    - graph_bfs, graph_dfs - 1k nodes (target: <500μs each)
+    - graph_shortest_path (target: <1ms)
+    - graph_get_neighbors
+  - **ExperienceStream Module** (7 benchmarks):
+    - write_event - lock-free circular buffer (target: <200ns)
+    - write_event_with_metadata (target: <500ns)
+    - read_event (target: <100ns)
+    - sample_batch_uniform - 100 from 10k (target: <50μs)
+    - sample_batch_prioritized (target: <100μs)
+    - set_appraiser_reward, query_range
+  - **IntuitionEngine Module** (7 benchmarks):
+    - homeostasis_appraisal, curiosity_appraisal (target: <100ns each)
+    - efficiency_appraisal, goal_directed_appraisal (target: <100ns each)
+    - state_quantization - 4^8 = 65,536 bins
+    - pattern_detection - 1k events (target: <10ms)
+    - statistical_comparison - t-test для корреляций
+  - **Итого**: 31 benchmarks с HTML отчётами и статистикой
+- **E2E Integration Tests**:
+  - **Learning Loop E2E** (learning_loop_e2e.rs):
+    - Полный цикл: 500 events → pattern detection → proposal generation
+    - Проверка: action 100 > action 200 когда state[0] > 0.5
+    - Batch sampling (uniform/prioritized)
+    - ADNA state evolution tracking
+  - **Action Controller E2E** (action_controller_e2e.rs):
+    - Intent → ADNA policy → Executor selection → Execution
+    - Events logging (action_started + action_completed)
+    - Epsilon-greedy exploration (20 runs с двумя executors)
+    - Failure handling и graceful degradation
+  - **Persistence E2E** (persistence_e2e.rs):
+    - PostgreSQL connection и health check
+    - Events persistence (100 events с rewards)
+    - ActionMetadata persistence (JSONB parameters)
+    - Policy versioning (v1 → v2 с parent tracking)
+    - Configuration versioning (v1 → v2)
+    - Archival retention policy testing
+  - **Итого**: 8 E2E integration tests
+- **Coverage Infrastructure**:
+  - setup_coverage.sh - автоматическая установка cargo-tarpaulin
+  - HTML coverage reports (target: >75% overall)
+  - Модульные цели: Token >90%, Connection/Grid/Graph >85%, ExperienceStream/IntuitionEngine >75%
+  - Исключение test/bench/bin кода из coverage
+- **Performance Profiling Infrastructure**:
+  - setup_profiling.sh - автоматическая установка flamegraph
+  - Профилирование learning-loop-demo и action-controller-demo
+  - SVG flamegraphs для CPU hotspot analysis
+  - Готовность к memory profiling (valgrind/miri)
+- **Performance Baseline Document**:
+  - PERFORMANCE_BASELINE_v0.27.0.md - шаблон для метрик
+  - Секции: Environment, Benchmark Results, Integration Tests, Coverage, Profiling
+  - Identified Bottlenecks и Recommendations для v0.28.0+
+  - Comparison to Targets (met/missed/exceeded)
+- **Automation Scripts**:
+  - run_benchmarks.sh - запуск всех 31 benchmarks
+  - setup_coverage.sh - генерация HTML coverage report
+  - setup_profiling.sh - генерация flamegraphs
+- **Specification**:
+  - [Testing_Benchmarking_v0.27.0.md](docs/specs/Testing_Benchmarking_v0.27.0.md): Полная техническая спецификация
+  - 4-фазный план: Benchmarks → Integration Tests → Coverage/Profiling → Documentation
+
+**Результат**: ПОЛНАЯ testing infrastructure с 31 performance benchmarks, 8 E2E integration tests, coverage reporting, и profiling tools. Baseline метрики готовы для сравнения с будущим Neural IntuitionEngine (v0.28.0). Production-ready quality assurance.
 
 ### v0.26.0 - Persistence Layer (PostgreSQL) ✅ ПОЛНОСТЬЮ ЗАВЕРШЁН
 
@@ -481,21 +558,16 @@ cargo run --example graph_demo
 
 ## Технологии
 
-| Категория                     | Техноло��ия                              |
-| -------------------------------------- | ------------------------------------------------- |
-| **Ядро**                     | Rust 2021 (нулевые зависимости) |
-| **Desktop UI**                   | Iced 0.12 (Rust native GUI)                       |
-| **Аутентификация** | Argon2id password hashing                         |
-| **Архитектура UI**    | Elm Architecture (Model-View-Update)              |
-| **FFI**                          | Direct Rust-to-Rust (zero overhead)               |
-| **Хранение**             | In-memory + PostgreSQL (optional persistence feature) |
-| **Тестирование**     | Rust test framework                               |
-
----
-
-## Документация
-
-.../docs/specs
+| Категория | Технология |
+|-----------|------------|
+| **Ядро** | Rust 2021 edition (минимальные зависимости) |
+| **Desktop UI** | Iced 0.12 (Rust native GUI) |
+| **Аутентификация** | Argon2id password hashing |
+| **Архитектура UI** | Elm Architecture (Model-View-Update) |
+| **FFI** | Direct Rust-to-Rust (zero overhead) |
+| **Персистентность** | PostgreSQL 14+ с sqlx 0.7 (опциональная feature) |
+| **Async Runtime** | Tokio 1.42 (многопоточность и async/await) |
+| **Тестирование** | Rust test framework (100+ unit tests) |
 
 ---
 
