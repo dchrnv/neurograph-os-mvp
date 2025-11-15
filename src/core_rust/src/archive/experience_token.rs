@@ -282,12 +282,15 @@ mod tests {
         let ep_id = token.episode_id;
         let step = token.step_number;
         let rew = token.reward;
+        let token_state = token.state;
+        let token_action = token.action;
+        let token_hash = token.adna_version_hash;
         assert_eq!(ep_id, 1);
         assert_eq!(step, 5);
         assert_eq!(rew, 10.5);
-        assert_eq!(token.state, state);
-        assert_eq!(token.action, action);
-        assert_eq!(token.adna_version_hash, adna_hash);
+        assert_eq!(token_state, state);
+        assert_eq!(token_action, action);
+        assert_eq!(token_hash, adna_hash);
     }
 
     #[test]
