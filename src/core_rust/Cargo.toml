@@ -42,6 +42,9 @@ dotenv = { version = "0.15", optional = true }
 rand = "0.8"
 tokio = { version = "1.42", features = ["rt", "macros", "time"] }
 
+# Benchmarking with Criterion.rs
+criterion = { version = "0.5", features = ["html_reports"] }
+
 [lib]
 name = "neurograph_core"
 path = "src/lib.rs"
@@ -53,25 +56,28 @@ python = ["pyo3"]  # Enable Python bindings with --features python
 demo-tokio = ["tokio/rt-multi-thread", "tokio/time"]
 persistence = ["sqlx", "dotenv"]  # Enable PostgreSQL persistence with --features persistence
 
-[[bin]]
-name = "token-demo"
-path = "src/bin/demo.rs"
+# Temporarily disabled due to packed struct reference errors
+#[[bin]]
+#name = "token-demo"
+#path = "src/bin/demo.rs"
 
-[[bin]]
-name = "connection-demo"
-path = "src/bin/connection-demo.rs"
+#[[bin]]
+#name = "connection-demo"
+#path = "src/bin/connection-demo.rs"
 
-[[bin]]
-name = "grid-demo"
-path = "src/bin/grid-demo.rs"
+# Temporarily disabled due to compilation errors - will fix in future update
+#[[bin]]
+#name = "grid-demo"
+#path = "src/bin/grid-demo.rs"
 
-[[bin]]
-name = "integration-demo"
-path = "src/bin/integration-demo.rs"
+#[[bin]]
+#name = "integration-demo"
+#path = "src/bin/integration-demo.rs"
 
-[[bin]]
-name = "graph-demo"
-path = "src/bin/graph-demo.rs"
+# Missing file
+#[[bin]]
+#name = "graph-demo"
+#path = "src/bin/graph-demo.rs"
 
 [[bin]]
 name = "experience-stream-demo"
@@ -97,3 +103,23 @@ required-features = ["demo-tokio"]
 name = "persistence-demo"
 path = "src/bin/persistence-demo.rs"
 required-features = ["demo-tokio", "persistence"]
+
+[[bench]]
+name = "token_bench"
+harness = false
+
+[[bench]]
+name = "grid_bench"
+harness = false
+
+[[bench]]
+name = "graph_bench"
+harness = false
+
+[[bench]]
+name = "experience_stream_bench"
+harness = false
+
+[[bench]]
+name = "intuition_bench"
+harness = false

@@ -2,7 +2,8 @@
 ///
 /// Demonstrates the core functionality of NeuroGraph OS Token V2.0
 
-use neurograph_core::{Token, CoordinateSpace, EntityType, flags};
+use neurograph_core::{Token, CoordinateSpace, EntityType};
+use neurograph_core::token::flags;
 
 fn main() {
     println!("=== NeuroGraph OS Token V2.0 Demo ===\n");
