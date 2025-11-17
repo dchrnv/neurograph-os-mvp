@@ -1,6 +1,6 @@
 {
   "neurograph_os": {
-    "version": "0.21.0 - Desktop UI v2.0 (Cyberpunk Edition)",
+    "version": "0.21.0 - Desktop UI v2.0",
     "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core)",
     "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA) + Desktop UI v2.0 - PRODUCTION",
     "last_updated": "2025-11-01",
