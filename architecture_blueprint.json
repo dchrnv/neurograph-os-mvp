@@ -1,453 +1,101 @@
 {
-  "neurograph_os": {
-    "version": "0.21.0 - Desktop UI v2.0",
-    "architecture_style": "pure-rust-architecture (Desktop UI + Rust Core)",
-    "status": "Rust Core (Token + Connection + Grid + Graph + Guardian + CDNA) + Desktop UI v2.0 - PRODUCTION",
-    "last_updated": "2025-11-01",
+  "neurograph": {
+    "version": "0.28.3",
+    "license": "AGPL-3.0",
+    "last_updated": "2025-11-17",
+    "description": "Высокопроизводительная система пространственных вычислений на основе токенов",
+
+    "architecture": {
+      "style": "Pure Rust - Desktop UI + Core modules",
+      "core_modules": [
+        "Token (64 bytes, 8D semantic space)",
+        "Connection (32 bytes, 40+ types, force physics)",
+        "Grid (8D spatial indexing, KNN)",
+        "Graph (topology, pathfinding, BFS/DFS)",
+        "Guardian (validation, events 3.5M/sec)",
+        "CDNA (constitutional layer, 384 bytes)",
+        "ADNA (adaptive DNA, evolution)",
+        "ExperienceStream (event processing)",
+        "ExperienceToken (128 bytes, sensorimotor)",
+        "Intuition (reward appraisers)",
+        "ActionController (E2E execution)",
+        "Persistence (PostgreSQL backend)"
+      ],
+      "ui": "Iced desktop app - cyberpunk theme, direct FFI access",
+      "ffi": "Optional PyO3 bindings for Python (10-100x speedup)"
+    },
+
+    "principles": {
+      "token_based": "8D semantic space (L1-L8: Physical, Sensory, Motor, Emotional, Cognitive, Social, Temporal, Abstract)",
+      "performance_first": "Rust zero-cost abstractions, cache-friendly structures (64-byte alignment)",
+      "native_first": "Direct FFI instead of REST API, microseconds not milliseconds",
+      "field_physics": "Force-based semantic fields with attraction/repulsion",
+      "constitutional": "CDNA/ADNA governance with validation and events",
+      "modular": "Independent composable modules",
+      "organic_growth": "Project grows naturally without artificial scope limits"
+    },
+
+    "code_standards": {
+      "license": "GNU Affero General Public License v3.0 (AGPL-3.0)",
+      "license_headers": {
+        "required_in": ["All Rust source files (*.rs)", "All Python source files (*.py)", "Main executable scripts"],
+        "not_required_in": ["Configuration files (*.json, *.toml, *.yaml)", "Documentation (*.md)", "Build artifacts", "Test data"]
+      },
+      "copyright": "Copyright (C) 2024-2025 Chernov Denys",
+      "effective_date": "All code written after 2025-11-17 is under AGPL-3.0"
+    },
 
     "current_status": {
-      "completed": [
-        "✅ Token V2.0 Rust (v0.12.0) - 64 bytes, 8D semantic space",
-        "✅ Connection V1.0 Rust (v0.13.0) - 32 bytes, 40+ types",
-        "✅ Grid V2.0 Rust (v0.15.0) - 8D spatial indexing, KNN, field physics",
-        "✅ Graph V2.0 Rust (v0.16.0) - topology, pathfinding, BFS/DFS",
-        "✅ Guardian + CDNA V2.1 Rust (v0.17.0) - constitutional layer, validation, events (3.5M/sec)",
-        "✅ Python FFI bindings (v0.14.0) - PyO3, 10-100x speedup",
-        "✅ Desktop UI v2.0 (v0.21.0) - Cyberpunk Edition with dual-mode system, metrics, modules",
-        "✅ Project cleanup (Hielo) - removed Python modules, ui/web, old docs"
-      ],
-      "in_progress": [],
-      "planned": [
-                 
-      ]
+      "completed": "v0.27.0 - Testing & Benchmarking baseline (10,000+ events/sec)",
+      "latest": "v0.28.3 - License AGPL-3.0, architecture blueprint refactoring",
+      "stable": "All core modules production-ready",
+      "next": "TBD - Exploring next development direction"
     },
 
-    "core_principles": {
-      "token_based_computing": "Токен-ориентированные вычисления - дискретные единицы информации в 8D семантическом пространстве",
-      "spatial_intelligence": "Пространственное представление данных (L1-L8) вместо абстрактных embeddings",
-      "performance_first": "Rust для всего критичного, zero-cost abstractions, cache-friendly structures",
-      "native_first": "Desktop-first подход, direct FFI вместо REST API, native performance",
-      "modular_design": "Модули как мининейронки - независимые, композируемые, тестируемые",
-      "organic_growth": "Проект растет органически, не сужаем scope искусственно"
+    "performance": {
+      "token_ops": "10-20x faster than Python",
+      "connection_ops": "10-25x faster than Python",
+      "serialization": "50-100x faster (zero-copy)",
+      "events": "3.5M/sec (Guardian pub/sub)",
+      "event_processing": "10,000+ events/sec",
+      "memory": "64 bytes per token, 32 bytes per connection, 128 bytes per experience token"
     },
 
-    "architecture_overview": {
-      "description": "Единый процесс: Desktop UI (Iced) + Rust Core через direct FFI",
-      "diagram": "Desktop UI (iced) -> CoreBridge -> Rust Core (Token/Grid/Graph/Guardian)",
-      "advantages": [
-        "Микросекунды вместо миллисекунд (no HTTP overhead)",
-        "Типобезопасность на этапе компиляции",
-        "Один процесс (проще отладка)",
-        "Zero-copy operations где возможно",
-        "Shared memory через Arc<Mutex<T>>"
-      ]
-    },
-
-    "architecture_layers": {
-      "desktop_ui": {
-        "status": "✅ v2.0 COMPLETE ",
-        "version": "0.21.0",
-        "location": "src/desktop/",
-        "framework": "iced 0.12 (Elm architecture)",
-        "language": "Rust 2021",
-        "design_philosophy": "Cyberpunk aesthetic with dual-mode system",
-        "characteristics": [
-          "Native Rust GUI (no Electron)",
-          "Direct FFI access to core (zero latency)",
-          "Argon2id authentication (User/Root modes)",
-          "Unity-style layout (80px left dock + workspace)",
-          "Cyberpunk theme (neon colors: #00ffcc, #3399ff, #9966ff)",
-          "Dual-mode visual system (User: rounded/cyan, Root: sharp/orange)",
-          "Real-time system metrics visualization",
-          "Custom StyleSheet for all components"
-        ],
-        "color_palette": {
-          "backgrounds": ["#0a0a0a", "#141414", "#1a1a1a", "#252525"],
-          "text": ["#e0e0e0", "#a0a0a0", "#606060"],
-          "accents": ["#00ffcc (primary)", "#3399ff (blue)", "#9966ff (purple)"],
-          "status": ["#33ff66 (ok)", "#ffaa33 (warning)", "#ff3366 (critical)"],
-          "modes": ["#00ffcc33 (user)", "#ff6600 (root)"]
-        },
-        "components": {
-          "main": "src/desktop/src/main.rs - entry point",
-          "app": "src/desktop/src/app.rs - main application state (Elm architecture)",
-          "auth": "src/desktop/src/auth/mod.rs - Argon2id authentication",
-          "core_bridge": "src/desktop/src/core/mod.rs - FFI wrapper for Rust core",
-          "workspaces": "src/desktop/src/workspaces/mod.rs - all UI screens with custom styles",
-          "theme": "src/desktop/src/theme.rs - cyberpunk color palette and constants",
-          "metrics": "src/desktop/src/metrics.rs - system metrics visualization (progress bars)"
-        },
-        "workspaces": {
-          "welcome": "HOME - Home screen with ASCII logo and system status",
-          "chat": "CHAT - Interactive dialog with dual-mode UI (User/Root visual difference)",
-          "status": " Real-time metrics (CPU, Memory, Temperature, Disk I/O, Network)",
-          "modules": " Module Manager (Token, Connection, Grid, Graph, Guardian status)",
-          "settings": " Module configuration",
-          "admin": " Admin Panel (Root mode only, CDNA editing)",
-          "lock": "Screen lock"
-        },
-        "core_bridge": {
-          "description": "FFI wrapper providing high-level API to Desktop UI",
-          "structure": {
-            "grid": "Arc<Mutex<Grid>> - spatial indexing",
-            "graph": "Arc<Mutex<Graph>> - topology",
-            "guardian": "Arc<Mutex<Guardian>> - validation and events"
-          },
-          "api": {
-            "process_message": "High-level command processor (status, create_token, help)",
-            "get_status": "System statistics (token count, graph size)",
-            "create_token": "Create and validate token",
-            "validate": "Guardian validation wrapper"
-          }
-        },
-        "technical_notes": {
-          "iced_0_12_limitations": [
-            "❌ No built-in Canvas API - using progress_bar for metrics instead",
-            "✅ Custom StyleSheet implementation for all cyberpunk styling",
-            "✅ Conditional styling via structs with is_root boolean field"
-          ],
-          "dual_mode_implementation": "Single struct with is_root: bool for conditional styling (type-safe)",
-          "metrics_visualization": "Progress bars with color-coded thresholds (CPU: green→blue→purple→red based on usage)"
-        },
-        "implementation_history": {
-          "v0.20.0": "✅ Phase 1 - Auth + Navigation + CoreBridge demo",
-          "v0.20.1": "✅ Project cleanup and refactoring",
-          "v0.21.0": "✅ Cyberpunk Edition - complete UI redesign with dual-mode, metrics, modules"
-        }
-      },
-
-      "core_rust": {
-        "status": "✅ PRODUCTION READY",
-        "location": "src/core_rust/",
-        "language": "Rust 2021 Edition",
-        "dependencies": "Zero for core, PyO3 for FFI (optional)",
-        "modules": {
-          "token": {
-            "status": "✅ v0.12.0 - PRODUCTION READY",
-            "version": "2.0",
-            "size": "64 bytes",
-            "file": "src/core_rust/src/token.rs (~600 lines)",
-            "description": "Атомарная единица информации в 8D пространстве",
-            "structure": {
-              "coordinates": "48 bytes - 8 spaces × 3 axes × i16",
-              "id": "4 bytes - u32 (domain + entity_type + local_id)",
-              "flags": "2 bytes - u16 (system + entity + user flags)",
-              "weight": "4 bytes - f32",
-              "field_radius": "1 byte - u8 (0.00-2.55)",
-              "field_strength": "1 byte - u8 (0.0-1.0)",
-              "timestamp": "4 bytes - u32 (Unix timestamp)"
-            },
-            "coordinate_spaces": {
-              "L1_Physical": "Physical 3D space (±327.67m, scale=100)",
-              "L2_Sensory": "Sensory perception (salience, valence, novelty, scale=10000)",
-              "L3_Motor": "Motor control (velocity, acceleration, angular, scale=1000)",
-              "L4_Emotional": "VAD model (valence, arousal, dominance, scale=10000)",
-              "L5_Cognitive": "Cognitive load (load, abstraction, confidence, scale=10000)",
-              "L6_Social": "Social interaction (distance, status, belonging, scale=10000)",
-              "L7_Temporal": "Time (offset, duration, frequency, scale=100/1000)",
-              "L8_Abstract": "Semantics (similarity, causality, modality, scale=10000)"
-            },
-            "performance": {
-              "creation": "~10ns",
-              "serialization": "zero-copy",
-              "memory": "exactly 64 bytes",
-              "speedup_vs_python": "10-20x"
-            },
-            "tests": "12+ unit tests"
-          },
-
-          "connection": {
-            "status": "✅ v0.13.0 - PRODUCTION READY",
-            "version": "1.0",
-            "size": "32 bytes",
-            "file": "src/core_rust/src/connection.rs (~450 lines)",
-            "description": "Типизированные связи с физической моделью",
-            "structure": {
-              "from_id": "4 bytes - u32",
-              "to_id": "4 bytes - u32",
-              "connection_type": "2 bytes - u16 (40+ types)",
-              "flags": "2 bytes - u16",
-              "pull_strength": "4 bytes - f32 (attraction/repulsion)",
-              "preferred_distance": "4 bytes - f32",
-              "rigidity": "4 bytes - f32 (spring stiffness)",
-              "level_mask": "1 byte - u8 (8-level activation)",
-              "activation_count": "4 bytes - u32",
-              "created_at": "4 bytes - u32",
-              "last_activated": "4 bytes - u32"
-            },
-            "connection_types": {
-              "semantic": "Synonym, Antonym, Hypernym, Hyponym, Meronym, Holonym",
-              "causal": "Cause, Effect, EnabledBy, PreventedBy",
-              "temporal": "Before, After, During, Simultaneous",
-              "spatial": "Near, Far, Inside, Outside, Above, Below",
-              "logical": "And, Or, Not, Implies, Equivalent",
-              "associative": "Similar, Different, Related, Cooccurs",
-              "structural": "PartOf, Contains, MemberOf, SubclassOf, InstanceOf",
-              "functional": "Uses, UsedBy, Requires, Produces, Consumes",
-              "emotional": "Likes, Dislikes, Fears, Desires",
-              "rules": "Constraint, Condition, Consequence",
-              "metaphorical": "MetaphorFor, Symbolizes",
-              "dynamic": "Activates, Inhibits, Modulates"
-            },
-            "physical_model": {
-              "formula": "force = (preferred_distance - current_distance) × rigidity × pull_strength",
-              "pull_strength": ">0 attraction, <0 repulsion",
-              "rigidity": "0.0-1.0 (spring stiffness)"
-            },
-            "performance": {
-              "creation": "~12ns",
-              "force_calc": "~5ns",
-              "memory": "exactly 32 bytes",
-              "speedup_vs_python": "10-25x"
-            },
-            "tests": "10+ unit tests"
-          },
-
-          "grid": {
-            "status": "✅ v0.15.0 - PRODUCTION READY",
-            "version": "2.0",
-            "file": "src/core_rust/src/grid.rs (~430 lines)",
-            "description": "8-мерная пространственная индексация",
-            "characteristics": [
-              "8 independent spatial indexes (L1-L8)",
-              "Bucket-based indexing (configurable bucket_size)",
-              "Sparse representation (only occupied cells)",
-              "KNN search (K-Nearest Neighbors)",
-              "Range queries (find all within radius)",
-              "Field influence (linear falloff)",
-              "Density calculations",
-              "Zero-copy token storage (HashMap<u32, Token>)"
-            ],
-            "api": {
-              "token_management": "add, remove, get, len, is_empty",
-              "spatial_queries": "find_neighbors (KNN), range_query",
-              "field_calculations": "calculate_field_influence, calculate_density",
-              "configuration": "GridConfig (bucket_size, density_threshold, min_field_nodes)"
-            },
-            "performance": {
-              "add_token": "50-100ns",
-              "find_neighbors": "5-20μs (k=10, N=1000)",
-              "range_query": "5-20μs (radius=10, N=1000)",
-              "memory_10k_tokens": "1-2MB",
-              "complexity": "O(k) where k = tokens in searched buckets"
-            },
-            "tests": "6+ unit tests"
-          },
-
-          "graph": {
-            "status": "✅ v0.16.0 - PRODUCTION READY",
-            "version": "2.0",
-            "file": "src/core_rust/src/graph.rs (~1300 lines)",
-            "description": "Топологическая навигация и поиск путей",
-            "characteristics": [
-              "Adjacency lists (O(1) neighbor access)",
-              "BFS/DFS traversal with iterators",
-              "Shortest path (BFS)",
-              "Weighted paths (Dijkstra)",
-              "Subgraph extraction (induced + ego-networks)",
-              "Connection queries by type",
-              "Bidirectional edge support"
-            ],
-            "api": {
-              "graph_management": "add_node, add_edge, remove_node, remove_edge",
-              "topology_queries": "neighbors, in_neighbors, out_neighbors, degree",
-              "traversal": "bfs_iter, dfs_iter",
-              "pathfinding": "shortest_path (BFS), dijkstra_path",
-              "subgraphs": "induced_subgraph, ego_network",
-              "statistics": "node_count, edge_count"
-            },
-            "performance": {
-              "add_node": "O(1)",
-              "add_edge": "O(1)",
-              "neighbors": "O(1) access, O(k) iteration",
-              "bfs": "O(V + E)",
-              "shortest_path": "O(V + E)",
-              "dijkstra": "O((V + E) log V)"
-            },
-            "tests": "10+ unit tests"
-          },
-
-          "guardian_cdna": {
-            "status": "✅ v0.17.0 - PRODUCTION READY",
-            "version": "Guardian 1.0 + CDNA 2.1",
-            "files": {
-              "cdna": "src/core_rust/src/cdna.rs (~569 lines)",
-              "guardian": "src/core_rust/src/guardian.rs (~719 lines)"
-            },
-            "description": "Конституционный слой с валидацией и событиями",
-            "cdna": {
-              "size": "384 bytes (6 cache lines)",
-              "structure": {
-                "version": "4 bytes - major.minor.patch + reserved",
-                "physical_constraints": "24 bytes - min/max для L1-L8",
-                "token_limits": "24 bytes - max tokens, connections, density",
-                "connection_rules": "24 bytes - max per token, allowed types",
-                "evolution_params": "24 bytes - mutation rates, selection",
-                "profile": "4 bytes - active profile ID",
-                "checksum": "4 bytes - FNV-1a validation",
-                "reserved": "276 bytes - future expansion"
-              },
-              "profiles": [
-                "Default - balanced constraints",
-                "Explorer - relaxed limits, high mutation",
-                "Analyst - strict validation, low mutation",
-                "Creative - high abstraction, flexible rules"
-              ],
-              "validation": "FNV-1a checksum for integrity"
-            },
-            "guardian": {
-              "responsibilities": [
-                "Token validation (coordinates, flags, fields)",
-                "Connection validation (types, forces, distances)",
-                "CDNA version control (update, rollback, history)",
-                "Event pub/sub system (3.5M events/sec)",
-                "Profile management"
-              ],
-              "event_system": {
-                "types": "TokenCreated, TokenModified, ConnectionCreated, CDNAUpdated, ValidationFailed",
-                "performance": "3.5M events/sec",
-                "subscribers": "multiple handlers per event type"
-              },
-              "api": {
-                "validation": "validate_token, validate_connection",
-                "cdna_management": "update_cdna, rollback_cdna, get_cdna_history",
-                "events": "subscribe, publish, event_count",
-                "profiles": "set_profile, get_profile"
-              }
-            },
-            "performance": {
-              "token_validation": "~100ns",
-              "connection_validation": "~150ns",
-              "event_publish": "~280ns (3.5M/sec)",
-              "cdna_checksum": "~50ns"
-            },
-            "tests": "70+ unit tests"
-          },
-
-          "ffi": {
-            "status": "✅ v0.14.0 - PRODUCTION READY (optional)",
-            "location": "src/core_rust/src/ffi/",
-            "description": "Python FFI bindings через PyO3",
-            "note": "Используется опционально, Desktop UI работает напрямую",
-            "files": {
-              "token": "src/core_rust/src/ffi/token.rs (~400 lines)",
-              "connection": "src/core_rust/src/ffi/connection.rs (~460 lines)",
-              "grid": "src/core_rust/src/ffi/grid.rs (~240 lines)",
-              "graph": "src/core_rust/src/ffi/graph.rs (~350 lines)",
-              "guardian": "src/core_rust/src/ffi/guardian.rs (~900 lines)"
-            },
-            "python_api": "from neurograph import Token, Connection, Grid, Graph, Guardian",
-            "speedup": "10-100x vs pure Python",
-            "build": "maturin develop --release --features python"
-          }
-        }
-      },
-
-      "python_legacy": {
-        "status": "⏸️ DEPRECATED (kept for reference)",
-        "location": "src/core/",
-        "note": "Python modules deprecated after Rust rewrite, minimal Python code remains",
-        "remaining": {
-          "token_v2": "src/core/token/token_v2.py - FFI wrapper for compatibility"
-        },
-        "removed_in_hielo": [
-          "src/core/spatial/ - replaced by Grid V2.0 Rust",
-          "src/core/graph/ - replaced by Graph V2.0 Rust",
-          "src/core/events/ - replaced by Guardian events",
-          "src/core/dna/ - replaced by CDNA Rust"
-        ]
-      }
-    }
-
-    ,"roadmap":
-    {
-      "v0_20_1_hielo": {
-        "status": "✅ COMPLETED (2025-10-29)",
-        "description": "Project cleanup and Desktop UI foundation",
-        "completed": [
-          "✅ Removed ui/web (React dashboard)",
-          "✅ Removed api_mvp (FastAPI server)",
-          "✅ Removed desktop/.venv (error)",
-          "✅ Cleaned git history (removed target/ - 1.6GB)",
-          "✅ Updated .gitignore (Rust artifacts)",
-          "✅ Simplified git tags (mvp, hielo, v0.20.0, v0.20.1)",
-          "✅ Desktop UI Phase 1 (auth, navigation, CoreBridge demo)"
-        ]
-      },
-      "v0_21_desktop_ui_v2": {
-        "status": "✅ COMPLETED (2025-11-01)",
-        "description": "Desktop UI v2.0 - Cyberpunk Edition",
-        "completed": [
-          "✅ Cyberpunk color palette (#00ffcc, #3399ff, #9966ff neon accents)",
-          "✅ Dual-mode visual system (User: cyan/rounded, Root: orange/sharp)",
-          "✅ ASCII icon Dock [≈] [◐] [⚙] [◉] [⬡] [!]",
-          "✅ System metrics visualization (CPU, Memory, Temperature, Disk I/O, Network)",
-          "✅ Module Manager workspace",
-          "✅ Custom StyleSheet for all components",
-          "✅ Chat with dual-mode UI differentiation",
-          "✅ Complete specification documentation (DESKTOP_UI_SPEC_V2.md)"
-        ],
-        "result": "Production-ready cyberpunk UI with dual-mode system"
-      
-      }
+    "structure": {
+      "core_rust": "src/core_rust/ - All Rust modules (~10,000 lines)",
+      "desktop_ui": "src/desktop/ - Iced GUI (~1,500 lines)",
+      "specs": "docs/specs/ - Module specifications",
+      "tests": "100+ unit tests, integration tests, benchmarks"
     },
 
     "documentation": {
-      "current": [
-        "README.md - main documentation (updated for v0.21.0)",
-        "project-reference-map.md - principles and aesthetics v2.0",
-        "architecture_blueprint.json - this file",
-        "docs/specs/TOKEN_V2_RUST.md",
-        "docs/specs/CONNECTION_V1_RUST.md",
-        "docs/specs/GRID_V2_RUST.md",
-        "docs/specs/GRAPH_V2_RUST.md",
-        "docs/specs/GUARDIAN_CDNA_RUST.md",
-        "docs/specs/DESKTOP_UI_SPEC_V2.md - Cyberpunk Edition (v0.21.0)",
-        "docs/specs/UI_Control_Panel_V2.md - design system",
-        "docs/specs/UI_Windows_System_V2.md - window system",
-        "docs/specs/arch/DESKTOP_UI_SPEC.md - v1.0 archived",
-        "docs/FFI_INTEGRATION.md"
-      ],
-      "removed_in_cleanup": [
-        "Old version docs (v0.10-v0.17 scattered)",
-        "Python implementation details",
-        "REST API documentation"
+      "main": "README.md - project overview",
+      "specs": "docs/specs/ - detailed module specifications",
+      "history": "docs/PROJECT_HISTORY.md - version history",
+      "roadmap": "ROADMAP.md - future plans",
+      "contributing": "CONTRIBUTING.md - how to contribute",
+      "architecture": "architecture_blueprint.json - this file",
+      "key_specs": [
+        "docs/token_extended_spec.md - Token V2.0",
+        "docs/specs/Testing_Benchmarking_v0.27.0.md - Performance baseline",
+        "docs/specs/Persistence_v0.26.0.md - PostgreSQL persistence",
+        "src/core_rust/PERSISTENCE_SETUP.md - Database setup"
       ]
     },
 
-    "deployment": {
-      "target_platform": "Old laptop (limited resources)",
-      "constraints": {
-        "ram": "~8GB (forces efficient memory usage)",
-        "cpu": "No GPU (symbolic AI instead of neural networks)",
-        "storage": "Limited (compact binary formats)"
-      },
-      "advantages": {
-        "efficiency": "Rust optimization critical, forces good design",
-        "privacy": "Local execution, no cloud dependency",
-        "portability": "If runs on old laptop, runs anywhere"
-      },
-      "build": {
-        "desktop": "cd src/desktop && cargo build --release",
-        "core_only": "cd src/core_rust && cargo build --release",
-        "python_ffi": "cd src/core_rust && maturin develop --release --features python"
-      }
+    "build": {
+      "desktop": "cd src/desktop && cargo build --release",
+      "core": "cd src/core_rust && cargo build --release",
+      "python_ffi": "cd src/core_rust && maturin develop --release --features python",
+      "tests": "cd src/core_rust && cargo test",
+      "benchmarks": "cd src/core_rust && cargo bench"
     },
 
-    "metrics": {
-      "code_stats": {
-        "rust_core": "~3500 lines (Token + Connection + Grid + Graph + Guardian + CDNA)",
-        "desktop_ui": "~1500 lines (v2.0 - all workspaces + metrics + custom styles)",
-        "tests": "100+ unit tests",
-        "docs": "~7000 lines (specs + README + v2.0 UI docs)"
-      },
-      "performance": {
-        "token_ops": "10-20x faster than Python",
-        "connection_ops": "10-25x faster than Python",
-        "serialization": "50-100x faster (zero-copy)",
-        "events": "3.5M/sec (Guardian pub/sub)",
-        "memory": "64 bytes per token, 32 bytes per connection"
-      }
+    "deployment": {
+      "target": "Old laptop with limited resources (~8GB RAM)",
+      "philosophy": "If it runs on old laptop, it runs anywhere",
+      "constraints": "No GPU - symbolic AI instead of neural networks",
+      "advantages": "Forces efficiency, privacy (local execution), portability"
     }
   }
 }
