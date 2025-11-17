@@ -28,7 +28,6 @@
 
 use std::collections::{HashMap, HashSet, VecDeque, BinaryHeap};
 use std::cmp::Ordering;
-use crate::Connection;
 
 /// Node identifier (Token.id)
 pub type NodeId = u32;
@@ -542,7 +541,7 @@ impl Graph {
 
     /// BFS iterator for lazy traversal
     /// Returns iterator over (node_id, depth) pairs
-    pub fn bfs_iter(&self, start_id: NodeId, max_depth: Option<usize>) -> BFSIterator {
+    pub fn bfs_iter(&self, start_id: NodeId, max_depth: Option<usize>) -> BFSIterator<'_> {
         BFSIterator::new(self, start_id, max_depth)
     }
 
@@ -603,7 +602,7 @@ impl Graph {
 
     /// DFS iterator for lazy traversal
     /// Returns iterator over (node_id, depth) pairs
-    pub fn dfs_iter(&self, start_id: NodeId, max_depth: Option<usize>) -> DFSIterator {
+    pub fn dfs_iter(&self, start_id: NodeId, max_depth: Option<usize>) -> DFSIterator<'_> {
         DFSIterator::new(self, start_id, max_depth)
     }
 

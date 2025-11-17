@@ -1,4 +1,4 @@
-# Участие в разработке NeuroGraph OS
+# Участие в разработке NeuroGraph
 
 Спасибо за интерес к проекту! Мы рады любому вкладу.
 
@@ -50,27 +50,39 @@ git checkout -b bugfix/issue-123
 ### Шаг 3: Разработка
 
 ```bash
-# Создайте виртуальное окружение
-python3 -m venv .venv
-source .venv/bin/activate
+# Rust core development
+cd src/core_rust
 
-# Установите зависимости
-pip install -r requirements.txt
+# Build library
+cargo build --lib
 
-# Установите pre-commit hooks (если есть)
-# pre-commit install
+# Run tests
+cargo test --lib
+
+# Run benchmarks
+cargo bench
+
+# Run integration tests
+cargo test --tests
 ```
 
 ### Шаг 4: Тестирование
 
 ```bash
-# Запустите тесты
-python -m pytest src/core/token/tests/ -v
+# Запустить все тесты библиотеки
+cd src/core_rust
+cargo test --lib
 
-# Проверьте стиль кода (если настроено)
-# black src/
-# isort src/
-# flake8 src/
+# Запустить конкретный тест
+cargo test --lib test_name
+
+# Запустить с выводом
+cargo test --lib -- --nocapture
+
+# Integration tests
+cargo test --test learning_loop_e2e
+cargo test --test action_controller_e2e
+cargo test --test persistence_e2e
 ```
 
 ### Шаг 5: Коммит
@@ -120,43 +132,50 @@ git push origin feature/your-feature-name
 
 - [ ] Код работает и протестирован
 - [ ] Добавлены тесты для новой функциональности
-- [ ] Документация обновлена
+- [ ] Документация обновлена (README, docs/)
 - [ ] Commit messages следуют формату
 - [ ] Нет конфликтов с main веткой
-- [ ] Код соответствует стилю проекта
+- [ ] `cargo test --lib` проходит без ошибок
+- [ ] `cargo build --lib` компилируется без warnings
 
 ---
 
 ## 🎨 Code Style
 
-### Python
-- PEP 8 compliance
-- Type hints где возможно
-- Docstrings для публичных функций/классов
+### Rust
+- Следуем Rust API Guidelines
+- Используем `cargo fmt` для форматирования
+- Используем `cargo clippy` для линтинга
+- Документируем публичные API с `///` doc comments
 - Максимальная длина строки: 100 символов
 
-```python
-def create_token(
-    entity_type: int,
-    domain: int = 0,
-    weight: float = 0.5
-) -> Token:
-    """
-    Создаёт новый токен с указанными параметрами.
-
-    Args:
-        entity_type: Тип сущности (0-15)
-        domain: Домен (0-15)
-        weight: Вес токена (0.0-1.0)
-
-    Returns:
-        Token: Созданный токен
-    """
-    token_id = create_token_id(get_next_id(), entity_type, domain)
-    return Token(id=token_id, weight=weight)
+```rust
+/// Creates a new token with specified parameters
+///
+/// # Arguments
+///
+/// * `id` - Unique token identifier (u32)
+///
+/// # Returns
+///
+/// New Token instance with default values
+///
+/// # Example
+///
+/// ```
+/// let token = Token::new(42);
+/// assert_eq!(token.id, 42);
+/// ```
+pub fn new(id: u32) -> Self {
+    Self {
+        id,
+        weight: 0.0,
+        // ... other fields
+    }
+}
 ```
 
-### TypeScript/React
+### TypeScript/React (Desktop UI)
 - ESLint rules
 - Functional components с hooks
 - Typed props
@@ -182,32 +201,49 @@ export const TokenCard: React.FC<TokenCardProps> = ({ token, onDelete }) => {
 
 ## 🧪 Тестирование
 
-### Unit Tests
-```python
-# src/core/token/tests/test_your_feature.py
-import pytest
-from src.core.token.token_v2 import Token
+### Unit Tests (Rust)
+```rust
+// src/core_rust/src/token.rs
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-def test_token_creation():
-    """Тест создания токена"""
-    token = Token(id=1)
-    assert token.id == 1
-    assert token.weight == 0.5
+    #[test]
+    fn test_token_creation() {
+        let token = Token::new(42);
+        let token_id = token.id;
+        assert_eq!(token_id, 42);
+    }
+}
 ```
 
-### Integration Tests
-Пишите интеграционные тесты для API endpoints:
+### Integration Tests (Rust)
+```rust
+// src/core_rust/tests/integration/learning_loop_e2e.rs
+#[tokio::test]
+async fn test_full_learning_loop() {
+    // Setup components
+    let mut stream = ExperienceStream::new();
+    let intuition = IntuitionEngine::new();
 
-```python
-# tests/integration/test_api.py
-def test_create_token_endpoint(client):
-    """Тест создания токена через API"""
-    response = client.post("/api/v1/tokens", json={
-        "entity_type": 1,
-        "domain": 0
-    })
-    assert response.status_code == 201
-    assert "id" in response.json()
+    // Test learning loop
+    // ...
+}
+```
+
+### Benchmarks (Rust)
+```rust
+// src/core_rust/benches/token_bench.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+fn bench_token_creation(c: &mut Criterion) {
+    c.bench_function("token_new", |b| {
+        b.iter(|| Token::new(black_box(1)))
+    });
+}
+
+criterion_group!(benches, bench_token_creation);
+criterion_main!(benches);
 ```
 
 ---
@@ -221,27 +257,27 @@ def test_create_token_endpoint(client):
 3. **Шаги воспроизведения** - как повторить баг
 4. **Окружение**:
    - OS: Linux/macOS/Windows
-   - Python версия: 3.10/3.11/3.12
-   - Версия NeuroGraph OS: 0.10.0
+   - Rust версия: `rustc --version`
+   - Версия NeuroGraph: (из Cargo.toml)
 5. **Логи/Скриншоты** - если есть
 
 **Пример:**
 ```markdown
 ### Описание
-API возвращает 500 при создании токена с невалидными координатами
+Token creation fails with panic when coordinates out of bounds
 
 ### Шаги воспроизведения
-1. POST /api/v1/tokens
-2. Передать координаты вне диапазона: {"l1_physical": {"x": 999999}}
-3. Получить 500 ошибку
+1. Create token: `Token::new(1)`
+2. Set coordinates: `token.set_coordinates(L1Physical, 9999.0, 0.0, 0.0)`
+3. Panic occurs
 
 ### Ожидаемое поведение
-Должен вернуться 400 с описанием ошибки валидации
+Should clamp coordinates or return Result<>
 
 ### Окружение
 - OS: Ubuntu 22.04
-- Python: 3.11
-- Version: 0.10.0
+- Rust: 1.75.0
+- Version: v0.27.0
 ```
 
 ---
@@ -261,9 +297,43 @@ API возвращает 500 при создании токена с невал�
 
 Перед началом разработки, ознакомьтесь с:
 
-- [README.md](README.md) - общее описание
-- [architecture_blueprint.json](architecture_blueprint.json) - архитектура
-- [docs/token_extended_spec.md](docs/token_extended_spec.md) - спецификация Token v2.0
+- [README.md](README.md) - общее описание проекта
+- [ROADMAP.md](ROADMAP.md) - план развития
+- [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) - история версий
+- [docs/reference-map.md](docs/reference-map.md) - карта документации
+- [architecture_blueprint.json](architecture_blueprint.json) - архитектура системы
+
+**Основные модули:**
+- `src/core_rust/src/token.rs` - Token V2.0 (64 bytes)
+- `src/core_rust/src/connection.rs` - Connection V2.0 (32 bytes)
+- `src/core_rust/src/grid.rs` - 8D Spatial indexing
+- `src/core_rust/src/graph.rs` - Topological navigation
+- `src/core_rust/src/cdna.rs` - Constitutional DNA
+- `src/core_rust/src/adna.rs` - Active DNA (Policy Engine)
+- `src/core_rust/src/experience_stream.rs` - Experience tracking
+- `src/core_rust/src/intuition_engine.rs` - Pattern detection
+- `src/core_rust/src/action_controller.rs` - Action selection
+
+---
+
+## 📝 Правила документации
+
+> См. подробнее в [docs/reference-map.md](docs/reference-map.md)
+
+### Общие правила:
+
+1. **README.md** - только актуальная версия проекта
+2. **PROJECT_HISTORY.md** - вся история разработки
+3. **ROADMAP.md** - только планы (без истории)
+4. **CONTRIBUTING.md** - гайд для контрибьюторов
+5. **reference-map.md** - навигация по документации
+
+### В коде:
+
+- Rust: используем `///` doc comments для публичных API
+- Пишем примеры в docstrings с `# Example`
+- Документируем сложные алгоритмы
+- Комментируем ПОЧЕМУ, а не ЧТО
 
 ---
 
@@ -306,4 +376,4 @@ API возвращает 500 при создании токена с невал�
 
 ---
 
-Спасибо за вклад в NeuroGraph OS! ⚡
+Спасибо за вклад в NeuroGraph! ⚡

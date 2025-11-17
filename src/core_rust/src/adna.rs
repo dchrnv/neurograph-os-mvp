@@ -640,14 +640,18 @@ mod tests {
     fn test_adna_fitness_update() {
         let mut adna = ADNA::new(PolicyType::Linear);
         adna.update_fitness(0.75);
-        assert_eq!(adna.evolution.fitness_score, 0.75);
+        // Copy packed field to avoid unaligned reference
+        let fitness = adna.evolution.fitness_score;
+        assert_eq!(fitness, 0.75);
 
         // Test clamping
         adna.update_fitness(1.5);
-        assert_eq!(adna.evolution.fitness_score, 1.0);
+        let fitness = adna.evolution.fitness_score;
+        assert_eq!(fitness, 1.0);
 
         adna.update_fitness(-0.5);
-        assert_eq!(adna.evolution.fitness_score, 0.0);
+        let fitness = adna.evolution.fitness_score;
+        assert_eq!(fitness, 0.0);
     }
 
     #[test]

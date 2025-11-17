@@ -63,7 +63,7 @@ fn bench_graph_bfs(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {
-                graph.bfs(black_box(0), black_box(None))
+                graph.bfs(black_box(0), black_box(None), |_, _| {})
             })
         });
     }
@@ -90,7 +90,7 @@ fn bench_graph_dfs(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {
-                graph.dfs(black_box(0), black_box(None))
+                graph.dfs(black_box(0), black_box(None), |_, _| {})
             })
         });
     }
@@ -124,7 +124,7 @@ fn bench_graph_shortest_path(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {
-                graph.shortest_path(black_box(0), black_box((*size - 1) as u32))
+                graph.find_path(black_box(0), black_box((*size - 1) as u32))
             })
         });
     }

@@ -48,11 +48,11 @@ dist/
 target/
 Cargo.lock
 
-# Project reference map (internal development)
-project-reference-map.md
-
 # Architecture archive (internal development specs)
 docs/arch/
+
+# Reference map (internal development navigation)
+reference-map.md
 
 # Roadmap (internal planning)
 ROADMAP.md

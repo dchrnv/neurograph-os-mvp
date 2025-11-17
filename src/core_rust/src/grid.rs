@@ -399,7 +399,6 @@ impl Default for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::EntityType;
 
     #[test]
     fn test_grid_creation() {

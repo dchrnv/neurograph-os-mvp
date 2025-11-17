@@ -659,7 +659,7 @@ impl ExperienceStream {
 
             SamplingStrategy::PrioritizedByReward { alpha } => {
                 // Prioritized sampling based on absolute total reward
-                let mut indices_with_priority: Vec<_> = all_events
+                let indices_with_priority: Vec<_> = all_events
                     .iter()
                     .enumerate()
                     .map(|(i, event)| {
@@ -714,7 +714,7 @@ impl ExperienceStream {
 
             SamplingStrategy::RecencyWeighted { decay } => {
                 // Weight events by recency
-                let mut indices_with_weight: Vec<_> = all_events
+                let indices_with_weight: Vec<_> = all_events
                     .iter()
                     .enumerate()
                     .map(|(i, _event)| {
@@ -760,7 +760,7 @@ impl ExperienceStream {
                 recency_weight,
             } => {
                 // Combine reward and recency
-                let mut indices_with_weight: Vec<_> = all_events
+                let indices_with_weight: Vec<_> = all_events
                     .iter()
                     .enumerate()
                     .map(|(i, event)| {

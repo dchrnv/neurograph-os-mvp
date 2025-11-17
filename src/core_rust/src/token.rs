@@ -327,10 +327,13 @@ mod tests {
     #[test]
     fn test_token_new() {
         let token = Token::new(42);
-        assert_eq!(token.id, 42);
+        // Copy packed fields to avoid unaligned references
+        let token_id = token.id;
+        let token_weight = token.weight;
+        assert_eq!(token_id, 42);
         assert_eq!(token.local_id(), 42);
         assert!(token.has_flag(flags::ACTIVE));
-        assert_eq!(token.weight, 0.0);
+        assert_eq!(token_weight, 0.0);
     }
 
     #[test]
@@ -409,8 +412,11 @@ mod tests {
         let bytes = token.to_bytes();
         let token2 = Token::from_bytes(&bytes);
 
-        assert_eq!(token2.id, 42);
-        assert_eq!(token2.weight, 0.5);
+        // Copy packed fields to avoid unaligned references
+        let token2_id = token2.id;
+        let token2_weight = token2.weight;
+        assert_eq!(token2_id, 42);
+        assert_eq!(token2_weight, 0.5);
         let coords = token2.get_coordinates(CoordinateSpace::L1Physical);
         assert!((coords[0] - 1.0).abs() < 0.01);
     }
