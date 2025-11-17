@@ -9,15 +9,16 @@
       "style": "Pure Rust - Desktop UI + Core modules",
       "core_modules": [
         "Token (64 bytes, 8D semantic space)",
-        "Connection (32 bytes, 40+ types, force physics)",
+        "Connection v2.0 (64 bytes, 40+ types, learning-capable, 3 mutability tiers)",
         "Grid (8D spatial indexing, KNN)",
         "Graph (topology, pathfinding, BFS/DFS)",
-        "Guardian (validation, events 3.5M/sec)",
+        "Guardian (validation, events 3.5M/sec, proposal gating)",
         "CDNA (constitutional layer, 384 bytes)",
         "ADNA (adaptive DNA, evolution)",
         "ExperienceStream (event processing)",
         "ExperienceToken (128 bytes, sensorimotor)",
-        "Intuition (reward appraisers)",
+        "IntuitionEngine v2.2 (hybrid: ADNA + Connection learning)",
+        "Appraisers (4 reward functions)",
         "ActionController (E2E execution)",
         "Persistence (PostgreSQL backend)"
       ],
@@ -49,7 +50,8 @@
       "completed": "v0.27.0 - Testing & Benchmarking baseline (10,000+ events/sec)",
       "latest": "v0.28.3 - License AGPL-3.0, architecture blueprint refactoring",
       "stable": "All core modules production-ready",
-      "next": "TBD - Exploring next development direction"
+      "planning": "v0.29.0 - Connection v2.0 + IntuitionEngine Hybrid (specs complete)",
+      "next": "Implement learning-capable Connections with three mutability tiers"
     },
 
     "performance": {

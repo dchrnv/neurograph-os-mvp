@@ -1,13 +1,47 @@
-# IntuitionEngine v2.1 - Learning Loop Integration
+# IntuitionEngine v2.2 - Hybrid Learning (ADNA + Connections)
 
-**Version:** 2.1
+**Version:** 2.2 (was 2.1 Statistical, now 2.2 Hybrid)
 **Language:** Rust
-**Status:** Specification
-**Based on:** docs/arch/3/IntuitionEngine.md v2.0
+**Status:** 🚧 In Development
+**Previous Version:** v2.1 (ADNA-only learning)
+**Based on:** Architectural pivot 2025-11-17
+
+## Philosophical Pivot: Why Hybrid?
+
+### The Original Plan (v2.1 → v2.0 Neural)
+
+The original roadmap proposed:
+- v2.1: Statistical learning (t-tests, state binning)
+- v2.0: Neural learning (gradient-based, deep patterns)
+
+**Problem identified**: This focused exclusively on **ADNA** (behavioral policies), ignoring **Connection** learning (causal models).
+
+### The Hybrid Realization (v2.2)
+
+After reflection on Connection vs IntuitionEngine overlap:
+- Connections encode **causal knowledge** ("Action X causes State Y")
+- IntuitionEngine discovers **what works** ("Action X succeeds 75% of time")
+- **These should inform each other!**
+
+**Hybrid Model**:
+1. **ADNA Learning** - behavioral strategies (which appraisers to weight, exploration rate)
+2. **Connection Learning** - causal models (which actions cause which states, with what confidence)
+
+Both use the **same statistical foundation** but update different structures.
+
+### Why Not Neural (Yet)?
+
+The hybrid model postpones neural approach for pragmatic reasons:
+- **Data efficiency**: Statistical works with less data
+- **Interpretability**: Can explain why proposals were made
+- **Incremental**: Can add Connection learning without rewriting everything
+- **Future path**: Can still do Neural v2.3 later, now with both ADNA and Connection targets
 
 ## Overview
 
-`IntuitionEngine` is the analytical brain of the system. It runs in the background, analyzing accumulated experience from `ExperienceStream`, finding correlations between actions (defined by `ADNA`) and their outcomes (`reward` from 4 Appraisers), and generating concrete, testable `Proposal`s to improve `ADNA`.
+`IntuitionEngine` is the analytical brain of the system. It runs in the background, analyzing accumulated experience from `ExperienceStream`, finding correlations between actions and outcomes, and generating concrete `Proposal`s to improve **both**:
+1. **ADNA** - behavioral policies (weights, thresholds, exploration)
+2. **Connections** - causal models (confidence, strength, existence)
 
 ## Key Functions
 
@@ -57,33 +91,79 @@ pub struct ExperienceEvent {
 }
 ```
 
-### Output: Proposal
+### Output: Proposal (Expanded for Hybrid Learning)
 
 ```rust
-/// Proposal for changing ADNA policy
+/// Proposal for changing system state (ADNA or Connections)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Proposal {
-    /// Unique proposal ID
-    pub proposal_id: uuid::Uuid,
+pub enum Proposal {
+    /// Modify existing ADNA policy
+    ModifyADNA {
+        proposal_id: uuid::Uuid,
+        target_policy_id: String,
+        proposed_change: serde_json::Value,  // JSON Patch format
+        justification: String,
+        expected_impact: f64,
+        confidence: f64,
+        created_at: std::time::SystemTime,
+    },
 
-    /// Target entity ID (ADNA rule ID or policy component)
-    pub target_entity_id: String,
+    /// Modify existing Connection (confidence, strength, etc.)
+    ModifyConnection {
+        proposal_id: uuid::Uuid,
+        connection_id: u64,
+        field: ConnectionField,
+        old_value: f32,
+        new_value: f32,
+        justification: String,
+        evidence: Vec<u64>,  // ExperienceEvent IDs
+        expected_impact: f64,
+        confidence: f64,
+        created_at: std::time::SystemTime,
+    },
 
-    /// Proposed change (JSON Patch format)
-    /// Example: {"op": "replace", "path": "/weight", "value": 0.85}
-    pub proposed_change: serde_json::Value,
+    /// Create new hypothesis Connection
+    CreateConnection {
+        proposal_id: uuid::Uuid,
+        token_a_id: u32,
+        token_b_id: u32,
+        connection_type: ConnectionType,
+        initial_strength: f32,
+        initial_confidence: f32,
+        justification: String,
+        evidence: Vec<u64>,
+        expected_impact: f64,
+        confidence: f64,
+        created_at: std::time::SystemTime,
+    },
 
-    /// Justification: data-driven reasoning
-    pub justification: String,
+    /// Delete hypothesis Connection
+    DeleteConnection {
+        proposal_id: uuid::Uuid,
+        connection_id: u64,
+        reason: String,
+        evidence: Vec<u64>,
+        created_at: std::time::SystemTime,
+    },
 
-    /// Expected impact on total reward
-    pub expected_impact: f64,
+    /// Promote Hypothesis → Learnable
+    PromoteConnection {
+        proposal_id: uuid::Uuid,
+        connection_id: u64,
+        evidence_count: u16,
+        justification: String,
+        created_at: std::time::SystemTime,
+    },
+}
 
-    /// Confidence level [0.0, 1.0]
-    pub confidence: f64,
-
-    /// Timestamp when proposal was created
-    pub created_at: std::time::SystemTime,
+/// Fields modifiable in Connection
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum ConnectionField {
+    Confidence,
+    PullStrength,
+    PreferredDistance,
+    LearningRate,
+    DecayRate,
 }
 ```
 
@@ -434,6 +514,59 @@ src/core_rust/src/
 
 ---
 
+## Implementation Plan (v0.29.0)
+
+### Phase 1: Connection v2.0 Foundation
+1. ✅ Spec completed - 64-byte structure with learning fields
+2. ⏳ Implement `Connection` struct in Rust
+3. ⏳ Add `ConnectionMutability` enum
+4. ⏳ Update Grid/Graph to handle 64-byte connections
+5. ⏳ Write unit tests for new fields
+
+### Phase 2: Proposal System Extension
+1. ⏳ Implement `Proposal` enum (ModifyADNA/ModifyConnection/CreateConnection/etc.)
+2. ⏳ Implement `ConnectionField` enum
+3. ⏳ Update `IntuitionEngine` to generate Connection proposals
+4. ⏳ Add causal pattern discovery logic
+
+### Phase 3: Guardian Integration
+1. ⏳ Extend Guardian to validate Connection proposals
+2. ⏳ Add mutability checks (reject Immutable modifications)
+3. ⏳ Add confidence delta validation
+4. ⏳ Add evidence requirement checks
+
+### Phase 4: Learning Algorithms
+1. ⏳ Implement confidence update formula (Bayesian or frequency-based)
+2. ⏳ Implement hypothesis decay mechanism
+3. ⏳ Implement promotion logic (Hypothesis → Learnable)
+4. ⏳ Implement deletion logic (low confidence threshold)
+
+### Phase 5: Integration & Testing
+1. ⏳ E2E test: Create hypothesis, accumulate evidence, promote
+2. ⏳ E2E test: Contradictory evidence → confidence drop → deletion
+3. ⏳ E2E test: Immutable connection protection
+4. ⏳ Benchmark: performance impact of 64-byte connections
+5. ⏳ Update documentation and examples
+
+### Estimated Scope
+- **Connection v2.0**: ~200 LOC (struct, impl, tests)
+- **Proposal extension**: ~150 LOC (enum variants, serialization)
+- **IntuitionEngine updates**: ~300 LOC (causal discovery, proposal generation)
+- **Guardian updates**: ~200 LOC (validation logic)
+- **Tests**: ~400 LOC (unit + integration)
+- **Total**: ~1250 LOC
+
+### Success Criteria
+- [ ] Connection can be created with all three mutability levels
+- [ ] IntuitionEngine generates Connection proposals from experience data
+- [ ] Guardian correctly validates/rejects proposals based on mutability
+- [ ] Hypothesis connections decay and promote as expected
+- [ ] All existing tests pass with 64-byte connections
+- [ ] Performance overhead < 10% compared to V1.0
+
+---
+
 **Version History:**
+- v2.2 (2025-11-17): Hybrid learning - ADNA + Connection learning, architectural pivot
 - v2.1 (2025-01-13): Integration with ExperienceStream v2.1, ADNA v3.1, 4 Appraisers
 - v2.0: Original specification (docs/arch/3/IntuitionEngine.md)
