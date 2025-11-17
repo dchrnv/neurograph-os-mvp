@@ -9,7 +9,7 @@
       "style": "Pure Rust - Desktop UI + Core modules",
       "core_modules": [
         "Token (64 bytes, 8D semantic space)",
-        "Connection v2.0 (64 bytes, 40+ types, learning-capable, 3 mutability tiers)",
+        "Connection v3.0 (64 bytes, 176 types, learning-capable, 3 mutability tiers)",
         "Grid (8D spatial indexing, KNN)",
         "Graph (topology, pathfinding, BFS/DFS)",
         "Guardian (validation, events 3.5M/sec, proposal gating)",
@@ -50,7 +50,7 @@
       "completed": "v0.27.0 - Testing & Benchmarking baseline (10,000+ events/sec)",
       "latest": "v0.28.3 - License AGPL-3.0, architecture blueprint refactoring",
       "stable": "All core modules production-ready",
-      "planning": "v0.29.0 - Connection v2.0 + IntuitionEngine Hybrid (specs complete)",
+      "planning": "v0.29.0 - Connection v3.0 + IntuitionEngine v2.2 Hybrid (specs complete)",
       "next": "Implement learning-capable Connections with three mutability tiers"
     },
 
@@ -60,7 +60,7 @@
       "serialization": "50-100x faster (zero-copy)",
       "events": "3.5M/sec (Guardian pub/sub)",
       "event_processing": "10,000+ events/sec",
-      "memory": "64 bytes per token, 32 bytes per connection, 128 bytes per experience token"
+      "memory": "64 bytes per token, 64 bytes per connection, 128 bytes per experience token"
     },
 
     "structure": {
@@ -79,6 +79,8 @@
       "architecture": "architecture_blueprint.json - this file",
       "key_specs": [
         "docs/token_extended_spec.md - Token V2.0",
+        "docs/specs/Connection_V3_UNIFIED.md - Connection V3.0 learning-capable",
+        "docs/specs/IntuitionEngine_v2.2.md - Hybrid learning for ADNA + Connections",
         "docs/specs/Testing_Benchmarking_v0.27.0.md - Performance baseline",
         "docs/specs/Persistence_v0.26.0.md - PostgreSQL persistence",
         "src/core_rust/PERSISTENCE_SETUP.md - Database setup"
