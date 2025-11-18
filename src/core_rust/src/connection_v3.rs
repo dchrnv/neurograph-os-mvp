@@ -522,6 +522,9 @@ pub enum ProposalError {
 
     /// Evidence threshold not met
     InsufficientEvidence { required: u16, provided: u16 },
+
+    /// Guardian rejected proposal (CDNA constraints violated)
+    GuardianRejected { reason: String },
 }
 
 impl ConnectionV3 {
@@ -660,6 +663,179 @@ impl ConnectionV3 {
             }
             _ => None,
         }
+    }
+}
+
+/// Guardian validation helpers for ConnectionV3
+pub mod guardian_validation {
+    use super::*;
+
+    /// Validate proposal against CDNA constraints (simplified for Phase 3)
+    ///
+    /// This is a lightweight validation that checks basic constraints.
+    /// Full Guardian integration would check against actual CDNA instance.
+    pub fn validate_proposal(
+        connection: &ConnectionV3,
+        proposal: &ConnectionProposal,
+    ) -> Result<(), String> {
+        match proposal {
+            ConnectionProposal::Modify {
+                field, new_value, ..
+            } => {
+                // Check pull_strength range (CDNA typical: -10.0 to +10.0)
+                if matches!(field, ConnectionField::PullStrength) {
+                    if new_value.abs() > 10.0 {
+                        return Err(format!(
+                            "Pull strength {} exceeds CDNA limit ±10.0",
+                            new_value
+                        ));
+                    }
+                }
+
+                // Check preferred_distance range (CDNA typical: 0.01 to 100.0)
+                if matches!(field, ConnectionField::PreferredDistance) {
+                    if *new_value < 0.01 || *new_value > 100.0 {
+                        return Err(format!(
+                            "Preferred distance {} outside CDNA range 0.01-100.0",
+                            new_value
+                        ));
+                    }
+                }
+
+                // Check confidence bounds
+                if matches!(field, ConnectionField::Confidence) {
+                    if *new_value < 0.0 || *new_value > 1.0 {
+                        return Err(format!(
+                            "Confidence {} outside valid range 0.0-1.0",
+                            new_value
+                        ));
+                    }
+                }
+
+                Ok(())
+            }
+
+            ConnectionProposal::Create {
+                connection_type,
+                initial_strength,
+                ..
+            } => {
+                // Validate connection type is known (0x00-0xAF range)
+                if *connection_type > 0xAF {
+                    return Err(format!(
+                        "Unknown connection type 0x{:02X}",
+                        connection_type
+                    ));
+                }
+
+                // Validate initial strength
+                if initial_strength.abs() > 10.0 {
+                    return Err(format!(
+                        "Initial strength {} exceeds CDNA limit ±10.0",
+                        initial_strength
+                    ));
+                }
+
+                Ok(())
+            }
+
+            ConnectionProposal::Delete { .. } => {
+                // Deletion allowed only for hypotheses (already checked in apply_proposal)
+                Ok(())
+            }
+
+            ConnectionProposal::Promote { .. } => {
+                // Promotion validation (already handled in apply_proposal)
+                Ok(())
+            }
+        }
+    }
+
+    /// Check if connection type is allowed by typical CDNA rules
+    ///
+    /// In full implementation, this would check against CDNA.allowed_connection_types
+    /// For Phase 3, we accept all types in the 0x00-0xAF range
+    pub fn is_connection_type_allowed(connection_type: u8) -> bool {
+        connection_type <= 0xAF
+    }
+
+    /// Validate connection meets CDNA constraints after modification
+    ///
+    /// This is called after proposal is applied to ensure result is valid
+    pub fn validate_connection_state(connection: &ConnectionV3) -> Result<(), String> {
+        // Check pull_strength bounds
+        if connection.pull_strength.abs() > 10.0 {
+            return Err(format!(
+                "Pull strength {} exceeds CDNA limit",
+                connection.pull_strength
+            ));
+        }
+
+        // Check preferred_distance bounds
+        if connection.preferred_distance < 0.01 || connection.preferred_distance > 100.0 {
+            return Err(format!(
+                "Preferred distance {} outside CDNA range",
+                connection.preferred_distance
+            ));
+        }
+
+        // Check connection type is known
+        if !is_connection_type_allowed(connection.connection_type) {
+            return Err(format!(
+                "Unknown connection type 0x{:02X}",
+                connection.connection_type
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl ConnectionV3 {
+    /// Apply proposal with Guardian validation
+    ///
+    /// This extends apply_proposal() with CDNA constraint checking
+    pub fn apply_proposal_with_guardian(
+        &mut self,
+        proposal: &ConnectionProposal,
+    ) -> Result<(), ProposalError> {
+        // Step 1: Guardian validation before changes
+        guardian_validation::validate_proposal(self, proposal).map_err(|reason| {
+            ProposalError::GuardianRejected { reason }
+        })?;
+
+        // Step 2: Apply proposal (includes mutability/evidence checks)
+        self.apply_proposal(proposal)?;
+
+        // Step 3: Validate final state against CDNA
+        guardian_validation::validate_connection_state(self).map_err(|reason| {
+            ProposalError::GuardianRejected { reason }
+        })?;
+
+        Ok(())
+    }
+
+    /// Create new Connection from proposal with Guardian validation
+    pub fn from_proposal_with_guardian(
+        proposal: &ConnectionProposal,
+    ) -> Result<Self, ProposalError> {
+        // Validate proposal first
+        let temp_conn = Self::new(1, 2); // Temporary for validation context
+        guardian_validation::validate_proposal(&temp_conn, proposal).map_err(|reason| {
+            ProposalError::GuardianRejected { reason }
+        })?;
+
+        // Create connection
+        let conn = Self::from_proposal(proposal).ok_or(ProposalError::GuardianRejected {
+            reason: "Proposal type not Create".to_string(),
+        })?;
+
+        // Validate final state
+        guardian_validation::validate_connection_state(&conn).map_err(|reason| {
+            ProposalError::GuardianRejected { reason }
+        })?;
+
+        Ok(conn)
     }
 }
 
@@ -1026,5 +1202,219 @@ mod tests {
 
         let conn = ConnectionV3::from_proposal(&proposal);
         assert!(conn.is_none());
+    }
+
+    // ===== Phase 3 Tests: Guardian Integration =====
+
+    #[test]
+    fn test_guardian_validate_pull_strength_within_bounds() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PullStrength,
+            old_value: 0.0,
+            new_value: 8.0, // Within ±10.0
+            justification: "Within CDNA bounds".to_string(),
+            evidence_count: 10,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.pull_strength, 8.0);
+    }
+
+    #[test]
+    fn test_guardian_reject_excessive_pull_strength() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PullStrength,
+            old_value: 0.0,
+            new_value: 12.0, // > 10.0 CDNA limit
+            justification: "Too strong".to_string(),
+            evidence_count: 10,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn test_guardian_validate_preferred_distance() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PreferredDistance,
+            old_value: 1.0,
+            new_value: 50.0, // Within 0.01-100.0
+            justification: "Valid distance".to_string(),
+            evidence_count: 8,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.preferred_distance, 50.0);
+    }
+
+    #[test]
+    fn test_guardian_reject_invalid_preferred_distance() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PreferredDistance,
+            old_value: 1.0,
+            new_value: 150.0, // > 100.0 CDNA limit
+            justification: "Too far".to_string(),
+            evidence_count: 8,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn test_guardian_validate_confidence_bounds() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 0.5,
+            new_value: 0.85, // Within 0.0-1.0
+            justification: "Valid confidence".to_string(),
+            evidence_count: 15,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_guardian_reject_invalid_confidence() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 0.5,
+            new_value: 1.5, // > 1.0 invalid
+            justification: "Too high".to_string(),
+            evidence_count: 10,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn test_guardian_validate_create_proposal() {
+        let proposal = ConnectionProposal::Create {
+            token_a_id: 5,
+            token_b_id: 10,
+            connection_type: ConnectionType::Cause as u8,
+            initial_strength: 4.5, // Within ±10.0
+            initial_confidence: 100,
+            justification: "Valid creation".to_string(),
+        };
+
+        let result = ConnectionV3::from_proposal_with_guardian(&proposal);
+        assert!(result.is_ok());
+
+        let conn = result.unwrap();
+        assert_eq!(conn.token_a_id, 5);
+        assert_eq!(conn.token_b_id, 10);
+        assert_eq!(conn.pull_strength, 4.5);
+    }
+
+    #[test]
+    fn test_guardian_reject_invalid_connection_type() {
+        let proposal = ConnectionProposal::Create {
+            token_a_id: 5,
+            token_b_id: 10,
+            connection_type: 0xFF, // > 0xAF invalid
+            initial_strength: 2.0,
+            initial_confidence: 100,
+            justification: "Invalid type".to_string(),
+        };
+
+        let result = ConnectionV3::from_proposal_with_guardian(&proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn test_guardian_reject_excessive_initial_strength() {
+        let proposal = ConnectionProposal::Create {
+            token_a_id: 5,
+            token_b_id: 10,
+            connection_type: ConnectionType::Cause as u8,
+            initial_strength: 15.0, // > 10.0 CDNA limit
+            initial_confidence: 100,
+            justification: "Too strong".to_string(),
+        };
+
+        let result = ConnectionV3::from_proposal_with_guardian(&proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+    }
+
+    #[test]
+    fn test_guardian_validation_preserves_mutability_check() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Immutable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 1.0,
+            new_value: 0.8, // Valid value
+            justification: "Should fail on mutability".to_string(),
+            evidence_count: 10,
+        };
+
+        // Should fail on mutability check (before Guardian)
+        let result = conn.apply_proposal_with_guardian(&proposal);
+        assert_eq!(result, Err(ProposalError::ImmutableConnection));
+    }
+
+    #[test]
+    fn test_guardian_validation_state_check() {
+        use guardian_validation::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.pull_strength = 5.0;
+        conn.preferred_distance = 10.0;
+        conn.connection_type = ConnectionType::Cause as u8;
+
+        let result = validate_connection_state(&conn);
+        assert!(result.is_ok());
+
+        // Now violate constraint
+        conn.pull_strength = 15.0;
+        let result = validate_connection_state(&conn);
+        assert!(result.is_err());
     }
 }
