@@ -839,6 +839,276 @@ impl ConnectionV3 {
     }
 }
 
+/// Learning algorithms for Connection v3.0
+///
+/// Statistical analysis for automatic proposal generation based on experience.
+/// These are simplified implementations for Phase 4 - full IntuitionEngine
+/// would have more sophisticated pattern detection.
+pub mod learning_stats {
+    use super::*;
+
+    /// Learning statistics for a connection
+    #[derive(Debug, Clone)]
+    pub struct ConnectionLearningStats {
+        /// Total observations
+        pub total_observations: u32,
+        /// Successful activations
+        pub successful_activations: u32,
+        /// Failed activations
+        pub failed_activations: u32,
+        /// Current success rate (0.0-1.0)
+        pub success_rate: f32,
+        /// Temporal co-occurrence count
+        pub temporal_cooccurrences: u32,
+        /// Average time delta (for temporal connections)
+        pub avg_time_delta_ms: i64,
+    }
+
+    impl ConnectionLearningStats {
+        /// Create new stats
+        pub fn new() -> Self {
+            Self {
+                total_observations: 0,
+                successful_activations: 0,
+                failed_activations: 0,
+                success_rate: 0.0,
+                temporal_cooccurrences: 0,
+                avg_time_delta_ms: 0,
+            }
+        }
+
+        /// Record successful activation
+        pub fn record_success(&mut self) {
+            self.successful_activations += 1;
+            self.total_observations += 1;
+            self.update_success_rate();
+        }
+
+        /// Record failed activation
+        pub fn record_failure(&mut self) {
+            self.failed_activations += 1;
+            self.total_observations += 1;
+            self.update_success_rate();
+        }
+
+        /// Update success rate
+        fn update_success_rate(&mut self) {
+            if self.total_observations > 0 {
+                self.success_rate =
+                    self.successful_activations as f32 / self.total_observations as f32;
+            }
+        }
+
+        /// Record temporal co-occurrence
+        pub fn record_cooccurrence(&mut self, time_delta_ms: i64) {
+            self.temporal_cooccurrences += 1;
+            // Running average
+            let n = self.temporal_cooccurrences as i64;
+            self.avg_time_delta_ms =
+                ((self.avg_time_delta_ms * (n - 1)) + time_delta_ms) / n;
+        }
+
+        /// Check if sufficient evidence for proposal
+        pub fn has_sufficient_evidence(&self, min_observations: u32) -> bool {
+            self.total_observations >= min_observations
+        }
+
+        /// Generate confidence proposal if statistics warrant it
+        pub fn generate_confidence_proposal(
+            &self,
+            connection: &ConnectionV3,
+            min_observations: u32,
+        ) -> Option<ConnectionProposal> {
+            // Need minimum observations
+            if !self.has_sufficient_evidence(min_observations) {
+                return None;
+            }
+
+            // Only for learnable/hypothesis connections
+            if connection.mutability == ConnectionMutability::Immutable as u8 {
+                return None;
+            }
+
+            let current_confidence = connection.confidence as f32 / 255.0;
+            let target_confidence = self.success_rate;
+
+            // Only propose if significant difference (>10%)
+            if (target_confidence - current_confidence).abs() < 0.1 {
+                return None;
+            }
+
+            // Clamp to reasonable change
+            let new_confidence = if target_confidence > current_confidence {
+                (current_confidence + 0.2).min(target_confidence)
+            } else {
+                (current_confidence - 0.2).max(target_confidence)
+            };
+
+            Some(ConnectionProposal::Modify {
+                connection_id: 0, // Would be set by caller
+                field: ConnectionField::Confidence,
+                old_value: current_confidence,
+                new_value: new_confidence,
+                justification: format!(
+                    "Success rate {:.1}% over {} observations",
+                    self.success_rate * 100.0,
+                    self.total_observations
+                ),
+                evidence_count: self.total_observations as u16,
+            })
+        }
+
+        /// Generate promote proposal if hypothesis is strong
+        pub fn generate_promote_proposal(
+            &self,
+            connection: &ConnectionV3,
+            min_observations: u32,
+            min_success_rate: f32,
+        ) -> Option<ConnectionProposal> {
+            // Only for hypothesis connections
+            if connection.mutability != ConnectionMutability::Hypothesis as u8 {
+                return None;
+            }
+
+            // Need sufficient evidence
+            if !self.has_sufficient_evidence(min_observations) {
+                return None;
+            }
+
+            // Need good success rate
+            if self.success_rate < min_success_rate {
+                return None;
+            }
+
+            Some(ConnectionProposal::Promote {
+                connection_id: 0, // Would be set by caller
+                evidence_count: self.total_observations as u16,
+                justification: format!(
+                    "Strong evidence: {:.1}% success over {} trials",
+                    self.success_rate * 100.0,
+                    self.total_observations
+                ),
+            })
+        }
+
+        /// Generate delete proposal if hypothesis is weak
+        pub fn generate_delete_proposal(
+            &self,
+            connection: &ConnectionV3,
+            min_observations: u32,
+            max_success_rate: f32,
+        ) -> Option<ConnectionProposal> {
+            // Only for hypothesis connections
+            if connection.mutability != ConnectionMutability::Hypothesis as u8 {
+                return None;
+            }
+
+            // Need sufficient evidence to conclude it's bad
+            if !self.has_sufficient_evidence(min_observations) {
+                return None;
+            }
+
+            // Success rate too low
+            if self.success_rate > max_success_rate {
+                return None;
+            }
+
+            Some(ConnectionProposal::Delete {
+                connection_id: 0, // Would be set by caller
+                reason: format!(
+                    "Low success rate: {:.1}% over {} trials",
+                    self.success_rate * 100.0,
+                    self.total_observations
+                ),
+            })
+        }
+    }
+
+    /// Temporal pattern for connection creation
+    #[derive(Debug, Clone)]
+    pub struct TemporalPattern {
+        pub token_a_id: u32,
+        pub token_b_id: u32,
+        pub connection_type: u8,
+        pub cooccurrence_count: u32,
+        pub confidence: f32,
+        pub avg_time_delta_ms: i64,
+    }
+
+    impl TemporalPattern {
+        /// Generate create proposal from detected pattern
+        pub fn generate_create_proposal(&self) -> Option<ConnectionProposal> {
+            // Need minimum occurrences
+            if self.cooccurrence_count < 5 {
+                return None;
+            }
+
+            // Need reasonable confidence
+            if self.confidence < 0.3 {
+                return None;
+            }
+
+            Some(ConnectionProposal::Create {
+                token_a_id: self.token_a_id,
+                token_b_id: self.token_b_id,
+                connection_type: self.connection_type,
+                initial_strength: 1.0 + (self.confidence * 2.0), // 1.0-3.0 range
+                initial_confidence: (self.confidence * 255.0) as u8,
+                justification: format!(
+                    "Temporal pattern: {} co-occurrences, avg Δt={}ms",
+                    self.cooccurrence_count, self.avg_time_delta_ms
+                ),
+            })
+        }
+    }
+
+    /// Detect temporal pattern between two tokens
+    ///
+    /// Simplified detection for Phase 4 - looks for tokens appearing in sequence.
+    /// Full IntuitionEngine would analyze ExperienceStream events.
+    pub fn detect_temporal_pattern(
+        token_a_id: u32,
+        token_b_id: u32,
+        observations: &[(u32, u32, i64)], // (token_a, token_b, time_delta_ms)
+        min_occurrences: u32,
+    ) -> Option<TemporalPattern> {
+        let mut count = 0;
+        let mut total_delta: i64 = 0;
+
+        for (a, b, delta) in observations {
+            if *a == token_a_id && *b == token_b_id {
+                count += 1;
+                total_delta += delta;
+            }
+        }
+
+        if count < min_occurrences {
+            return None;
+        }
+
+        let avg_delta = total_delta / count as i64;
+        let confidence = (count as f32 / observations.len() as f32).min(1.0);
+
+        // Determine connection type based on time delta
+        let connection_type = if avg_delta.abs() < 1000 {
+            ConnectionType::Simultaneous as u8
+        } else if avg_delta > 0 {
+            ConnectionType::After as u8
+        } else {
+            ConnectionType::Before as u8
+        };
+
+        Some(TemporalPattern {
+            token_a_id,
+            token_b_id,
+            connection_type,
+            cooccurrence_count: count,
+            confidence,
+            avg_time_delta_ms: avg_delta,
+        })
+    }
+}
+
 /// Get current Unix timestamp
 fn current_timestamp() -> u32 {
     SystemTime::now()
@@ -1416,5 +1686,352 @@ mod tests {
         conn.pull_strength = 15.0;
         let result = validate_connection_state(&conn);
         assert!(result.is_err());
+    }
+
+    // ===== Phase 4 Tests: Learning Algorithms =====
+
+    #[test]
+    fn test_learning_stats_success_rate() {
+        use learning_stats::*;
+
+        let mut stats = ConnectionLearningStats::new();
+        assert_eq!(stats.success_rate, 0.0);
+
+        stats.record_success();
+        stats.record_success();
+        stats.record_failure();
+
+        assert_eq!(stats.total_observations, 3);
+        assert_eq!(stats.successful_activations, 2);
+        assert_eq!(stats.failed_activations, 1);
+        assert!((stats.success_rate - 0.666).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_learning_stats_temporal_cooccurrence() {
+        use learning_stats::*;
+
+        let mut stats = ConnectionLearningStats::new();
+        stats.record_cooccurrence(100);
+        stats.record_cooccurrence(200);
+        stats.record_cooccurrence(300);
+
+        assert_eq!(stats.temporal_cooccurrences, 3);
+        assert_eq!(stats.avg_time_delta_ms, 200);
+    }
+
+    #[test]
+    fn test_generate_confidence_proposal_increase() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+        conn.confidence = 128; // 0.5
+
+        let mut stats = ConnectionLearningStats::new();
+        // Simulate 80% success rate
+        for _ in 0..8 {
+            stats.record_success();
+        }
+        for _ in 0..2 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_confidence_proposal(&conn, 10);
+        assert!(proposal.is_some());
+
+        let proposal = proposal.unwrap();
+        match proposal {
+            ConnectionProposal::Modify {
+                field, new_value, ..
+            } => {
+                assert!(matches!(field, ConnectionField::Confidence));
+                assert!(new_value > 0.5); // Should increase
+                assert!(new_value <= 0.8); // But not exceed success rate
+            }
+            _ => panic!("Expected Modify proposal"),
+        }
+    }
+
+    #[test]
+    fn test_generate_confidence_proposal_decrease() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+        conn.confidence = 200; // 0.78
+
+        let mut stats = ConnectionLearningStats::new();
+        // Simulate 40% success rate
+        for _ in 0..4 {
+            stats.record_success();
+        }
+        for _ in 0..6 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_confidence_proposal(&conn, 10);
+        assert!(proposal.is_some());
+
+        let proposal = proposal.unwrap();
+        match proposal {
+            ConnectionProposal::Modify {
+                field, new_value, ..
+            } => {
+                assert!(matches!(field, ConnectionField::Confidence));
+                assert!(new_value < 0.78); // Should decrease
+            }
+            _ => panic!("Expected Modify proposal"),
+        }
+    }
+
+    #[test]
+    fn test_no_proposal_insufficient_evidence() {
+        use learning_stats::*;
+
+        let conn = ConnectionV3::new(1, 2);
+        let mut stats = ConnectionLearningStats::new();
+        stats.record_success();
+        stats.record_success();
+
+        let proposal = stats.generate_confidence_proposal(&conn, 10);
+        assert!(proposal.is_none()); // Only 2 observations, need 10
+    }
+
+    #[test]
+    fn test_no_proposal_small_difference() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.confidence = 128; // 0.5
+
+        let mut stats = ConnectionLearningStats::new();
+        // 55% success - only 5% difference
+        for _ in 0..55 {
+            stats.record_success();
+        }
+        for _ in 0..45 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_confidence_proposal(&conn, 10);
+        assert!(proposal.is_none()); // Difference < 10% threshold
+    }
+
+    #[test]
+    fn test_no_proposal_for_immutable() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Immutable as u8;
+
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..10 {
+            stats.record_success();
+        }
+
+        let proposal = stats.generate_confidence_proposal(&conn, 10);
+        assert!(proposal.is_none()); // Cannot modify immutable
+    }
+
+    #[test]
+    fn test_generate_promote_proposal() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..18 {
+            stats.record_success();
+        }
+        for _ in 0..2 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_promote_proposal(&conn, 20, 0.7);
+        assert!(proposal.is_some());
+
+        match proposal.unwrap() {
+            ConnectionProposal::Promote { evidence_count, .. } => {
+                assert_eq!(evidence_count, 20);
+            }
+            _ => panic!("Expected Promote proposal"),
+        }
+    }
+
+    #[test]
+    fn test_no_promote_low_success_rate() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..10 {
+            stats.record_success();
+        }
+        for _ in 0..10 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_promote_proposal(&conn, 20, 0.7);
+        assert!(proposal.is_none()); // Success rate only 50%, need 70%
+    }
+
+    #[test]
+    fn test_generate_delete_proposal() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..2 {
+            stats.record_success();
+        }
+        for _ in 0..18 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_delete_proposal(&conn, 20, 0.2);
+        assert!(proposal.is_some());
+
+        match proposal.unwrap() {
+            ConnectionProposal::Delete { reason, .. } => {
+                assert!(reason.contains("10.0%")); // 2/20 = 10%
+            }
+            _ => panic!("Expected Delete proposal"),
+        }
+    }
+
+    #[test]
+    fn test_no_delete_good_performance() {
+        use learning_stats::*;
+
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..15 {
+            stats.record_success();
+        }
+        for _ in 0..5 {
+            stats.record_failure();
+        }
+
+        let proposal = stats.generate_delete_proposal(&conn, 20, 0.2);
+        assert!(proposal.is_none()); // Success rate 75%, above 20% threshold
+    }
+
+    #[test]
+    fn test_temporal_pattern_detection() {
+        use learning_stats::*;
+
+        let observations = vec![
+            (1, 2, 100),
+            (1, 2, 150),
+            (1, 2, 120),
+            (3, 4, 200),
+            (1, 2, 130),
+            (1, 2, 140),
+        ];
+
+        let pattern = detect_temporal_pattern(1, 2, &observations, 5);
+        assert!(pattern.is_some());
+
+        let pattern = pattern.unwrap();
+        assert_eq!(pattern.token_a_id, 1);
+        assert_eq!(pattern.token_b_id, 2);
+        assert_eq!(pattern.cooccurrence_count, 5);
+        assert_eq!(pattern.avg_time_delta_ms, 128); // (100+150+120+130+140)/5
+    }
+
+    #[test]
+    fn test_temporal_pattern_connection_type() {
+        use learning_stats::*;
+
+        // Simultaneous (< 1000ms)
+        let observations = vec![(1, 2, 50), (1, 2, 100), (1, 2, 150)];
+        let pattern = detect_temporal_pattern(1, 2, &observations, 3).unwrap();
+        assert_eq!(pattern.connection_type, ConnectionType::Simultaneous as u8);
+
+        // After (> 0)
+        let observations = vec![(3, 4, 2000), (3, 4, 3000), (3, 4, 2500)];
+        let pattern = detect_temporal_pattern(3, 4, &observations, 3).unwrap();
+        assert_eq!(pattern.connection_type, ConnectionType::After as u8);
+
+        // Before (< 0)
+        let observations = vec![(5, 6, -2000), (5, 6, -3000), (5, 6, -2500)];
+        let pattern = detect_temporal_pattern(5, 6, &observations, 3).unwrap();
+        assert_eq!(pattern.connection_type, ConnectionType::Before as u8);
+    }
+
+    #[test]
+    fn test_temporal_pattern_create_proposal() {
+        use learning_stats::*;
+
+        let pattern = TemporalPattern {
+            token_a_id: 10,
+            token_b_id: 20,
+            connection_type: ConnectionType::After as u8,
+            cooccurrence_count: 8,
+            confidence: 0.6,
+            avg_time_delta_ms: 1500,
+        };
+
+        let proposal = pattern.generate_create_proposal();
+        assert!(proposal.is_some());
+
+        match proposal.unwrap() {
+            ConnectionProposal::Create {
+                token_a_id,
+                token_b_id,
+                connection_type,
+                initial_strength,
+                ..
+            } => {
+                assert_eq!(token_a_id, 10);
+                assert_eq!(token_b_id, 20);
+                assert_eq!(connection_type, ConnectionType::After as u8);
+                assert!(initial_strength > 1.0); // Should be > 1.0
+                assert!(initial_strength < 3.0); // Should be < 3.0
+            }
+            _ => panic!("Expected Create proposal"),
+        }
+    }
+
+    #[test]
+    fn test_no_create_insufficient_occurrences() {
+        use learning_stats::*;
+
+        let pattern = TemporalPattern {
+            token_a_id: 10,
+            token_b_id: 20,
+            connection_type: ConnectionType::After as u8,
+            cooccurrence_count: 3, // < 5 minimum
+            confidence: 0.6,
+            avg_time_delta_ms: 1500,
+        };
+
+        let proposal = pattern.generate_create_proposal();
+        assert!(proposal.is_none());
+    }
+
+    #[test]
+    fn test_no_create_low_confidence() {
+        use learning_stats::*;
+
+        let pattern = TemporalPattern {
+            token_a_id: 10,
+            token_b_id: 20,
+            connection_type: ConnectionType::After as u8,
+            cooccurrence_count: 8,
+            confidence: 0.2, // < 0.3 threshold
+            avg_time_delta_ms: 1500,
+        };
+
+        let proposal = pattern.generate_create_proposal();
+        assert!(proposal.is_none());
     }
 }
