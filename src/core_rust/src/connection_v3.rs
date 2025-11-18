@@ -458,6 +458,211 @@ impl ConnectionV3 {
     }
 }
 
+/// Fields modifiable in Connection via proposals
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ConnectionField {
+    Confidence,
+    PullStrength,
+    PreferredDistance,
+    LearningRate,
+    DecayRate,
+}
+
+/// Proposal for modifying a Connection (from IntuitionEngine)
+#[derive(Debug, Clone)]
+pub enum ConnectionProposal {
+    /// Modify existing Connection field
+    Modify {
+        connection_id: u64,
+        field: ConnectionField,
+        old_value: f32,
+        new_value: f32,
+        justification: String,
+        evidence_count: u16,
+    },
+
+    /// Create new hypothesis Connection
+    Create {
+        token_a_id: u32,
+        token_b_id: u32,
+        connection_type: u8,
+        initial_strength: f32,
+        initial_confidence: u8,
+        justification: String,
+    },
+
+    /// Delete hypothesis Connection (low confidence)
+    Delete {
+        connection_id: u64,
+        reason: String,
+    },
+
+    /// Promote Hypothesis → Learnable
+    Promote {
+        connection_id: u64,
+        evidence_count: u16,
+        justification: String,
+    },
+}
+
+/// Proposal application error
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProposalError {
+    /// Cannot modify immutable connection
+    ImmutableConnection,
+
+    /// Invalid field value
+    InvalidValue { field: String, value: f32 },
+
+    /// Cannot promote non-hypothesis
+    NotHypothesis,
+
+    /// Cannot delete non-hypothesis
+    CannotDelete,
+
+    /// Evidence threshold not met
+    InsufficientEvidence { required: u16, provided: u16 },
+}
+
+impl ConnectionV3 {
+    /// Apply a proposal from IntuitionEngine (with validation)
+    pub fn apply_proposal(&mut self, proposal: &ConnectionProposal) -> Result<(), ProposalError> {
+        match proposal {
+            ConnectionProposal::Modify {
+                field,
+                new_value,
+                evidence_count,
+                ..
+            } => {
+                // Check mutability
+                if !self.can_modify() {
+                    return Err(ProposalError::ImmutableConnection);
+                }
+
+                // Require minimum evidence for modifications
+                if *evidence_count < 5 {
+                    return Err(ProposalError::InsufficientEvidence {
+                        required: 5,
+                        provided: *evidence_count,
+                    });
+                }
+
+                // Apply field change
+                match field {
+                    ConnectionField::Confidence => {
+                        let conf_u8 = (*new_value * 255.0) as u8;
+                        if conf_u8 > 255 {
+                            return Err(ProposalError::InvalidValue {
+                                field: "confidence".to_string(),
+                                value: *new_value,
+                            });
+                        }
+                        self.confidence = conf_u8;
+                        self.evidence_count = self.evidence_count.saturating_add(*evidence_count);
+                    }
+                    ConnectionField::PullStrength => {
+                        if new_value.abs() > 10.0 {
+                            return Err(ProposalError::InvalidValue {
+                                field: "pull_strength".to_string(),
+                                value: *new_value,
+                            });
+                        }
+                        self.pull_strength = *new_value;
+                    }
+                    ConnectionField::PreferredDistance => {
+                        if *new_value < 0.01 || *new_value > 100.0 {
+                            return Err(ProposalError::InvalidValue {
+                                field: "preferred_distance".to_string(),
+                                value: *new_value,
+                            });
+                        }
+                        self.preferred_distance = *new_value;
+                    }
+                    ConnectionField::LearningRate => {
+                        let lr_u8 = (*new_value * 255.0) as u8;
+                        self.learning_rate = lr_u8;
+                    }
+                    ConnectionField::DecayRate => {
+                        let dr_u8 = (*new_value * 255.0) as u8;
+                        self.decay_rate = dr_u8;
+                    }
+                }
+
+                self.last_update = current_timestamp();
+                self.flags |= connection_flags::MODIFIED;
+                Ok(())
+            }
+
+            ConnectionProposal::Promote { evidence_count, .. } => {
+                // Only hypotheses can be promoted
+                if self.mutability != ConnectionMutability::Hypothesis as u8 {
+                    return Err(ProposalError::NotHypothesis);
+                }
+
+                // Require significant evidence
+                if *evidence_count < 20 {
+                    return Err(ProposalError::InsufficientEvidence {
+                        required: 20,
+                        provided: *evidence_count,
+                    });
+                }
+
+                // Promote to Learnable
+                self.mutability = ConnectionMutability::Learnable as u8;
+                self.learning_rate = 32; // Slower learning
+                self.decay_rate = 8; // Slower decay
+                self.evidence_count = *evidence_count;
+                self.last_update = current_timestamp();
+                self.flags |= connection_flags::MODIFIED;
+
+                Ok(())
+            }
+
+            ConnectionProposal::Delete { .. } => {
+                // Only hypotheses can be deleted via proposal
+                if self.mutability != ConnectionMutability::Hypothesis as u8 {
+                    return Err(ProposalError::CannotDelete);
+                }
+
+                // Mark inactive (actual deletion handled by caller)
+                self.flags &= !connection_flags::ACTIVE;
+                Ok(())
+            }
+
+            ConnectionProposal::Create { .. } => {
+                // Create is handled externally (not applied to existing connection)
+                Ok(())
+            }
+        }
+    }
+
+    /// Create new Connection from CreateConnection proposal
+    pub fn from_proposal(proposal: &ConnectionProposal) -> Option<Self> {
+        match proposal {
+            ConnectionProposal::Create {
+                token_a_id,
+                token_b_id,
+                connection_type,
+                initial_strength,
+                initial_confidence,
+                ..
+            } => {
+                let mut conn = Self::new(*token_a_id, *token_b_id);
+                conn.connection_type = *connection_type;
+                conn.mutability = ConnectionMutability::Hypothesis as u8;
+                conn.pull_strength = *initial_strength;
+                conn.confidence = *initial_confidence;
+                conn.learning_rate = 128; // Fast learning for hypothesis
+                conn.decay_rate = 32; // Moderate decay
+                conn.source_id = 1; // Mark as IntuitionEngine-generated
+
+                Some(conn)
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Get current Unix timestamp
 fn current_timestamp() -> u32 {
     SystemTime::now()
@@ -594,5 +799,232 @@ mod tests {
         assert_ne!(conn.flags & connection_flags::ACTIVE, 0);
         assert_ne!(conn.flags & connection_flags::REINFORCED, 0);
         assert!(conn.rigidity > initial_rigidity);
+    }
+
+    // ===== Phase 2 Tests: Proposal System =====
+
+    #[test]
+    fn test_proposal_modify_confidence() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+        conn.confidence = 128;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 0.5,
+            new_value: 0.75,
+            justification: "Test confidence increase".to_string(),
+            evidence_count: 10,
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.confidence, 191); // 0.75 * 255
+        assert_eq!(conn.evidence_count, 10);
+        assert_ne!(conn.flags & connection_flags::MODIFIED, 0);
+    }
+
+    #[test]
+    fn test_proposal_modify_immutable_rejected() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Immutable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 1.0,
+            new_value: 0.5,
+            justification: "Should fail".to_string(),
+            evidence_count: 10,
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert_eq!(result, Err(ProposalError::ImmutableConnection));
+    }
+
+    #[test]
+    fn test_proposal_insufficient_evidence() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::Confidence,
+            old_value: 0.5,
+            new_value: 0.75,
+            justification: "Too few evidence".to_string(),
+            evidence_count: 3, // < 5 minimum
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert_eq!(
+            result,
+            Err(ProposalError::InsufficientEvidence {
+                required: 5,
+                provided: 3
+            })
+        );
+    }
+
+    #[test]
+    fn test_proposal_modify_pull_strength() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PullStrength,
+            old_value: 0.0,
+            new_value: 5.0,
+            justification: "Increase attraction".to_string(),
+            evidence_count: 8,
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.pull_strength, 5.0);
+    }
+
+    #[test]
+    fn test_proposal_invalid_pull_strength() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Modify {
+            connection_id: 1,
+            field: ConnectionField::PullStrength,
+            old_value: 0.0,
+            new_value: 15.0, // > 10.0 max
+            justification: "Too strong".to_string(),
+            evidence_count: 8,
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert!(matches!(result, Err(ProposalError::InvalidValue { .. })));
+    }
+
+    #[test]
+    fn test_proposal_promote_hypothesis() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+        conn.learning_rate = 128; // Fast learning
+        conn.decay_rate = 32;
+
+        let proposal = ConnectionProposal::Promote {
+            connection_id: 1,
+            evidence_count: 25,
+            justification: "Strong evidence".to_string(),
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.mutability, ConnectionMutability::Learnable as u8);
+        assert_eq!(conn.learning_rate, 32); // Slower learning
+        assert_eq!(conn.decay_rate, 8); // Slower decay
+        assert_eq!(conn.evidence_count, 25);
+    }
+
+    #[test]
+    fn test_proposal_promote_insufficient_evidence() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+
+        let proposal = ConnectionProposal::Promote {
+            connection_id: 1,
+            evidence_count: 15, // < 20 minimum
+            justification: "Not enough".to_string(),
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert_eq!(
+            result,
+            Err(ProposalError::InsufficientEvidence {
+                required: 20,
+                provided: 15
+            })
+        );
+    }
+
+    #[test]
+    fn test_proposal_promote_non_hypothesis() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Promote {
+            connection_id: 1,
+            evidence_count: 25,
+            justification: "Should fail".to_string(),
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert_eq!(result, Err(ProposalError::NotHypothesis));
+    }
+
+    #[test]
+    fn test_proposal_delete_hypothesis() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+        conn.flags = connection_flags::ACTIVE;
+
+        let proposal = ConnectionProposal::Delete {
+            connection_id: 1,
+            reason: "Low confidence".to_string(),
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert!(result.is_ok());
+        assert_eq!(conn.flags & connection_flags::ACTIVE, 0);
+    }
+
+    #[test]
+    fn test_proposal_delete_non_hypothesis() {
+        let mut conn = ConnectionV3::new(1, 2);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+
+        let proposal = ConnectionProposal::Delete {
+            connection_id: 1,
+            reason: "Should fail".to_string(),
+        };
+
+        let result = conn.apply_proposal(&proposal);
+        assert_eq!(result, Err(ProposalError::CannotDelete));
+    }
+
+    #[test]
+    fn test_from_proposal_create() {
+        let proposal = ConnectionProposal::Create {
+            token_a_id: 10,
+            token_b_id: 20,
+            connection_type: ConnectionType::Cause as u8,
+            initial_strength: 3.5,
+            initial_confidence: 64, // 0.25
+            justification: "Pattern detected".to_string(),
+        };
+
+        let conn = ConnectionV3::from_proposal(&proposal);
+        assert!(conn.is_some());
+
+        let conn = conn.unwrap();
+        assert_eq!(conn.token_a_id, 10);
+        assert_eq!(conn.token_b_id, 20);
+        assert_eq!(conn.connection_type, ConnectionType::Cause as u8);
+        assert_eq!(conn.mutability, ConnectionMutability::Hypothesis as u8);
+        assert_eq!(conn.pull_strength, 3.5);
+        assert_eq!(conn.confidence, 64);
+        assert_eq!(conn.learning_rate, 128); // Fast learning
+        assert_eq!(conn.decay_rate, 32); // Moderate decay
+        assert_eq!(conn.source_id, 1); // IntuitionEngine
+    }
+
+    #[test]
+    fn test_from_proposal_non_create() {
+        let proposal = ConnectionProposal::Delete {
+            connection_id: 1,
+            reason: "Test".to_string(),
+        };
+
+        let conn = ConnectionV3::from_proposal(&proposal);
+        assert!(conn.is_none());
     }
 }
