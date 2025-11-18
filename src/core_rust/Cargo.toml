@@ -123,3 +123,7 @@ harness = false
 [[bench]]
 name = "intuition_bench"
 harness = false
+
+[[bench]]
+name = "connection_v3_bench"
+harness = false
