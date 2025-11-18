@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.27.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.29.5-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -86,6 +86,8 @@
 ### Ключевые спецификации
 
 - [docs/token_extended_spec.md](docs/token_extended_spec.md) - Token V2.0 (64 bytes)
+- [docs/specs/Connection_V3_UNIFIED.md](docs/specs/Connection_V3_UNIFIED.md) - **Connection V3.0** (learning-capable, 64 bytes) ✅ v0.29.5
+- [docs/specs/IntuitionEngine_v2.2.md](docs/specs/IntuitionEngine_v2.2.md) - Hybrid Learning (ADNA + Connections)
 - [docs/specs/Testing_Benchmarking_v0.27.0.md](docs/specs/Testing_Benchmarking_v0.27.0.md) - Performance baseline
 - [docs/specs/Persistence_v0.26.0.md](docs/specs/Persistence_v0.26.0.md) - PostgreSQL persistence
 - [src/core_rust/PERSISTENCE_SETUP.md](src/core_rust/PERSISTENCE_SETUP.md) - PostgreSQL setup guide

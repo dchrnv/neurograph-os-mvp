@@ -48,10 +48,10 @@
 
     "current_status": {
       "completed": "v0.27.0 - Testing & Benchmarking baseline (10,000+ events/sec)",
-      "latest": "v0.28.3 - License AGPL-3.0, architecture blueprint refactoring",
-      "stable": "All core modules production-ready",
-      "planning": "v0.29.0 - Connection v3.0 + IntuitionEngine v2.2 Hybrid (specs complete)",
-      "next": "Implement learning-capable Connections with three mutability tiers"
+      "latest": "v0.29.5 - Connection v3.0 Phase 5 (E2E tests, docs)",
+      "stable": "Connection v3.0 implemented (2314 lines, 53 tests)",
+      "implemented": "v0.29.1-4: Foundation, Proposals, Guardian, Learning algorithms",
+      "next": "v0.30.0 - Final release with benchmarks and full IntuitionEngine integration"
     },
 
     "performance": {
