@@ -2034,4 +2034,281 @@ mod tests {
         let proposal = pattern.generate_create_proposal();
         assert!(proposal.is_none());
     }
+
+    // ========================================
+    // Phase 5: E2E Integration Tests
+    // ========================================
+
+    /// E2E: Complete learning cycle - Hypothesis → Learning → Promotion → Learnable
+    #[test]
+    fn test_e2e_hypothesis_learning_promotion() {
+        use learning_stats::*;
+
+        // 1. Create Hypothesis connection from temporal pattern
+        let pattern = TemporalPattern {
+            token_a_id: 100,
+            token_b_id: 200,
+            connection_type: ConnectionType::Cause as u8,
+            cooccurrence_count: 10,
+            confidence: 0.7,
+            avg_time_delta_ms: 500,
+        };
+
+        let create_proposal = pattern.generate_create_proposal().unwrap();
+        let mut conn = ConnectionV3::from_proposal_with_guardian(&create_proposal).unwrap();
+
+        assert_eq!(conn.mutability, ConnectionMutability::Hypothesis as u8);
+        assert_eq!(conn.confidence, 178); // 0.7 * 255
+
+        // 2. Simulate learning: record successes
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..25 {
+            stats.record_success(); // 100% success rate
+        }
+
+        // 3. Generate confidence increase proposal
+        let confidence_proposal = stats
+            .generate_confidence_proposal(&conn, 20)
+            .unwrap();
+
+        conn.apply_proposal_with_guardian(&confidence_proposal)
+            .unwrap();
+        assert!(conn.confidence > 178); // Confidence increased
+
+        // 4. Generate promotion proposal (Hypothesis → Learnable)
+        let promote_proposal = stats
+            .generate_promote_proposal(&conn, 20, 0.8)
+            .unwrap();
+
+        conn.apply_proposal_with_guardian(&promote_proposal).unwrap();
+        assert_eq!(conn.mutability, ConnectionMutability::Learnable as u8);
+        assert!(conn.confidence > 200); // High confidence maintained after promotion
+    }
+
+    /// E2E: Temporal pattern detection → Connection creation → Guardian validation
+    #[test]
+    fn test_e2e_temporal_pattern_to_connection() {
+        use learning_stats::*;
+
+        // Simulate observations: token A followed by token B
+        let observations = vec![
+            (100, 200, 100),  // A, B, time_delta_ms
+            (100, 200, 120),
+            (100, 200, 90),
+            (100, 200, 110),
+            (100, 200, 105),
+            (100, 200, 95),
+        ];
+
+        // Detect pattern
+        let pattern = detect_temporal_pattern(100, 200, &observations, 5).unwrap();
+        assert_eq!(pattern.token_a_id, 100);
+        assert_eq!(pattern.token_b_id, 200);
+        assert_eq!(pattern.cooccurrence_count, 6);
+        assert!((pattern.avg_time_delta_ms - 103).abs() <= 5); // ~103ms avg
+
+        // Generate creation proposal
+        let create_proposal = pattern.generate_create_proposal().unwrap();
+
+        // Create connection with Guardian validation
+        let conn = ConnectionV3::from_proposal_with_guardian(&create_proposal).unwrap();
+        assert_eq!(conn.token_a_id, 100);
+        assert_eq!(conn.token_b_id, 200);
+        assert_eq!(conn.connection_type, pattern.connection_type);
+        assert_eq!(conn.mutability, ConnectionMutability::Hypothesis as u8);
+    }
+
+    /// E2E: Failed learning → Deletion proposal → Guardian check
+    #[test]
+    fn test_e2e_failed_learning_deletion() {
+        use learning_stats::*;
+
+        // Create Hypothesis connection
+        let mut conn = ConnectionV3::new(100, 200);
+        conn.set_connection_type(ConnectionType::Cause);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+        conn.pull_strength = 5.0;
+        conn.confidence = 128; // 0.5
+        conn.learning_rate = 25; // ~0.1
+
+        // Simulate poor performance: 80% failures
+        let mut stats = ConnectionLearningStats::new();
+        for _ in 0..5 {
+            stats.record_success();
+        }
+        for _ in 0..20 {
+            stats.record_failure();
+        }
+
+        assert!(stats.success_rate < 0.3); // 20% success rate
+
+        // Generate deletion proposal
+        let delete_proposal = stats.generate_delete_proposal(&conn, 20, 0.3).unwrap();
+
+        // Apply with Guardian (should allow deletion of weak Hypothesis)
+        let result = conn.apply_proposal_with_guardian(&delete_proposal);
+        assert!(result.is_ok()); // Guardian approves deletion
+    }
+
+    /// E2E: Guardian rejects invalid learning proposal
+    #[test]
+    fn test_e2e_guardian_rejects_invalid_proposal() {
+        // Create Learnable connection
+        let mut conn = ConnectionV3::new(100, 200);
+        conn.set_connection_type(ConnectionType::Cause);
+        conn.mutability = ConnectionMutability::Learnable as u8;
+        conn.pull_strength = 5.0;
+        conn.confidence = 204; // ~0.8
+        conn.learning_rate = 13; // ~0.05
+        conn.decay_rate = 3; // ~0.01
+
+        // Try to apply proposal with invalid pull_strength (>10.0 CDNA limit)
+        let invalid_proposal = ConnectionProposal::Modify {
+            connection_id: 0,
+            field: ConnectionField::PullStrength,
+            old_value: 5.0,
+            new_value: 15.0, // Exceeds CDNA max_pull_strength
+            justification: "Invalid increase".to_string(),
+            evidence_count: 30,
+        };
+
+        let result = conn.apply_proposal_with_guardian(&invalid_proposal);
+        assert!(matches!(
+            result,
+            Err(ProposalError::GuardianRejected { .. })
+        ));
+        assert_eq!(conn.pull_strength, 5.0); // Unchanged
+    }
+
+    /// E2E: Multi-step learning with Guardian at each step
+    #[test]
+    fn test_e2e_multi_step_learning_with_guardian() {
+        use learning_stats::*;
+
+        // Start with Hypothesis
+        let mut conn = ConnectionV3::new(100, 200);
+        conn.set_connection_type(ConnectionType::EnabledBy);
+        conn.mutability = ConnectionMutability::Hypothesis as u8;
+        conn.pull_strength = 3.0;
+        conn.confidence = 128; // 0.5
+        conn.learning_rate = 25; // ~0.1
+
+        let mut stats = ConnectionLearningStats::new();
+
+        // Step 1: Good performance → confidence increase
+        for _ in 0..22 {
+            stats.record_success();
+        }
+        for _ in 0..3 {
+            stats.record_failure();
+        }
+
+        let conf_proposal = stats.generate_confidence_proposal(&conn, 20).unwrap();
+        conn.apply_proposal_with_guardian(&conf_proposal).unwrap();
+        let new_conf = conn.confidence;
+        assert!(new_conf > 50);
+
+        // Step 2: Continued success → promotion
+        for _ in 0..10 {
+            stats.record_success();
+        }
+
+        let promote_proposal = stats.generate_promote_proposal(&conn, 30, 0.8).unwrap();
+        conn.apply_proposal_with_guardian(&promote_proposal)
+            .unwrap();
+        assert_eq!(conn.mutability, ConnectionMutability::Learnable as u8);
+
+        // Step 3: Fine-tune as Learnable
+        let tune_proposal = ConnectionProposal::Modify {
+            connection_id: 0,
+            field: ConnectionField::LearningRate,
+            old_value: 0.1,
+            new_value: 0.05,
+            justification: "Reduce plasticity after promotion".to_string(),
+            evidence_count: 35,
+        };
+
+        conn.apply_proposal_with_guardian(&tune_proposal).unwrap();
+        // Learning rate is stored as u8, so check approximate value
+        assert!(conn.learning_rate < 20); // Should be ~13 (0.05 * 255)
+    }
+
+    /// E2E: IntuitionEngine simulation - batch proposals
+    #[test]
+    fn test_e2e_intuition_engine_batch_proposals() {
+        use learning_stats::*;
+
+        // Simulate IntuitionEngine generating batch of proposals
+        let mut conn0 = ConnectionV3::new(1, 2);
+        conn0.set_connection_type(ConnectionType::Cause);
+        conn0.mutability = ConnectionMutability::Hypothesis as u8;
+        conn0.pull_strength = 5.0;
+        conn0.confidence = 153; // 0.6
+
+        let mut conn1 = ConnectionV3::new(3, 4);
+        conn1.set_connection_type(ConnectionType::EnabledBy);
+        conn1.mutability = ConnectionMutability::Hypothesis as u8;
+        conn1.pull_strength = 4.0;
+        conn1.confidence = 128; // 0.5
+
+        let mut conn2 = ConnectionV3::new(5, 6);
+        conn2.set_connection_type(ConnectionType::After);
+        conn2.mutability = ConnectionMutability::Hypothesis as u8;
+        conn2.pull_strength = 3.0;
+        conn2.confidence = 102; // 0.4
+
+        let mut connections = vec![conn0, conn1, conn2];
+
+        // IntuitionEngine tracks stats for each connection
+        let mut stats_map = vec![
+            ConnectionLearningStats::new(),
+            ConnectionLearningStats::new(),
+            ConnectionLearningStats::new(),
+        ];
+
+        // Simulate different learning outcomes
+        // Conn 0: excellent (promote)
+        for _ in 0..25 {
+            stats_map[0].record_success();
+        }
+        // Conn 1: moderate (adjust confidence)
+        for _ in 0..15 {
+            stats_map[1].record_success();
+        }
+        for _ in 0..10 {
+            stats_map[1].record_failure();
+        }
+        // Conn 2: poor (delete)
+        for _ in 0..5 {
+            stats_map[2].record_success();
+        }
+        for _ in 0..20 {
+            stats_map[2].record_failure();
+        }
+
+        // Generate and apply proposals
+        // Conn 0: promote
+        if let Some(proposal) = stats_map[0].generate_promote_proposal(&connections[0], 20, 0.8) {
+            connections[0]
+                .apply_proposal_with_guardian(&proposal)
+                .unwrap();
+            assert_eq!(
+                connections[0].mutability,
+                ConnectionMutability::Learnable as u8
+            );
+        }
+
+        // Conn 1: adjust confidence
+        if let Some(proposal) = stats_map[1].generate_confidence_proposal(&connections[1], 20) {
+            connections[1]
+                .apply_proposal_with_guardian(&proposal)
+                .unwrap();
+        }
+
+        // Conn 2: delete (simulated - would be removed from collection)
+        if let Some(proposal) = stats_map[2].generate_delete_proposal(&connections[2], 20, 0.3) {
+            let result = connections[2].apply_proposal_with_guardian(&proposal);
+            assert!(result.is_ok());
+        }
+    }
 }
