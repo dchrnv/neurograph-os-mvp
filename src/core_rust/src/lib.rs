@@ -21,7 +21,8 @@
 /// # Architecture
 ///
 /// - Token V2.0: 64-byte atomic unit of information
-/// - Connection V1.0: 32-byte link between tokens
+/// - Connection V1.0: 32-byte link between tokens (legacy)
+/// - Connection V3.0: 64-byte learning-capable link (IN DEVELOPMENT v0.29.0)
 /// - 8-dimensional semantic space (L1-L8)
 /// - ADNA v3.0: 256-byte Policy Engine
 /// - ExperienceStream v2.1: Event-based memory system (128-byte events)
@@ -32,6 +33,7 @@
 
 pub mod token;
 pub mod connection;
+pub mod connection_v3;  // NEW: v3.0 learning-capable (v0.29.0)
 pub mod grid;
 pub mod graph;
 pub mod cdna;
