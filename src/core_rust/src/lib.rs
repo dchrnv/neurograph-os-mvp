@@ -194,6 +194,19 @@ pub use hybrid_learning::{
     connection_to_adna_hint,
 };
 
+pub use reflex_layer::{
+    ShiftConfig,
+    AssociativeStats,
+    AdaptiveTuningConfig,
+    AdaptiveTuner,
+    AssociativeMemory,
+    FastPathResult,
+    FastPathConfig,
+    IntuitionStats,
+    compute_grid_hash,
+    token_similarity,
+};
+
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;

@@ -108,6 +108,59 @@ impl ShiftConfig {
             per_dimension: [None; 8],
         }
     }
+
+    /// Increase shift value (coarser grid, larger sectors)
+    ///
+    /// Used when hit rate is too low - grid is too fine-grained.
+    /// Increases shift by 1 (doubles sector size) for all dimensions.
+    pub fn increase_shift(&mut self) {
+        // Increase default (capped at 12 to avoid too coarse)
+        if self.default < 12 {
+            self.default += 1;
+        }
+
+        // Increase per-dimension overrides
+        for shift_opt in &mut self.per_dimension {
+            if let Some(shift) = shift_opt {
+                if *shift < 12 {
+                    *shift += 1;
+                }
+            }
+        }
+    }
+
+    /// Decrease shift value (finer grid, smaller sectors)
+    ///
+    /// Used when collision rate is too high - grid is too coarse.
+    /// Decreases shift by 1 (halves sector size) for all dimensions.
+    pub fn decrease_shift(&mut self) {
+        // Decrease default (capped at 2 to avoid too fine)
+        if self.default > 2 {
+            self.default -= 1;
+        }
+
+        // Decrease per-dimension overrides
+        for shift_opt in &mut self.per_dimension {
+            if let Some(shift) = shift_opt {
+                if *shift > 2 {
+                    *shift -= 1;
+                }
+            }
+        }
+    }
+
+    /// Adjust shift for specific dimension
+    ///
+    /// Delta can be positive (coarser) or negative (finer).
+    pub fn adjust_dimension_shift(&mut self, dim_idx: usize, delta: i8) {
+        if dim_idx >= 8 {
+            return;
+        }
+
+        let current = self.get_shift_for_dimension(dim_idx);
+        let new_shift = (current as i16 + delta as i16).clamp(2, 12) as u8;
+        self.per_dimension[dim_idx] = Some(new_shift);
+    }
 }
 
 /// Computes spatial hash for Token coordinates
@@ -169,6 +222,43 @@ pub fn compute_grid_hash(token: &Token, shift_config: &ShiftConfig) -> u64 {
     hash
 }
 
+/// Compute cosine similarity between two Tokens (8D coordinates)
+///
+/// Returns similarity score in range [0.0, 1.0]:
+/// - 1.0 = identical vectors
+/// - 0.0 = orthogonal vectors
+///
+/// # Performance
+///
+/// - ~50-100ns (8 dimensions × 3 axes = 24 dot products)
+pub fn token_similarity(token_a: &Token, token_b: &Token) -> f32 {
+    let coords_a = token_a.coordinates;
+    let coords_b = token_b.coordinates;
+
+    let mut dot_product: f64 = 0.0;
+    let mut magnitude_a: f64 = 0.0;
+    let mut magnitude_b: f64 = 0.0;
+
+    for dim_idx in 0..8 {
+        for axis_idx in 0..3 {
+            let a = coords_a[dim_idx][axis_idx] as f64;
+            let b = coords_b[dim_idx][axis_idx] as f64;
+
+            dot_product += a * b;
+            magnitude_a += a * a;
+            magnitude_b += b * b;
+        }
+    }
+
+    // Avoid division by zero
+    if magnitude_a == 0.0 || magnitude_b == 0.0 {
+        return 0.0;
+    }
+
+    let similarity = dot_product / (magnitude_a.sqrt() * magnitude_b.sqrt());
+    similarity.clamp(0.0, 1.0) as f32
+}
+
 // ================================================================================================
 // SECTION 2: AssociativeMemory - Reflex Storage
 // ================================================================================================
@@ -207,6 +297,116 @@ impl AssociativeStats {
             return 0.0;
         }
         self.collisions as f32 / self.hits as f32
+    }
+}
+
+/// Configuration for adaptive shift tuning
+#[derive(Debug, Clone)]
+pub struct AdaptiveTuningConfig {
+    /// Minimum hit rate before increasing shift (making grid coarser)
+    ///
+    /// If hit_rate < min_hit_rate, grid is too fine → increase shift
+    pub min_hit_rate: f32,
+
+    /// Maximum collision rate before decreasing shift (making grid finer)
+    ///
+    /// If collision_rate > max_collision_rate, grid is too coarse → decrease shift
+    pub max_collision_rate: f32,
+
+    /// Number of lookups between tuning checks
+    ///
+    /// Too frequent = unstable, too rare = slow adaptation
+    pub tuning_interval: u64,
+
+    /// Enable adaptive tuning (can be disabled for debugging)
+    pub enabled: bool,
+}
+
+impl Default for AdaptiveTuningConfig {
+    fn default() -> Self {
+        Self {
+            min_hit_rate: 0.3,         // If <30% hit rate, grid too fine
+            max_collision_rate: 0.15,  // If >15% collisions, grid too coarse
+            tuning_interval: 1000,     // Check every 1000 lookups
+            enabled: true,
+        }
+    }
+}
+
+/// Adaptive shift tuner
+///
+/// Analyzes reflex memory statistics and automatically adjusts
+/// ShiftConfig to optimize hit rate and minimize collisions.
+///
+/// # Strategy
+///
+/// - **Low hit rate** (<30%): Grid too fine → increase shift (coarser)
+/// - **High collision rate** (>15%): Grid too coarse → decrease shift (finer)
+/// - **Balanced**: No adjustment needed
+///
+/// # Usage
+///
+/// ```
+/// let mut tuner = AdaptiveTuner::new(config);
+/// let mut shift_config = ShiftConfig::default();
+///
+/// // Every N lookups:
+/// if tuner.should_tune(&stats) {
+///     tuner.tune(&mut shift_config, &stats);
+/// }
+/// ```
+pub struct AdaptiveTuner {
+    config: AdaptiveTuningConfig,
+    last_tuning_lookups: u64,
+}
+
+impl AdaptiveTuner {
+    /// Create new adaptive tuner
+    pub fn new(config: AdaptiveTuningConfig) -> Self {
+        Self {
+            config,
+            last_tuning_lookups: 0,
+        }
+    }
+
+    /// Check if tuning should be performed
+    pub fn should_tune(&mut self, stats: &AssociativeStats) -> bool {
+        if !self.config.enabled {
+            return false;
+        }
+
+        // Check if enough lookups have occurred since last tuning
+        let lookups_since_tuning = stats.total_lookups - self.last_tuning_lookups;
+        lookups_since_tuning >= self.config.tuning_interval
+    }
+
+    /// Perform adaptive tuning of ShiftConfig
+    ///
+    /// Returns true if adjustments were made, false if no changes needed.
+    pub fn tune(&mut self, shift_config: &mut ShiftConfig, stats: &AssociativeStats) -> bool {
+        if !self.config.enabled {
+            return false;
+        }
+
+        self.last_tuning_lookups = stats.total_lookups;
+
+        let hit_rate = stats.hit_rate();
+        let collision_rate = stats.collision_rate();
+
+        // Priority 1: Fix low hit rate (grid too fine)
+        if hit_rate < self.config.min_hit_rate && hit_rate > 0.0 {
+            shift_config.increase_shift();
+            return true;
+        }
+
+        // Priority 2: Fix high collision rate (grid too coarse)
+        if collision_rate > self.config.max_collision_rate {
+            shift_config.decrease_shift();
+            return true;
+        }
+
+        // No adjustment needed - grid is balanced
+        false
     }
 }
 
@@ -617,5 +817,192 @@ mod tests {
         stats.avg_fast_path_time_ns = 50;
         stats.avg_slow_path_time_ns = 10_000_000;  // 10ms
         assert!((stats.speedup_ratio() - 200_000.0).abs() < 1.0);
+    }
+
+    // ========== Adaptive Tuning Tests ==========
+
+    #[test]
+    fn test_shift_increase_decrease() {
+        let mut config = ShiftConfig::uniform(6);
+        assert_eq!(config.default, 6);
+
+        // Increase shift (coarser grid)
+        config.increase_shift();
+        assert_eq!(config.default, 7);
+
+        // Decrease shift (finer grid)
+        config.decrease_shift();
+        assert_eq!(config.default, 6);
+    }
+
+    #[test]
+    fn test_shift_bounds() {
+        let mut config = ShiftConfig::uniform(2);  // Minimum
+        config.decrease_shift();
+        assert_eq!(config.default, 2, "Should not go below 2");
+
+        let mut config = ShiftConfig::uniform(12);  // Maximum
+        config.increase_shift();
+        assert_eq!(config.default, 12, "Should not exceed 12");
+    }
+
+    #[test]
+    fn test_adjust_dimension_shift() {
+        let mut config = ShiftConfig::uniform(6);
+
+        // Increase L1 by +2
+        config.adjust_dimension_shift(0, 2);
+        assert_eq!(config.get_shift_for_dimension(0), 8);
+
+        // Decrease L2 by -3
+        config.adjust_dimension_shift(1, -3);
+        assert_eq!(config.get_shift_for_dimension(1), 3);
+
+        // Test bounds
+        config.adjust_dimension_shift(2, -10);  // Should clamp to 2
+        assert_eq!(config.get_shift_for_dimension(2), 2);
+
+        config.adjust_dimension_shift(3, 20);  // Should clamp to 12
+        assert_eq!(config.get_shift_for_dimension(3), 12);
+    }
+
+    #[test]
+    fn test_token_similarity_identical() {
+        let mut token = Token::new(100);
+        // Set non-zero coordinates for valid similarity calculation
+        token.coordinates[0] = [100, 200, 300];
+        token.coordinates[1] = [50, 150, 250];
+        token.coordinates[2] = [10, 20, 30];
+
+        let similarity = token_similarity(&token, &token);
+        assert!((similarity - 1.0).abs() < 0.01, "Identical tokens should have similarity ~1.0");
+    }
+
+    #[test]
+    fn test_token_similarity_different() {
+        let mut token1 = Token::new(1);
+        let mut token2 = Token::new(2);
+
+        token1.coordinates[0] = [1000, 0, 0];
+        token2.coordinates[0] = [0, 1000, 0];  // Orthogonal
+
+        let similarity = token_similarity(&token1, &token2);
+        // Should be low but not necessarily 0 due to other dimensions
+        assert!(similarity < 0.5, "Orthogonal vectors should have low similarity");
+    }
+
+    #[test]
+    fn test_adaptive_tuner_low_hit_rate() {
+        let config_tuning = AdaptiveTuningConfig {
+            min_hit_rate: 0.3,
+            max_collision_rate: 0.15,
+            tuning_interval: 100,
+            enabled: true,
+        };
+
+        let mut tuner = AdaptiveTuner::new(config_tuning);
+        let mut shift_config = ShiftConfig::uniform(6);
+
+        // Simulate low hit rate (10%)
+        let stats = AssociativeStats {
+            total_entries: 1000,
+            total_lookups: 1000,
+            hits: 100,  // 10% hit rate
+            misses: 900,
+            collisions: 5,
+        };
+
+        // Should trigger tuning
+        assert!(tuner.should_tune(&stats));
+
+        // Should increase shift (coarser grid)
+        let adjusted = tuner.tune(&mut shift_config, &stats);
+        assert!(adjusted, "Should have adjusted shift");
+        assert_eq!(shift_config.default, 7, "Should increase shift when hit rate is low");
+    }
+
+    #[test]
+    fn test_adaptive_tuner_high_collision_rate() {
+        let config_tuning = AdaptiveTuningConfig {
+            min_hit_rate: 0.3,
+            max_collision_rate: 0.15,
+            tuning_interval: 100,
+            enabled: true,
+        };
+
+        let mut tuner = AdaptiveTuner::new(config_tuning);
+        let mut shift_config = ShiftConfig::uniform(6);
+
+        // Simulate high collision rate (30%)
+        let stats = AssociativeStats {
+            total_entries: 1000,
+            total_lookups: 1000,
+            hits: 500,  // 50% hit rate (good)
+            misses: 500,
+            collisions: 150,  // 30% collision rate (high!)
+        };
+
+        // Should trigger tuning
+        assert!(tuner.should_tune(&stats));
+
+        // Should decrease shift (finer grid)
+        let adjusted = tuner.tune(&mut shift_config, &stats);
+        assert!(adjusted, "Should have adjusted shift");
+        assert_eq!(shift_config.default, 5, "Should decrease shift when collision rate is high");
+    }
+
+    #[test]
+    fn test_adaptive_tuner_balanced() {
+        let config_tuning = AdaptiveTuningConfig {
+            min_hit_rate: 0.3,
+            max_collision_rate: 0.15,
+            tuning_interval: 100,
+            enabled: true,
+        };
+
+        let mut tuner = AdaptiveTuner::new(config_tuning);
+        let mut shift_config = ShiftConfig::uniform(6);
+
+        // Simulate balanced performance (50% hit, 10% collisions)
+        let stats = AssociativeStats {
+            total_entries: 1000,
+            total_lookups: 1000,
+            hits: 500,
+            misses: 500,
+            collisions: 50,  // 10% collision rate
+        };
+
+        // Should trigger check but not adjust
+        assert!(tuner.should_tune(&stats));
+        let adjusted = tuner.tune(&mut shift_config, &stats);
+        assert!(!adjusted, "Should NOT adjust when balanced");
+        assert_eq!(shift_config.default, 6, "Should remain unchanged");
+    }
+
+    #[test]
+    fn test_adaptive_tuner_disabled() {
+        let config_tuning = AdaptiveTuningConfig {
+            min_hit_rate: 0.3,
+            max_collision_rate: 0.15,
+            tuning_interval: 100,
+            enabled: false,  // Disabled
+        };
+
+        let mut tuner = AdaptiveTuner::new(config_tuning);
+        let mut shift_config = ShiftConfig::uniform(6);
+
+        let stats = AssociativeStats {
+            total_entries: 1000,
+            total_lookups: 1000,
+            hits: 50,  // Very low (5%)
+            misses: 950,
+            collisions: 0,
+        };
+
+        // Should NOT trigger when disabled
+        assert!(!tuner.should_tune(&stats));
+        let adjusted = tuner.tune(&mut shift_config, &stats);
+        assert!(!adjusted);
+        assert_eq!(shift_config.default, 6);
     }
 }

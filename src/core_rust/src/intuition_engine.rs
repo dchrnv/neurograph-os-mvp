@@ -201,10 +201,13 @@ impl IntuitionEngine {
                 continue;
             }
 
-            // 5. Compute similarity (TODO: needs state_token in Connection)
-            // For now, assume first candidate is good enough
-            // This will be improved when we add state_token_id to Connection
-            let similarity = 1.0;  // Placeholder
+            // 5. Compute similarity (v0.32.0: needs state_token storage)
+            // TODO v0.32.0: To fully leverage token_similarity(), we need to:
+            //   - Store source Token (or its coordinates) when consolidating reflexes
+            //   - Retrieve stored Token here and call token_similarity(state, stored_token)
+            //   - Use actual similarity score for collision resolution
+            // For now, use confidence as a proxy (higher confidence = better match)
+            let similarity = conn.confidence as f32 / 255.0;
 
             // 6. Track best match
             match best_match {
