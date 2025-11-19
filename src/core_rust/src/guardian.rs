@@ -39,7 +39,7 @@
 /// - **Immutability**: CDNA changes are versioned and reversible
 
 use crate::cdna::{CDNA, ProfileId};
-use crate::{Token, Connection};
+use crate::{Token, Connection, ConnectionV3};
 use std::collections::{HashMap, VecDeque};
 
 /// Event types that can be emitted by Guardian
@@ -59,6 +59,10 @@ pub enum EventType {
     ValidationFailed,
     /// System state changed
     SystemStateChanged,
+    /// Reflex was validated (for fast path)
+    ReflexValidated,
+    /// Reflex validation failed
+    ReflexValidationFailed,
 }
 
 /// Event emitted by Guardian
@@ -487,6 +491,76 @@ impl Guardian {
         }
     }
 
+    /// Validate reflex (ConnectionV3) for Fast Path usage
+    ///
+    /// This is a lightweight validation optimized for <100ns execution.
+    /// It checks only critical safety properties without full CDNA validation.
+    ///
+    /// # Fast Path Criteria
+    ///
+    /// - **Confidence:** Must be ≥ 128 (50% confidence minimum)
+    /// - **Mutability:** Immutable or Learnable only (no Hypothesis)
+    /// - **Pull Strength:** Must be within safe bounds
+    /// - **Rigidity:** Must be ≥ 0.5 (stable connection)
+    ///
+    /// # Performance
+    ///
+    /// - Target: <50ns (5-6 simple checks, no allocations)
+    /// - No CDNA profile lookups (too slow for Fast Path)
+    /// - No event emission (to avoid allocation overhead)
+    ///
+    /// # Usage
+    ///
+    /// ```rust
+    /// use neurograph_core::{Guardian, ConnectionV3};
+    ///
+    /// let guardian = Guardian::new();
+    /// let connection = ConnectionV3::default();
+    ///
+    /// if guardian.validate_reflex(&connection).is_ok() {
+    ///     // Safe to use in Fast Path
+    /// } else {
+    ///     // Fall back to Slow Path (ADNA)
+    /// }
+    /// ```
+    pub fn validate_reflex(&self, connection: &ConnectionV3) -> Result<(), &'static str> {
+        // Skip if validation disabled (but still check critical safety properties)
+
+        // 1. Confidence check: Must be at least 50% confident
+        if connection.confidence < 128 {
+            return Err("Reflex confidence too low (<50%)");
+        }
+
+        // 2. Mutability check: Only Immutable (0) or Learnable (1) allowed
+        // Hypothesis (2) connections are too unstable for reflexes
+        if connection.mutability > 1 {
+            return Err("Reflex must be Immutable or Learnable (no Hypothesis)");
+        }
+
+        // 3. Pull strength check: Must be positive and within reasonable bounds
+        if connection.pull_strength <= 0.0 {
+            return Err("Reflex pull_strength must be positive");
+        }
+
+        if connection.pull_strength > 100.0 {
+            return Err("Reflex pull_strength exceeds safe maximum (100.0)");
+        }
+
+        // 4. Rigidity check: Must be stable (≥50%)
+        let rigidity = connection.rigidity as f32 / 255.0;
+        if rigidity < 0.5 {
+            return Err("Reflex rigidity too low (<0.5) - connection unstable");
+        }
+
+        // 5. Sanity check: token IDs must be different
+        if connection.token_a_id == connection.token_b_id {
+            return Err("Reflex cannot connect token to itself");
+        }
+
+        // All checks passed - reflex is safe for Fast Path
+        Ok(())
+    }
+
     // ==================== EVENT SYSTEM ====================
 
     /// Subscribe module to events
@@ -734,5 +808,117 @@ mod tests {
 
         // Queue should be limited to 5
         assert_eq!(guardian.event_queue_size(), 5);
+    }
+
+    // ==================== Reflex Validation Tests ====================
+
+    #[test]
+    fn test_validate_reflex_valid() {
+        let guardian = Guardian::new();
+
+        // Create valid reflex: high confidence, Learnable, stable
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;  // ~78% confidence
+        connection.mutability = 1;    // Learnable
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;    // ~70% rigidity
+
+        assert!(guardian.validate_reflex(&connection).is_ok());
+    }
+
+    #[test]
+    fn test_validate_reflex_low_confidence() {
+        let guardian = Guardian::new();
+
+        // Low confidence (<50%)
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 100;  // ~39% - too low!
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex confidence too low (<50%)");
+    }
+
+    #[test]
+    fn test_validate_reflex_hypothesis() {
+        let guardian = Guardian::new();
+
+        // Hypothesis connections not allowed in reflexes
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.mutability = 2;  // Hypothesis - not allowed!
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex must be Immutable or Learnable (no Hypothesis)");
+    }
+
+    #[test]
+    fn test_validate_reflex_low_rigidity() {
+        let guardian = Guardian::new();
+
+        // Low rigidity (unstable connection)
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.pull_strength = 5.0;
+        connection.rigidity = 100;  // ~39% - too low!
+
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex rigidity too low (<0.5) - connection unstable");
+    }
+
+    #[test]
+    fn test_validate_reflex_self_loop() {
+        let guardian = Guardian::new();
+
+        // Self-loop (token connects to itself)
+        let mut connection = ConnectionV3::new(42, 42);
+        connection.confidence = 200;
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex cannot connect token to itself");
+    }
+
+    #[test]
+    fn test_validate_reflex_invalid_pull_strength() {
+        let guardian = Guardian::new();
+
+        // Zero pull strength
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.pull_strength = 0.0;  // Invalid!
+        connection.rigidity = 180;
+
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex pull_strength must be positive");
+
+        // Excessive pull strength
+        connection.pull_strength = 150.0;  // Too high!
+        let result = guardian.validate_reflex(&connection);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Reflex pull_strength exceeds safe maximum (100.0)");
+    }
+
+    #[test]
+    fn test_validate_reflex_immutable() {
+        let guardian = Guardian::new();
+
+        // Immutable connections are also valid for reflexes
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 255;  // 100% confidence
+        connection.mutability = 0;    // Immutable
+        connection.pull_strength = 10.0;
+        connection.rigidity = 255;    // 100% rigidity
+
+        assert!(guardian.validate_reflex(&connection).is_ok());
     }
 }

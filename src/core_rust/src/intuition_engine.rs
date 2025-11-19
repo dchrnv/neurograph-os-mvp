@@ -282,6 +282,62 @@ impl IntuitionEngine {
         stats.total_reflexes = self.connections.read().unwrap().len();
     }
 
+    /// Check if connection should be consolidated to reflex and do it automatically
+    ///
+    /// # Consolidation Criteria
+    ///
+    /// A connection is eligible for automatic consolidation if:
+    /// - **Confidence ≥ 192** (~75% - high confidence threshold)
+    /// - **Evidence count ≥ 10** (sufficient experience)
+    /// - **Mutability = Learnable or Immutable** (no Hypothesis)
+    /// - **Passes Guardian validation** (safety check)
+    ///
+    /// # Usage
+    ///
+    /// ```rust
+    /// // After updating a connection from experience
+    /// if intuition.try_auto_consolidate(&state_token, &connection) {
+    ///     println!("Connection promoted to reflex!");
+    /// }
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// - `true` if connection was consolidated to reflex
+    /// - `false` if not eligible or validation failed
+    pub fn try_auto_consolidate(
+        &mut self,
+        state_token: &Token,
+        connection: &ConnectionV3,
+        guardian: Option<&crate::Guardian>,
+    ) -> bool {
+        // 1. Check confidence threshold (75%)
+        if connection.confidence < 192 {
+            return false;
+        }
+
+        // 2. Check evidence count (at least 10 experiences)
+        if connection.evidence_count < 10 {
+            return false;
+        }
+
+        // 3. Check mutability (no Hypothesis)
+        if connection.mutability > 1 {
+            return false;
+        }
+
+        // 4. Optional Guardian validation
+        if let Some(g) = guardian {
+            if g.validate_reflex(connection).is_err() {
+                return false;
+            }
+        }
+
+        // 5. All checks passed - consolidate!
+        self.consolidate_reflex(state_token, connection.clone());
+        true
+    }
+
     /// Get current stats (for monitoring/UI)
     pub fn get_stats(&self) -> ReflexStats {
         self.stats.read().unwrap().clone()
@@ -652,5 +708,146 @@ mod tests {
             assert!(pattern.reward_delta > 3.0); // Difference should be ~4.0
             assert!(pattern.confidence > 0.5);
         }
+    }
+
+    // ==================== Auto Consolidation Tests ====================
+
+    #[test]
+    fn test_auto_consolidate_eligible() {
+        let config = IntuitionConfig::default();
+        let stream = Arc::new(ExperienceStream::new(1000, 100));
+        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let (tx, _rx) = mpsc::channel(100);
+
+        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let guardian = crate::Guardian::new();
+
+        // Create eligible connection: high confidence, evidence, learnable
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;  // ~78% > 75% threshold
+        connection.evidence_count = 15;  // > 10 threshold
+        connection.mutability = 1;  // Learnable
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let state_token = Token::new(100);
+
+        // Should consolidate
+        let result = engine.try_auto_consolidate(&state_token, &connection, Some(&guardian));
+        assert!(result, "Eligible connection should consolidate");
+
+        // Verify reflex was added
+        let stats = engine.get_stats();
+        assert_eq!(stats.reflexes_created, 1);
+        assert_eq!(stats.total_reflexes, 1);
+    }
+
+    #[test]
+    fn test_auto_consolidate_low_confidence() {
+        let config = IntuitionConfig::default();
+        let stream = Arc::new(ExperienceStream::new(1000, 100));
+        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let (tx, _rx) = mpsc::channel(100);
+
+        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+
+        // Low confidence (<75%)
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 150;  // ~59% < 75% threshold
+        connection.evidence_count = 15;
+        connection.mutability = 1;
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let state_token = Token::new(100);
+
+        // Should NOT consolidate
+        let result = engine.try_auto_consolidate(&state_token, &connection, None);
+        assert!(!result, "Low confidence should not consolidate");
+
+        let stats = engine.get_stats();
+        assert_eq!(stats.reflexes_created, 0);
+    }
+
+    #[test]
+    fn test_auto_consolidate_low_evidence() {
+        let config = IntuitionConfig::default();
+        let stream = Arc::new(ExperienceStream::new(1000, 100));
+        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let (tx, _rx) = mpsc::channel(100);
+
+        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+
+        // Low evidence count
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.evidence_count = 5;  // < 10 threshold
+        connection.mutability = 1;
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let state_token = Token::new(100);
+
+        // Should NOT consolidate
+        let result = engine.try_auto_consolidate(&state_token, &connection, None);
+        assert!(!result, "Low evidence should not consolidate");
+
+        let stats = engine.get_stats();
+        assert_eq!(stats.reflexes_created, 0);
+    }
+
+    #[test]
+    fn test_auto_consolidate_hypothesis() {
+        let config = IntuitionConfig::default();
+        let stream = Arc::new(ExperienceStream::new(1000, 100));
+        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let (tx, _rx) = mpsc::channel(100);
+
+        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+
+        // Hypothesis connection (not stable enough)
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.evidence_count = 15;
+        connection.mutability = 2;  // Hypothesis - not allowed!
+        connection.pull_strength = 5.0;
+        connection.rigidity = 180;
+
+        let state_token = Token::new(100);
+
+        // Should NOT consolidate
+        let result = engine.try_auto_consolidate(&state_token, &connection, None);
+        assert!(!result, "Hypothesis should not consolidate");
+
+        let stats = engine.get_stats();
+        assert_eq!(stats.reflexes_created, 0);
+    }
+
+    #[test]
+    fn test_auto_consolidate_guardian_rejection() {
+        let config = IntuitionConfig::default();
+        let stream = Arc::new(ExperienceStream::new(1000, 100));
+        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let (tx, _rx) = mpsc::channel(100);
+
+        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let guardian = crate::Guardian::new();
+
+        // Connection that passes basic checks but fails Guardian validation
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 200;
+        connection.evidence_count = 15;
+        connection.mutability = 1;
+        connection.pull_strength = 5.0;
+        connection.rigidity = 100;  // Too low - Guardian will reject
+
+        let state_token = Token::new(100);
+
+        // Should NOT consolidate (Guardian rejects)
+        let result = engine.try_auto_consolidate(&state_token, &connection, Some(&guardian));
+        assert!(!result, "Guardian rejection should prevent consolidation");
+
+        let stats = engine.get_stats();
+        assert_eq!(stats.reflexes_created, 0);
     }
 }
