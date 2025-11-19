@@ -34,8 +34,9 @@ data/
 *.db
 *.sqlite3
 
-# Tests
+# Tests (Python only - allow Rust integration tests)
 tests/
+!src/core_rust/tests/
 .coverage
 htmlcov/
 
