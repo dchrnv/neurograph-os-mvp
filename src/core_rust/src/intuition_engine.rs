@@ -77,24 +77,24 @@ impl Default for IntuitionConfig {
 
 /// Identified pattern from batch analysis
 #[derive(Debug, Clone)]
-struct IdentifiedPattern {
+pub struct IdentifiedPattern {
     /// State cluster/bin ID
-    state_bin_id: u64,
+    pub state_bin_id: u64,
 
     /// Action type with better reward
-    better_action: u16,
+    pub better_action: u16,
 
     /// Action type with worse reward
-    worse_action: u16,
+    pub worse_action: u16,
 
     /// Difference in mean rewards
-    reward_delta: f64,
+    pub reward_delta: f64,
 
     /// Statistical confidence [0.0, 1.0]
-    confidence: f64,
+    pub confidence: f64,
 
     /// Number of samples used
-    sample_count: usize,
+    pub sample_count: usize,
 }
 
 /// IntuitionEngine - Analyzes experience and generates improvement proposals

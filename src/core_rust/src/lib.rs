@@ -34,6 +34,14 @@
 pub mod token;
 pub mod connection;
 pub mod connection_v3;  // NEW: v3.0 learning-capable (v0.29.0)
+
+// Re-export Connection v3.0 types
+pub use connection_v3::{
+    ConnectionV3,
+    ConnectionMutability,
+    ConnectionProposal,
+    ConnectionField,
+};
 pub mod grid;
 pub mod graph;
 pub mod cdna;
@@ -50,6 +58,7 @@ pub mod action_executor;
 pub mod action_controller;
 pub mod executors;
 pub mod persistence;
+pub mod hybrid_learning;  // NEW: v2.2 Hybrid Learning Integration (v0.30.2)
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -175,6 +184,17 @@ pub use policy::{
 pub use intuition_engine::{
     IntuitionEngine,
     IntuitionConfig,
+    IdentifiedPattern,
+};
+
+pub use hybrid_learning::{
+    HybridProposal,
+    ProposalOutcome,
+    ProposalRouter,
+    HybridLearningStats,
+    HybridLearningError,
+    adna_to_connection_feedback,
+    connection_to_adna_hint,
 };
 
 /// Version information
