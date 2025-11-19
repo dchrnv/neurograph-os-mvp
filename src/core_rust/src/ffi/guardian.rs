@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Python bindings for Guardian V1.0 structure
+//! Python bindings for Guardian structure
 
 use crate::guardian::{Guardian, GuardianConfig, Event, EventType, ValidationError};
 use crate::cdna::CDNA;
 use crate::token::Token;
-use crate::connection::Connection;
+use crate::connection_v3::ConnectionV3;
 use super::cdna::PyCDNA;
 use super::token::PyToken;
 use super::connection::PyConnection;

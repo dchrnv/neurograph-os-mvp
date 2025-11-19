@@ -21,27 +21,30 @@
 /// # Architecture
 ///
 /// - Token V2.0: 64-byte atomic unit of information
-/// - Connection V1.0: 32-byte link between tokens (legacy)
-/// - Connection V3.0: 64-byte learning-capable link (IN DEVELOPMENT v0.29.0)
+/// - Connection V3.0: 64-byte learning-capable link with Guardian integration
 /// - 8-dimensional semantic space (L1-L8)
 /// - ADNA v3.0: 256-byte Policy Engine
 /// - ExperienceStream v2.1: Event-based memory system (128-byte events)
 /// - Archive: Long-term compressed storage (ExperienceToken 128-byte)
+/// - HybridLearning v2.2: ADNA ↔ Connection feedback loops
 /// - Binary-compatible format for cross-language interop
 /// - Python FFI bindings via PyO3 (optional)
 /// - Zero core dependencies (pure Rust)
 
 pub mod token;
-pub mod connection;
-pub mod connection_v3;  // NEW: v3.0 learning-capable (v0.29.0)
+pub mod connection_v3;
 
-// Re-export Connection v3.0 types
+// Re-export Connection v3.0 types (primary API)
 pub use connection_v3::{
     ConnectionV3,
+    ConnectionType,
     ConnectionMutability,
     ConnectionProposal,
     ConnectionField,
 };
+
+// Alias for backward compatibility
+pub type Connection = ConnectionV3;
 pub mod grid;
 pub mod graph;
 pub mod cdna;
@@ -69,13 +72,6 @@ pub use token::{
     EntityType,
     flags as token_flags,
     SCALE_FACTORS,
-};
-
-pub use connection::{
-    Connection,
-    ConnectionType,
-    active_levels,
-    flags as connection_flags,
 };
 
 pub use grid::{

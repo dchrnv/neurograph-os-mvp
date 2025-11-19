@@ -648,12 +648,13 @@ mod tests {
 
         // Valid connection
         let mut conn = Connection::new(1, 2);
-        conn.set_connection_type(crate::ConnectionType::Near);
-        conn.set_rigidity(0.5);
+        conn.set_connection_type(crate::ConnectionType::Synonym);
+        conn.mutability = crate::ConnectionMutability::Learnable as u8;
+        conn.learning_rate = 32; // 0.125
         assert!(guardian.validate_connection(&conn).is_ok());
 
-        // Invalid connection (rigidity at boundary - should still be valid)
-        conn.set_rigidity(1.0);
+        // Another valid connection
+        conn.mutability = crate::ConnectionMutability::Immutable as u8;
         let result = guardian.validate_connection(&conn);
         assert!(result.is_ok());
     }

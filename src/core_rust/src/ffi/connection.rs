@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Python bindings for Connection V1.0 structure
+//! Python bindings for Connection V3.0 structure
 
-use crate::connection::{Connection, ConnectionType};
+use crate::connection_v3::{ConnectionV3, ConnectionType, ConnectionMutability};
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 
@@ -308,7 +308,7 @@ impl PyConnectionType {
 /// Python wrapper for Connection V1.0
 #[pyclass(name = "Connection")]
 pub struct PyConnection {
-    inner: Connection,
+    inner: ConnectionV3,
 }
 
 #[pymethods]
@@ -342,16 +342,46 @@ impl PyConnection {
         format!("{:?}", self.inner.get_connection_type())
     }
 
-    /// Get rigidity (0-255 mapped to 0.0-1.0)
+    /// Get mutability level
     #[getter]
-    fn rigidity(&self) -> f32 {
-        self.inner.get_rigidity()
+    fn mutability(&self) -> u8 {
+        self.inner.mutability
     }
 
-    /// Set rigidity (0.0-1.0)
+    /// Set mutability level
     #[setter]
-    fn set_rigidity(&mut self, value: f32) {
-        self.inner.set_rigidity(value);
+    fn set_mutability(&mut self, value: u8) {
+        self.inner.mutability = value;
+    }
+
+    /// Get learning rate (0-255)
+    #[getter]
+    fn learning_rate(&self) -> u8 {
+        self.inner.learning_rate
+    }
+
+    /// Set learning rate (0-255)
+    #[setter]
+    fn set_learning_rate(&mut self, value: u8) {
+        self.inner.learning_rate = value;
+    }
+
+    /// Get decay rate (0-255)
+    #[getter]
+    fn decay_rate(&self) -> u8 {
+        self.inner.decay_rate
+    }
+
+    /// Set decay rate (0-255)
+    #[setter]
+    fn set_decay_rate(&mut self, value: u8) {
+        self.inner.decay_rate = value;
+    }
+
+    /// Get confidence (0-255)
+    #[getter]
+    fn confidence(&self) -> u8 {
+        self.inner.confidence
     }
 
     /// Get pull strength
