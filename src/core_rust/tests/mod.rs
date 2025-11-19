@@ -32,6 +32,7 @@ mod integration {
     pub mod learning_loop_e2e;
     pub mod persistence_e2e;
     pub mod hybrid_learning_e2e;
+    pub mod intuition_v3_e2e;
 }
 
 // Common test utilities

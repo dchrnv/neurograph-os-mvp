@@ -1,217 +1,62 @@
-// NeuroGraph - Высокопроизводительная система пространственных вычислений на основе токенов.
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2024-2025 Chernov Denys
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
-
-// You should have received a copy of the GNU Affero General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-//! IntuitionEngine Benchmarks for v0.27.0
+//! IntuitionEngine v3.0 Performance Benchmarks
 //!
-//! Performance measurements for IntuitionEngine operations:
-//! - homeostasis_appraisal: <100 ns target
-//! - curiosity_appraisal: <100 ns target
-//! - efficiency_appraisal: <100 ns target
-//! - goal_directed_appraisal: <100 ns target
-//! - pattern_detection: <10 ms target (1k events)
+//! Measures performance of Fast Path (Reflex Layer):
+//! - GridHash computation: Target <10ns
+//! - AssociativeMemory lookup: Target <30ns
+//! - Fast Path total (hash + lookup): Target <50ns
+//! - Speedup vs Slow Path: Target >10,000x
+//!
+//! Run with: cargo bench --bench intuition_bench
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use neurograph_core::{ExperienceEvent, EventType, IntuitionConfig, ExperienceBatch};
+use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use neurograph_core::token::Token;
+use neurograph_core::reflex_layer::{
+    ShiftConfig, AssociativeMemory, compute_grid_hash,
+};
 
-/// Helper: Create a test batch with varying patterns
-fn create_test_batch(size: usize) -> ExperienceBatch {
-    let mut events = Vec::with_capacity(size);
+// ================================================================================================
+// GridHash Benchmarks
+// ================================================================================================
 
-    for i in 0..size {
-        let mut event = ExperienceEvent::default();
-        event.event_id = i as u128;
-        event.event_type = if i % 3 == 0 {
-            EventType::ActionCompleted as u16
-        } else if i % 3 == 1 {
-            EventType::ActionStarted as u16
-        } else {
-            EventType::ActionFailed as u16
-        };
+/// Benchmark: GridHash computation (target: <10ns)
+fn bench_grid_hash(c: &mut Criterion) {
+    let mut group = c.benchmark_group("grid_hash");
 
-        event.episode_id = (i / 100) as u64;
-        event.step_number = i as u32;
+    let token = Token::new(100);
+    let config = ShiftConfig::default();
 
-        // Create pattern: state values correlate with reward
-        event.state = [
-            (i as f32 * 0.01) % 2.0 - 1.0,
-            (i as f32 * 0.02) % 2.0 - 1.0,
-            (i as f32 * 0.03) % 2.0 - 1.0,
-            (i as f32 * 0.04) % 2.0 - 1.0,
-            (i as f32 * 0.05) % 2.0 - 1.0,
-            (i as f32 * 0.06) % 2.0 - 1.0,
-            (i as f32 * 0.07) % 2.0 - 1.0,
-            (i as f32 * 0.08) % 2.0 - 1.0,
-        ];
-
-        // Rewards based on event type (creating a learnable pattern)
-        event.reward_homeostasis = if event.event_type == EventType::ActionCompleted as u16 {
-            0.8
-        } else {
-            0.2
-        };
-
-        event.reward_curiosity = if event.event_type == EventType::ActionStarted as u16 {
-            0.7
-        } else {
-            0.3
-        };
-
-        event.reward_efficiency = 0.5;
-        event.reward_goal = 0.4;
-
-        events.push(event);
-    }
-
-    ExperienceBatch { events }
-}
-
-/// Benchmark: Homeostasis appraisal (single event, target: <100 ns)
-fn bench_homeostasis_appraisal(c: &mut Criterion) {
-    let event = ExperienceEvent::default();
-
-    c.bench_function("homeostasis_appraisal", |b| {
+    group.bench_function("compute_hash", |b| {
         b.iter(|| {
-            // Simplified appraisal logic (checking L5, L6, L8)
-            let state = black_box(&event.state);
-            let l5 = state[4]; // L5 Cognitive
-            let l6 = state[5]; // L6 Social
-            let l8 = state[7]; // L8 Abstract
-
-            // Simple homeostasis check: balance between cognitive load
-            let cognitive_balance = (l5.abs() + l6.abs() + l8.abs()) / 3.0;
-            let reward = 1.0 - cognitive_balance.clamp(0.0, 1.0);
-            black_box(reward)
+            black_box(compute_grid_hash(
+                black_box(&token),
+                black_box(&config)
+            ))
         })
     });
+
+    group.finish();
 }
 
-/// Benchmark: Curiosity appraisal (novelty detection, target: <100 ns)
-fn bench_curiosity_appraisal(c: &mut Criterion) {
-    let event = ExperienceEvent::default();
+/// Benchmark: GridHash with different shift configs
+fn bench_grid_hash_shift_variations(c: &mut Criterion) {
+    let mut group = c.benchmark_group("grid_hash_shift");
 
-    c.bench_function("curiosity_appraisal", |b| {
-        b.iter(|| {
-            // Simplified novelty check (L2 Sensory)
-            let state = black_box(&event.state);
-            let l2 = state[1]; // L2 Sensory
+    let token = Token::new(100);
 
-            // Higher sensory values = more novel
-            let novelty = l2.abs().clamp(0.0, 1.0);
-            black_box(novelty)
-        })
-    });
-}
-
-/// Benchmark: Efficiency appraisal (L3 + L5, target: <100 ns)
-fn bench_efficiency_appraisal(c: &mut Criterion) {
-    let event = ExperienceEvent::default();
-
-    c.bench_function("efficiency_appraisal", |b| {
-        b.iter(|| {
-            // Simplified efficiency check (L3 Motor + L5 Cognitive)
-            let state = black_box(&event.state);
-            let l3 = state[2]; // L3 Motor
-            let l5 = state[4]; // L5 Cognitive
-
-            // Lower values = more efficient
-            let efficiency = 1.0 - ((l3.abs() + l5.abs()) / 2.0).clamp(0.0, 1.0);
-            black_box(efficiency)
-        })
-    });
-}
-
-/// Benchmark: Goal-directed appraisal (L7, target: <100 ns)
-fn bench_goal_directed_appraisal(c: &mut Criterion) {
-    let event = ExperienceEvent::default();
-
-    c.bench_function("goal_directed_appraisal", |b| {
-        b.iter(|| {
-            // Simplified goal check (L7 Temporal)
-            let state = black_box(&event.state);
-            let l7 = state[6]; // L7 Temporal
-
-            // Temporal consistency = goal progress
-            let goal_progress = l7.abs().clamp(0.0, 1.0);
-            black_box(goal_progress)
-        })
-    });
-}
-
-/// Benchmark: State quantization (4 bins per dimension = 4^8 total bins)
-fn bench_state_quantization(c: &mut Criterion) {
-    let config = IntuitionConfig::default();
-    let event = ExperienceEvent::default();
-
-    c.bench_function("state_quantization", |b| {
-        b.iter(|| {
-            // Quantize state into bin
-            let state = black_box(&event.state);
-            let mut bin_id: u64 = 0;
-            let bins_per_dim = config.state_bins_per_dim as u64;
-
-            for (i, &value) in state.iter().enumerate() {
-                let normalized = ((value + 1.0) / 2.0).clamp(0.0, 0.999);
-                let bin = (normalized * bins_per_dim as f32) as u64;
-                bin_id = bin_id * bins_per_dim + bin;
-            }
-
-            black_box(bin_id)
-        })
-    });
-}
-
-/// Benchmark: Pattern detection in batch (target: <10 ms for 1k events)
-fn bench_pattern_detection(c: &mut Criterion) {
-    use std::collections::HashMap;
-
-    let mut group = c.benchmark_group("pattern_detection");
-
-    for size in [100, 500, 1000].iter() {
-        let batch = create_test_batch(*size);
-
+    for shift in [4, 6, 8, 10].iter() {
+        let config = ShiftConfig::uniform(*shift);
         group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            size,
+            BenchmarkId::from_parameter(shift),
+            shift,
             |b, _| {
                 b.iter(|| {
-                    // Simplified pattern detection: quantize states and aggregate rewards
-                    let mut state_action_rewards: HashMap<(u64, u16), Vec<f32>> = HashMap::new();
-                    let bins_per_dim = 4u64;
-
-                    for event in &batch.events {
-                        // Quantize state
-                        let mut bin_id: u64 = 0;
-                        for &value in &event.state {
-                            let normalized = ((value + 1.0) / 2.0).clamp(0.0, 0.999);
-                            let bin = (normalized * bins_per_dim as f32) as u64;
-                            bin_id = bin_id * bins_per_dim + bin;
-                        }
-
-                        let action = event.event_type;
-                        let total_reward = event.total_reward();
-
-                        state_action_rewards
-                            .entry((bin_id, action))
-                            .or_insert_with(Vec::new)
-                            .push(total_reward);
-                    }
-
-                    // Count patterns found
-                    let pattern_count = state_action_rewards.len();
-                    black_box(pattern_count)
+                    black_box(compute_grid_hash(
+                        black_box(&token),
+                        black_box(&config)
+                    ))
                 })
             },
         );
@@ -220,45 +65,240 @@ fn bench_pattern_detection(c: &mut Criterion) {
     group.finish();
 }
 
-/// Benchmark: Statistical comparison (t-test for action comparison)
-fn bench_statistical_comparison(c: &mut Criterion) {
-    // Create two reward distributions
-    let rewards_a: Vec<f32> = (0..100).map(|i| 0.6 + (i as f32 * 0.001)).collect();
-    let rewards_b: Vec<f32> = (0..100).map(|i| 0.4 + (i as f32 * 0.001)).collect();
+// ================================================================================================
+// AssociativeMemory Benchmarks
+// ================================================================================================
 
-    c.bench_function("statistical_comparison", |b| {
+/// Benchmark: AssociativeMemory lookup (target: <30ns)
+fn bench_associative_memory_lookup(c: &mut Criterion) {
+    let mut group = c.benchmark_group("associative_memory");
+
+    // Setup: Create memory with varying sizes
+    for size in [10, 100, 1_000, 10_000].iter() {
+        let memory = AssociativeMemory::new();
+
+        // Populate with reflexes
+        for i in 0..*size {
+            memory.insert(i as u64, i as u64 + 1000);
+        }
+
+        let test_hash = (size / 2) as u64;  // Middle entry
+
+        group.throughput(Throughput::Elements(1));
+        group.bench_with_input(
+            BenchmarkId::from_parameter(size),
+            size,
+            |b, _| {
+                b.iter(|| {
+                    black_box(memory.lookup(black_box(test_hash)))
+                })
+            },
+        );
+    }
+
+    group.finish();
+}
+
+/// Benchmark: AssociativeMemory insert (background operation)
+fn bench_associative_memory_insert(c: &mut Criterion) {
+    let mut group = c.benchmark_group("associative_memory_insert");
+
+    let memory = AssociativeMemory::new();
+
+    group.bench_function("insert", |b| {
+        let mut counter = 0u64;
         b.iter(|| {
-            // Calculate means
-            let mean_a = black_box(&rewards_a).iter().sum::<f32>() / rewards_a.len() as f32;
-            let mean_b = black_box(&rewards_b).iter().sum::<f32>() / rewards_b.len() as f32;
-
-            // Calculate variances
-            let var_a: f32 = rewards_a.iter()
-                .map(|&x| (x - mean_a).powi(2))
-                .sum::<f32>() / (rewards_a.len() - 1) as f32;
-
-            let var_b: f32 = rewards_b.iter()
-                .map(|&x| (x - mean_b).powi(2))
-                .sum::<f32>() / (rewards_b.len() - 1) as f32;
-
-            // Calculate t-statistic
-            let pooled_se = ((var_a / rewards_a.len() as f32) +
-                            (var_b / rewards_b.len() as f32)).sqrt();
-            let t_stat = (mean_a - mean_b) / pooled_se;
-
-            black_box(t_stat)
+            memory.insert(black_box(counter), black_box(counter + 1000));
+            counter += 1;
         })
     });
+
+    group.finish();
 }
+
+/// Benchmark: Collision handling (multiple candidates)
+fn bench_associative_memory_collisions(c: &mut Criterion) {
+    let mut group = c.benchmark_group("associative_memory_collision");
+
+    for num_candidates in [1, 2, 4, 8].iter() {
+        let memory = AssociativeMemory::new();
+
+        // Create collision: same hash, multiple connections
+        let hash = 12345u64;
+        for i in 0..*num_candidates {
+            memory.insert(hash, hash + i as u64);
+        }
+
+        group.bench_with_input(
+            BenchmarkId::from_parameter(num_candidates),
+            num_candidates,
+            |b, _| {
+                b.iter(|| {
+                    let candidates = black_box(memory.lookup(black_box(hash))).unwrap();
+                    // Simulate collision resolution (iterate candidates)
+                    for &_conn_id in candidates.iter() {
+                        black_box(_conn_id);
+                    }
+                })
+            },
+        );
+    }
+
+    group.finish();
+}
+
+// ================================================================================================
+// Fast Path E2E Benchmarks
+// ================================================================================================
+
+/// Benchmark: Complete Fast Path (hash + lookup + eligibility check)
+fn bench_fast_path_e2e(c: &mut Criterion) {
+    let mut group = c.benchmark_group("fast_path_e2e");
+
+    // Setup
+    let shift_config = ShiftConfig::default();
+    let memory = AssociativeMemory::new();
+
+    // Create 1000 reflexes
+    let mut tokens = Vec::new();
+    for i in 0..1000 {
+        let mut token = Token::new(i);
+        token.coordinates[0] = [(i * 100) as i16, (i * 200) as i16, (i * 300) as i16];
+
+        let hash = compute_grid_hash(&token, &shift_config);
+        memory.insert(hash, i as u64);
+
+        tokens.push(token);
+    }
+
+    // Test token (known reflex)
+    let test_token = &tokens[500];
+
+    group.bench_function("fast_path_hit", |b| {
+        b.iter(|| {
+            // 1. Compute hash
+            let hash = compute_grid_hash(black_box(test_token), &shift_config);
+
+            // 2. Lookup
+            let candidates = memory.lookup(hash);
+
+            // 3. Return first candidate (simplified)
+            black_box(candidates)
+        })
+    });
+
+    // Test unknown token (miss)
+    let mut unknown_token = Token::new(9999);
+    unknown_token.coordinates[0] = [30000, 30000, 30000];
+
+    group.bench_function("fast_path_miss", |b| {
+        b.iter(|| {
+            let hash = compute_grid_hash(black_box(&unknown_token), &shift_config);
+            let candidates = memory.lookup(hash);
+            black_box(candidates)
+        })
+    });
+
+    group.finish();
+}
+
+/// Benchmark: Batch operations (simulate real-world usage)
+fn bench_fast_path_batch(c: &mut Criterion) {
+    let mut group = c.benchmark_group("fast_path_batch");
+
+    let shift_config = ShiftConfig::default();
+    let memory = AssociativeMemory::new();
+
+    // Create reflexes
+    for i in 0..1000 {
+        let mut token = Token::new(i);
+        token.coordinates[0] = [(i * 100) as i16, 0, 0];
+        let hash = compute_grid_hash(&token, &shift_config);
+        memory.insert(hash, i as u64);
+    }
+
+    // Batch of queries (mix of hits and misses)
+    let mut query_tokens = Vec::new();
+    for i in 0..100 {
+        let mut token = Token::new(i);
+        if i < 80 {
+            // 80% hits
+            token.coordinates[0] = [(i * 100) as i16, 0, 0];
+        } else {
+            // 20% misses
+            token.coordinates[0] = [30000, 30000, 30000];
+        }
+        query_tokens.push(token);
+    }
+
+    group.throughput(Throughput::Elements(100));
+    group.bench_function("batch_100_queries", |b| {
+        b.iter(|| {
+            for token in &query_tokens {
+                let hash = compute_grid_hash(token, &shift_config);
+                let _result = memory.lookup(hash);
+                black_box(_result);
+            }
+        })
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// Comparison: Fast Path vs Slow Path
+// ================================================================================================
+
+/// Benchmark: Fast Path vs Slow Path speedup
+fn bench_fast_vs_slow_path(c: &mut Criterion) {
+    let mut group = c.benchmark_group("fast_vs_slow");
+
+    let token = Token::new(100);
+    let shift_config = ShiftConfig::default();
+    let memory = AssociativeMemory::new();
+
+    // Add reflex
+    let hash = compute_grid_hash(&token, &shift_config);
+    memory.insert(hash, 999);
+
+    // Fast Path
+    group.bench_function("fast_path", |b| {
+        b.iter(|| {
+            let hash = compute_grid_hash(black_box(&token), &shift_config);
+            black_box(memory.lookup(hash))
+        })
+    });
+
+    // Slow Path (simulated: just a delay representing ADNA computation)
+    group.bench_function("slow_path_simulated", |b| {
+        b.iter(|| {
+            // Simulate ADNA forward pass (~1-10ms)
+            // For benchmark purposes, use busy loop to represent computation
+            let mut sum = 0u64;
+            for i in 0..10_000 {  // ~10μs on modern CPU
+                sum = sum.wrapping_add(i);
+            }
+            black_box(sum)
+        })
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// Criterion Groups
+// ================================================================================================
 
 criterion_group!(
     benches,
-    bench_homeostasis_appraisal,
-    bench_curiosity_appraisal,
-    bench_efficiency_appraisal,
-    bench_goal_directed_appraisal,
-    bench_state_quantization,
-    bench_pattern_detection,
-    bench_statistical_comparison
+    bench_grid_hash,
+    bench_grid_hash_shift_variations,
+    bench_associative_memory_lookup,
+    bench_associative_memory_insert,
+    bench_associative_memory_collisions,
+    bench_fast_path_e2e,
+    bench_fast_path_batch,
+    bench_fast_vs_slow_path,
 );
+
 criterion_main!(benches);

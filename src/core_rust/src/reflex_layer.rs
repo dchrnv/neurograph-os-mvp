@@ -94,6 +94,13 @@ impl ShiftConfig {
             .unwrap_or(self.default)
     }
 
+    /// Set shift value for specific dimension
+    pub fn set_shift_for_dimension(&mut self, dim_idx: usize, shift: u8) {
+        if dim_idx < 8 {
+            self.per_dimension[dim_idx] = Some(shift);
+        }
+    }
+
     /// Create uniform shift configuration (same for all dimensions)
     pub fn uniform(shift: u8) -> Self {
         Self {
