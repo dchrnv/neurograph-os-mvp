@@ -31,6 +31,12 @@ uuid = { version = "1.0", features = ["v4"] }
 # Random number generation (for sampling strategies)
 rand = "0.8"
 
+# DashMap for lock-free concurrent HashMap (IntuitionEngine v3.0)
+dashmap = "6.1"
+
+# SmallVec for stack-allocated vectors (IntuitionEngine v3.0)
+smallvec = "1.13"
+
 # PostgreSQL async driver (optional, for persistence)
 sqlx = { version = "0.7", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "json"], optional = true }
 
