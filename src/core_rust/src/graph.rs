@@ -1059,6 +1059,222 @@ impl Graph {
 
         self.extract_subgraph(&nodes_within)
     }
+
+    // ============================================================================
+    // SignalSystem v1.0 - Spreading Activation Methods
+    // ============================================================================
+
+    /// Perform spreading activation from a source node
+    ///
+    /// Uses BFS with energy decay to propagate activation through the graph.
+    /// Energy decreases with each hop based on edge weights and decay rate.
+    ///
+    /// # Arguments
+    ///
+    /// * `source_id` - Starting node for activation
+    /// * `initial_energy` - Initial energy at source [0.0, inf]
+    /// * `custom_config` - Optional custom configuration (uses graph's signal_config if None)
+    ///
+    /// # Returns
+    ///
+    /// ActivationResult containing:
+    /// - List of activated nodes with energies
+    /// - Performance metrics
+    /// - Strongest activation path
+    pub fn spreading_activation(
+        &mut self,
+        source_id: NodeId,
+        initial_energy: f32,
+        custom_config: Option<SignalConfig>,
+    ) -> ActivationResult {
+        let start_time = std::time::Instant::now();
+
+        // Use custom config or default
+        let config = custom_config.unwrap_or_else(|| self.signal_config.clone());
+
+        // Validate config
+        if let Err(e) = config.validate() {
+            eprintln!("Invalid SignalConfig: {}", e);
+            return ActivationResult::default();
+        }
+
+        // Check if source node exists
+        if !self.contains_node(source_id) {
+            eprintln!("Source node {} does not exist", source_id);
+            return ActivationResult::default();
+        }
+
+        // Clear previous activations
+        self.clear_activations();
+
+        // Initialize result
+        let mut result = ActivationResult::default();
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+
+        // Activate source node
+        self.activate_node(source_id, initial_energy, None, &config);
+        queue.push_back((source_id, initial_energy, 0_usize, vec![source_id]));
+        visited.insert(source_id);
+
+        // BFS with energy decay
+        while let Some((current_id, current_energy, depth, path)) = queue.pop_front() {
+            result.nodes_visited += 1;
+            result.max_depth_reached = result.max_depth_reached.max(depth);
+
+            // Check max depth
+            if depth >= config.max_depth {
+                continue;
+            }
+
+            // Get outgoing neighbors
+            let neighbors = self.get_neighbors(current_id, Direction::Outgoing);
+
+            for (neighbor_id, edge_id) in neighbors {
+                // Skip already visited nodes
+                if visited.contains(&neighbor_id) {
+                    continue;
+                }
+
+                // Get edge info for weight
+                let edge_weight = self.edge_map
+                    .get(&edge_id)
+                    .map(|e| e.weight)
+                    .unwrap_or(1.0);
+
+                // Compute transmitted energy
+                let transmitted_energy = self.compute_transmitted_energy(
+                    current_energy,
+                    edge_weight,
+                    &config,
+                );
+
+                // Check energy threshold
+                if transmitted_energy < config.min_energy {
+                    continue;
+                }
+
+                // Activate neighbor node
+                self.activate_node(neighbor_id, transmitted_energy, Some(current_id), &config);
+
+                // Build path
+                let mut new_path = path.clone();
+                new_path.push(neighbor_id);
+
+                // Add to queue
+                queue.push_back((neighbor_id, transmitted_energy, depth + 1, new_path.clone()));
+                visited.insert(neighbor_id);
+
+                // Record activated node
+                if transmitted_energy >= config.activation_threshold {
+                    result.activated_nodes.push(ActivatedNode {
+                        node_id: neighbor_id,
+                        energy: transmitted_energy,
+                        depth: depth + 1,
+                        path_from_source: new_path,
+                    });
+                }
+            }
+        }
+
+        // Sort activated nodes by energy (descending)
+        result.activated_nodes.sort_by(|a, b| {
+            b.energy.partial_cmp(&a.energy).unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        // Find strongest path
+        if let Some(strongest) = result.activated_nodes.first() {
+            result.strongest_path = Some(Path {
+                nodes: strongest.path_from_source.clone(),
+                edges: Vec::new(), // TODO: populate edges
+                total_cost: strongest.energy,
+                length: strongest.depth,
+            });
+        }
+
+        result.execution_time_us = start_time.elapsed().as_micros() as u64;
+        result
+    }
+
+    /// Compute energy transmitted to neighbor node
+    ///
+    /// Formula: E_transmitted = E_source * edge_weight * (1 - decay_rate)
+    fn compute_transmitted_energy(
+        &self,
+        source_energy: f32,
+        edge_weight: f32,
+        config: &SignalConfig,
+    ) -> f32 {
+        source_energy * edge_weight * (1.0 - config.decay_rate)
+    }
+
+    /// Activate a node with given energy
+    ///
+    /// Handles different accumulation modes (Sum, Max, WeightedAverage)
+    fn activate_node(
+        &mut self,
+        node_id: NodeId,
+        energy: f32,
+        source_id: Option<NodeId>,
+        config: &SignalConfig,
+    ) {
+        let activation = self.activations.entry(node_id).or_insert_with(NodeActivation::default);
+
+        // Apply accumulation mode
+        match config.accumulation_mode {
+            AccumulationMode::Sum => {
+                activation.energy += energy;
+            }
+            AccumulationMode::Max => {
+                activation.energy = activation.energy.max(energy);
+            }
+            AccumulationMode::WeightedAverage => {
+                let count = activation.activation_count as f32;
+                if count > 0.0 {
+                    activation.energy = (activation.energy * count + energy) / (count + 1.0);
+                } else {
+                    activation.energy = energy;
+                }
+            }
+        }
+
+        activation.activation_count += 1;
+        activation.last_activated = NodeActivation::current_timestamp_us();
+        if source_id.is_some() {
+            activation.source_id = source_id;
+        }
+    }
+
+    /// Clear all activation states
+    pub fn clear_activations(&mut self) {
+        self.activations.clear();
+    }
+
+    /// Get activation energy of a node
+    pub fn get_activation(&self, node_id: NodeId) -> Option<f32> {
+        self.activations.get(&node_id).map(|a| a.energy)
+    }
+
+    /// Get full activation state of a node
+    pub fn get_activation_state(&self, node_id: NodeId) -> Option<&NodeActivation> {
+        self.activations.get(&node_id)
+    }
+
+    /// Set signal configuration
+    pub fn set_signal_config(&mut self, config: SignalConfig) -> Result<(), String> {
+        config.validate()?;
+        self.signal_config = config;
+        Ok(())
+    }
+
+    /// Get current signal configuration
+    pub fn get_signal_config(&self) -> &SignalConfig {
+        &self.signal_config
+    }
+
+    // ============================================================================
+    // End of SignalSystem methods
+    // ============================================================================
 }
 
 impl Default for Graph {
