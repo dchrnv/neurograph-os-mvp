@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.29.5-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.32.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -72,6 +72,17 @@
 - Обработка комбинаторного взрыва при масштабировании
 - Эффективная памяти и вычислительно оптимальная навигация
 
+### 7. Двухпутевое принятие решений (v0.32.1)
+
+- **Fast Path (System 1):** рефлексы через IntuitionEngine (~50-150ns)
+  - Высокая уверенность (≥78% по умолчанию)
+  - Guardian-валидация для безопасности
+  - 10,000-200,000× быстрее аналитического пути
+- **Slow Path (System 2):** аналитика через ADNA (~1-10ms)
+  - Для новых ситуаций и низкой уверенности
+  - Полное вычисление policy weights
+  - Автоматический fallback при отказе Fast Path
+
 ---
 
 ## Документация
@@ -86,7 +97,9 @@
 ### Ключевые спецификации
 
 - [docs/token_extended_spec.md](docs/token_extended_spec.md) - Token V2.0 (64 bytes)
-- [docs/specs/Connection_V3_UNIFIED.md](docs/specs/Connection_V3_UNIFIED.md) - **Connection V3.0** (learning-capable, 64 bytes) ✅ v0.29.5
+- [docs/specs/Connection_V3_UNIFIED.md](docs/specs/Connection_V3_UNIFIED.md) - Connection V3.0 (learning-capable, 64 bytes)
+- [docs/specs/CHANGELOG_v0.32.1.md](docs/specs/CHANGELOG_v0.32.1.md) - **ActionController v2.0 Arbitrator** (Fast Path complete) ✅ v0.32.1
+- [docs/specs/CHANGELOG_v0.31.4.md](docs/specs/CHANGELOG_v0.31.4.md) - IntuitionEngine v3.0 (adaptive tuning, collision resolution)
 - [docs/specs/IntuitionEngine_v2.2.md](docs/specs/IntuitionEngine_v2.2.md) - Hybrid Learning (ADNA + Connections)
 - [docs/specs/Testing_Benchmarking_v0.27.0.md](docs/specs/Testing_Benchmarking_v0.27.0.md) - Performance baseline
 - [docs/specs/Persistence_v0.26.0.md](docs/specs/Persistence_v0.26.0.md) - PostgreSQL persistence
@@ -96,14 +109,17 @@
 
 ## Производительность
 
-### Текущие метрики (v0.27.0 baseline)
+### Текущие метрики (v0.32.1)
 
+- **ActionController Fast Path:** ~50-150ns (reflex lookup + Guardian validation)
+- **ActionController Slow Path:** ~1-10ms (ADNA policy computation)
+- **Speedup (Fast vs Slow):** 10,000-200,000× для изученных паттернов
 - **Обработка событий:** ~10,000+ событий/сек
 - **Создание токенов:** <10 ns (target)
 - **Grid KNN search:** <5 μs для k=10 из 10k токенов
 - **Graph BFS/DFS:** <500 μs для 1k узлов
 - **ExperienceStream write:** <200 ns (lock-free circular buffer)
-- **Pattern detection:** <10 ms для 1k событий
+- **IntuitionEngine pattern detection:** <10 ms для 1k событий
 - **Rust vs Python:** 100× быстрее благодаря zero-copy сериализации
 
 ### Архитектура
@@ -173,8 +189,8 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 
 ### Core Structures
 
-- **Token V2.0** (64 bytes) - базовая единица информации
-- **Connection V2.0** (32 bytes) - связи между токенами
+- **Token V2.0** (64 bytes) - базовая единица информации с 8D координатами
+- **Connection V3.0** (64 bytes) - обучаемые связи с Guardian-валидацией
 - **Grid V2.0** - 8D пространственная индексация (K-D деревья)
 - **Graph V2.0** - топологическая навигация (BFS/DFS/Dijkstra)
 
@@ -184,12 +200,13 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 - **ADNA V3.0** - Active DNA (изменяемые политики действий)
 - **Guardian** - конституционная валидация и event pub/sub
 
-### Learning System
+### Learning & Decision Making
 
-- **ExperienceStream** - циркулярный буфер событий (128 bytes/event)
-- **IntuitionEngine V2.1** - статистическое обнаружение паттернов
+- **ExperienceStream V2.1** - циркулярный буфер событий (128 bytes/event)
+- **IntuitionEngine V3.0** - рефлексы и быстрое обучение паттернов (адаптивная настройка)
+- **ActionController V2.0** - **двухпутевое принятие решений** (Fast Path ~100ns / Slow Path ~5ms)
 - **EvolutionManager** - безопасная эволюция ADNA политик
-- **ActionController** - выбор и выполнение действий
+- **HybridLearning V2.2** - интеграция ADNA ↔ Connection feedback loops
 
 ### Persistence (опционально)
 
@@ -315,7 +332,14 @@ cargo test --lib
 
 ---
 
-**Текущая версия:** v0.27.0 - Testing & Benchmarking ✅
-**Следующая версия:** v0.28.0 - IntuitionEngine v2.0 (Neural) 🚧
+**Текущая версия:** v0.32.1 - ActionController v2.0 Fast Path Complete ✅
+**Следующая версия:** v0.33.0 - Target Vector Storage & ADNA Integration 🚧
 
-См. [ROADMAP.md](ROADMAP.md) для планов развития и [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) для полной истории.
+**Недавние релизы:**
+- **v0.32.1** - Fast Path интеграция завершена (Token API, Guardian validation, все тесты) ✅
+- **v0.32.0** - ActionController v2.0 "Arbitrator" (двухпутевое принятие решений) ✅
+- **v0.31.4** - IntuitionEngine v3.0 адаптивная настройка ✅
+- **v0.31.3** - IntuitionEngine v3.0 collision resolution ✅
+- **v0.30.2** - HybridLearning v2.2 интеграция ✅
+
+См. [ROADMAP.md](ROADMAP.md) для планов развития, [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) для полной истории, и [docs/specs/CHANGELOG_v0.32.1.md](docs/specs/CHANGELOG_v0.32.1.md) для деталей последнего релиза.
