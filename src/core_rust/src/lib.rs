@@ -59,6 +59,7 @@ pub mod intuition_engine;
 pub mod evolution_manager;
 pub mod action_executor;
 pub mod action_controller;
+pub mod action_types;
 pub mod executors;
 pub mod persistence;
 pub mod hybrid_learning;  // NEW: v2.2 Hybrid Learning Integration (v0.30.2)
@@ -236,9 +237,17 @@ pub use action_executor::{
     ActionError,
 };
 
+pub use action_types::{
+    ActionIntent,
+    ActionType,
+    DecisionSource,
+};
+
 pub use action_controller::{
     ActionController,
     ActionControllerConfig,
+    ArbiterConfig,
+    ArbiterStats,
 };
 
 pub use executors::{
