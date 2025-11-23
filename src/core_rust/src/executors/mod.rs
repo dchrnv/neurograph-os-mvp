@@ -21,6 +21,8 @@
 
 mod noop;
 mod message_sender;
+mod signal_executor;
 
 pub use noop::NoOpExecutor;
 pub use message_sender::MessageSenderExecutor;
+pub use signal_executor::SignalExecutor;
