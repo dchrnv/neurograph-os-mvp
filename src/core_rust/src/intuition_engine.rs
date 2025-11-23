@@ -343,6 +343,21 @@ impl IntuitionEngine {
         self.stats.read().unwrap().clone()
     }
 
+    /// Get connection by ID (for Guardian validation, ActionController, etc.)
+    ///
+    /// # Arguments
+    /// * `connection_id` - Connection ID to retrieve
+    ///
+    /// # Returns
+    /// Option with ConnectionV3 if found
+    pub fn get_connection(&self, connection_id: u64) -> Option<ConnectionV3> {
+        self.connections
+            .read()
+            .unwrap()
+            .get(&connection_id)
+            .cloned()
+    }
+
     /// Run main analysis loop (async background task)
     pub async fn run(self) {
         let mut interval = tokio::time::interval(

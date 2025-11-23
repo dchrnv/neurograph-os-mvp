@@ -152,6 +152,78 @@ impl Token {
         }
     }
 
+    /// Create Token from 8D state vector (simplified for ActionController)
+    ///
+    /// This method creates a Token from a simple 8D float vector by placing
+    /// each value in the X-axis of its corresponding coordinate space.
+    /// Y and Z axes are set to 0.
+    ///
+    /// # Arguments
+    /// * `id` - Token identifier
+    /// * `state` - 8D state vector (one value per coordinate space)
+    ///
+    /// # Returns
+    /// Token with state[i] mapped to coordinates[i][0] (X-axis)
+    ///
+    /// # Example
+    /// ```ignore
+    /// let state = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+    /// let token = Token::from_state_f32(0, &state);
+    /// ```
+    pub fn from_state_f32(id: u32, state: &[f32; 8]) -> Self {
+        let mut token = Self::new(id);
+
+        // Map each state value to the X-axis of its coordinate space
+        for i in 0..8 {
+            let space = match i {
+                0 => CoordinateSpace::L1Physical,
+                1 => CoordinateSpace::L2Sensory,
+                2 => CoordinateSpace::L3Motor,
+                3 => CoordinateSpace::L4Emotional,
+                4 => CoordinateSpace::L5Cognitive,
+                5 => CoordinateSpace::L6Social,
+                6 => CoordinateSpace::L7Temporal,
+                7 => CoordinateSpace::L8Abstract,
+                _ => unreachable!(),
+            };
+
+            // Encode value to X-axis, Y=0, Z=0
+            token.coordinates[i][0] = Self::encode_coordinate(state[i], space);
+            token.coordinates[i][1] = 0;
+            token.coordinates[i][2] = 0;
+        }
+
+        token
+    }
+
+    /// Extract 8D state vector from Token (inverse of from_state_f32)
+    ///
+    /// Extracts the X-axis value from each coordinate space.
+    ///
+    /// # Returns
+    /// 8D state vector with decoded X-axis values
+    pub fn to_state_f32(&self) -> [f32; 8] {
+        let mut state = [0.0f32; 8];
+
+        for i in 0..8 {
+            let space = match i {
+                0 => CoordinateSpace::L1Physical,
+                1 => CoordinateSpace::L2Sensory,
+                2 => CoordinateSpace::L3Motor,
+                3 => CoordinateSpace::L4Emotional,
+                4 => CoordinateSpace::L5Cognitive,
+                5 => CoordinateSpace::L6Social,
+                6 => CoordinateSpace::L7Temporal,
+                7 => CoordinateSpace::L8Abstract,
+                _ => unreachable!(),
+            };
+
+            state[i] = Self::decode_coordinate(self.coordinates[i][0], space);
+        }
+
+        state
+    }
+
     /// Get current Unix timestamp
     pub fn current_timestamp() -> u32 {
         SystemTime::now()

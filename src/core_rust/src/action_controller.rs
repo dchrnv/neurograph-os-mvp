@@ -466,12 +466,59 @@ impl ActionController {
         use crate::action_types::ActionIntent;
 
         // Try Fast Path first (if available)
-        // NOTE: v0.32.0 implementation - simplified without full Token integration
-        // In production, this would properly integrate with IntuitionEngine's Token-based API
-        if let Some(ref _intuition_arc) = self.intuition {
-            // Fast Path is available but not yet fully integrated with Token API
-            // Fallthrough to Slow Path for now
-            // TODO v0.32.0: Complete Token-based fast path integration
+        if let Some(ref intuition_arc) = self.intuition {
+            let start = Instant::now();
+            let intuition = intuition_arc.read();
+
+            // Convert state to Token for fast path lookup
+            let state_token = crate::Token::from_state_f32(0, &state);
+
+            // Lookup reflex connection
+            if let Some(fast_result) = intuition.try_fast_path(&state_token) {
+                let lookup_time_ns = start.elapsed().as_nanos() as u64;
+                let similarity = fast_result.similarity;
+                let connection_id = fast_result.connection_id;
+
+                // Get the actual connection for validation and target extraction
+                if let Some(connection) = intuition.get_connection(connection_id) {
+                    let confidence_u8 = connection.confidence;
+                    let confidence_f32 = confidence_u8 as f32 / 255.0;
+
+                    // Check if confidence meets threshold
+                    if confidence_u8 >= self.arbiter_config.reflex_confidence_threshold {
+                        // Guardian validation (optional)
+                        if let Some(ref guardian) = self.guardian {
+                            if let Err(_) = guardian.validate_reflex(&connection) {
+                                // Guardian rejected: fallback to Slow Path
+                                self.arbiter_stats.write().record_guardian_rejection();
+                                drop(intuition);
+                                return self.act_slow_path(state);
+                            }
+                        }
+
+                        // Fast Path SUCCESS
+                        // NOTE: ConnectionV3 doesn't store explicit target_vector yet
+                        // For now, use state as action parameters (simplified)
+                        // In v0.33.0, we'll add proper target storage to reflex connections
+                        let target_state = state; // Placeholder for now
+                        let action_type = self.infer_action_type(&target_state);
+                        let action_id = self.next_action_id();
+
+                        // Record stats
+                        self.arbiter_stats.write().record_reflex(confidence_f32, lookup_time_ns);
+
+                        return ActionIntent::from_reflex(
+                            action_id,
+                            action_type,
+                            target_state,
+                            connection_id,
+                            lookup_time_ns,
+                            similarity,
+                            confidence_f32,
+                        );
+                    }
+                }
+            }
         }
 
         // Fast Path unavailable or failed → Slow Path
@@ -807,9 +854,186 @@ mod tests {
     }
 
 
-    // TODO v0.32.0: Fast path tests disabled pending Token API integration
-    // These tests require proper Token structure initialization and IntuitionEngine API updates
+    // ============================================================================
+    // ActionController v2.0 Tests - Fast Path with Token API
+    // ============================================================================
 
+    #[test]
+    fn test_act_fast_path_with_reflex() {
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        // Create IntuitionEngine with a high-confidence reflex
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        // Create and consolidate a high-confidence reflex connection
+        let source = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let target = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+
+        // Convert to Token format using new helper
+        let source_token = crate::Token::from_state_f32(1, &source);
+        let target_token = crate::Token::from_state_f32(2, &target);
+
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 220; // High confidence (>200 threshold)
+        connection.mutability = ConnectionMutability::Immutable as u8;
+        connection.rigidity = 200; // 0.8 * 255
+        connection.pull_strength = 50.0;
+
+        // Consolidate the reflex (adds to fast path)
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(Guardian::new());
+
+        // Create ActionController v2.0 with Arbiter
+        let controller = ActionController::with_arbiter(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            ArbiterConfig::default(),
+        );
+
+        // Call act() with matching state
+        let state = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let intent = controller.act(state);
+
+        // Should use Fast Path (reflex)
+        assert!(intent.source.is_reflex());
+        assert!(intent.confidence > 0.8); // High confidence
+
+        // Check stats
+        let stats = controller.get_arbiter_stats();
+        assert_eq!(stats.total_decisions, 1);
+        assert_eq!(stats.reflex_decisions, 1);
+        assert_eq!(stats.reasoning_decisions, 0);
+        assert!(stats.avg_reflex_time_ns < 1_000_000); // < 1ms
+    }
+
+    #[test]
+    fn test_act_guardian_rejection_fallback() {
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        // Create IntuitionEngine with a HYPOTHESIS reflex (will be rejected by Guardian)
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        let source = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let target = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+
+        let source_token = crate::Token::from_state_f32(1, &source);
+        let target_token = crate::Token::from_state_f32(2, &target);
+
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 250; // Very high confidence
+        connection.mutability = ConnectionMutability::Hypothesis as u8; // Guardian will reject this!
+        connection.rigidity = 200;
+        connection.pull_strength = 50.0;
+
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(Guardian::new());
+
+        let controller = ActionController::with_arbiter(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            ArbiterConfig::default(),
+        );
+
+        let state = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let intent = controller.act(state);
+
+        // Guardian should reject → fallback to Slow Path
+        assert!(intent.source.is_reasoning());
+
+        // Check stats: guardian rejection recorded
+        let stats = controller.get_arbiter_stats();
+        assert_eq!(stats.guardian_rejections, 1);
+        assert_eq!(stats.reflex_decisions, 0);
+        assert_eq!(stats.reasoning_decisions, 1);
+    }
+
+    #[test]
+    fn test_act_low_confidence_fallback() {
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        // Create IntuitionEngine with LOW confidence reflex
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        let source = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let target = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+
+        let source_token = crate::Token::from_state_f32(1, &source);
+        let target_token = crate::Token::from_state_f32(2, &target);
+
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 150; // Low confidence (< 200 threshold)
+        connection.mutability = ConnectionMutability::Immutable as u8;
+
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(Guardian::new());
+
+        let controller = ActionController::with_arbiter(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            ArbiterConfig::default(),
+        );
+
+        let state = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let intent = controller.act(state);
+
+        // Low confidence → fallback to Slow Path
+        assert!(intent.source.is_reasoning());
+
+        let stats = controller.get_arbiter_stats();
+        assert_eq!(stats.reflex_decisions, 0);
+        assert_eq!(stats.reasoning_decisions, 1);
+    }
 
     #[test]
     fn test_arbiter_stats_speedup_factor() {
