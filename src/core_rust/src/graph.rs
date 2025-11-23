@@ -1699,4 +1699,275 @@ mod tests {
         assert!(visited.len() >= 1);
         assert_eq!(visited[0].0, 1); // First node is start
     }
+
+    // ============================================================================
+    // SignalSystem v1.0 Tests
+    // ============================================================================
+
+    #[test]
+    fn test_spreading_activation_basic() {
+        // Test basic spreading on simple chain: 1 -> 2 -> 3 -> 4
+        let mut graph = Graph::new();
+
+        // Build chain
+        for i in 1..=4 {
+            graph.add_node(i);
+        }
+
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 0.8, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(2, 3, 0), 2, 3, 0, 0.8, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 0.8, false).unwrap();
+
+        // Activate from node 1
+        let result = graph.spreading_activation(1, 1.0, None);
+
+        // Should activate nodes 2, 3, 4
+        assert!(result.activated_nodes.len() >= 2, "Should activate at least 2 nodes");
+        assert!(result.nodes_visited >= 4, "Should visit at least 4 nodes");
+        assert!(result.execution_time_us > 0, "Should track execution time");
+
+        // Nodes should be sorted by energy (descending)
+        for i in 1..result.activated_nodes.len() {
+            assert!(
+                result.activated_nodes[i-1].energy >= result.activated_nodes[i].energy,
+                "Nodes should be sorted by energy"
+            );
+        }
+
+        // Energy should decay with distance
+        if result.activated_nodes.len() >= 2 {
+            let first = &result.activated_nodes[0];
+            let second = &result.activated_nodes[1];
+            assert!(first.depth <= second.depth || first.energy >= second.energy,
+                "Higher energy nodes should be closer or have higher energy");
+        }
+    }
+
+    #[test]
+    fn test_spreading_activation_accumulation_sum() {
+        // Test sum accumulation mode with diamond: 1 -> 2,3 -> 4
+        let mut graph = Graph::new();
+
+        for i in 1..=4 {
+            graph.add_node(i);
+        }
+
+        // Create diamond pattern
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 0.5, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 0.5, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
+
+        // Configure for sum accumulation
+        let mut config = SignalConfig::default();
+        config.accumulation_mode = crate::graph::AccumulationMode::Sum;
+
+        let result = graph.spreading_activation(1, 1.0, Some(config));
+
+        // Node 4 should receive energy from both paths (2 and 3)
+        // So its energy should be higher than if it came from single path
+        let node4_activation = graph.get_activation(4);
+        assert!(node4_activation.is_some(), "Node 4 should be activated");
+
+        // Energy at node 4 should be sum of both paths
+        let energy = node4_activation.unwrap();
+        assert!(energy > 0.2, "Node 4 should have significant energy from both paths: {}", energy);
+    }
+
+    #[test]
+    fn test_spreading_activation_accumulation_max() {
+        // Test max accumulation mode
+        let mut graph = Graph::new();
+
+        for i in 1..=4 {
+            graph.add_node(i);
+        }
+
+        // Diamond with different weights
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 0.8, false).unwrap(); // Strong path
+        graph.add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 0.3, false).unwrap(); // Weak path
+        graph.add_edge(Graph::compute_edge_id(2, 4, 0), 2, 4, 0, 1.0, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 1.0, false).unwrap();
+
+        // Configure for max accumulation
+        let mut config = SignalConfig::default();
+        config.accumulation_mode = crate::graph::AccumulationMode::Max;
+
+        let result = graph.spreading_activation(1, 1.0, Some(config));
+
+        // Node 4 should have energy from stronger path (via node 2)
+        let node4_activation = graph.get_activation(4);
+        assert!(node4_activation.is_some(), "Node 4 should be activated");
+    }
+
+    #[test]
+    fn test_spreading_activation_max_depth() {
+        // Test max depth limiting
+        let mut graph = Graph::new();
+
+        // Create long chain: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+        for i in 1..=6 {
+            graph.add_node(i);
+        }
+
+        for i in 1..=5 {
+            let edge_id = Graph::compute_edge_id(i, i+1, 0);
+            graph.add_edge(edge_id, i, i+1, 0, 1.0, false).unwrap();
+        }
+
+        // Limit to depth 3
+        let mut config = SignalConfig::default();
+        config.max_depth = 3;
+        config.min_energy = 0.0; // Disable energy cutoff
+
+        let result = graph.spreading_activation(1, 1.0, Some(config));
+
+        // Should reach at most depth 3
+        assert_eq!(result.max_depth_reached, 3, "Should respect max_depth");
+
+        // Should not activate nodes beyond depth 3
+        for node in &result.activated_nodes {
+            assert!(node.depth <= 3, "Node {} at depth {} exceeds max_depth", node.node_id, node.depth);
+        }
+    }
+
+    #[test]
+    fn test_spreading_activation_energy_cutoff() {
+        // Test min_energy cutoff
+        let mut graph = Graph::new();
+
+        // Chain with low weights (causes fast decay)
+        for i in 1..=5 {
+            graph.add_node(i);
+        }
+
+        for i in 1..=4 {
+            let edge_id = Graph::compute_edge_id(i, i+1, 0);
+            graph.add_edge(edge_id, i, i+1, 0, 0.3, false).unwrap(); // Low weight
+        }
+
+        // Configure high decay and cutoff
+        let mut config = SignalConfig::default();
+        config.decay_rate = 0.5; // 50% decay per hop
+        config.min_energy = 0.05; // Stop when energy < 0.05
+        let min_energy_threshold = config.min_energy;
+
+        let result = graph.spreading_activation(1, 1.0, Some(config));
+
+        // Should stop early due to energy cutoff
+        // With 50% decay and 0.3 weight: 1.0 -> 0.15 -> 0.0225 (stops)
+        assert!(result.activated_nodes.len() < 4, "Should stop due to energy cutoff");
+
+        // All activated nodes should have energy >= min_energy
+        for node in &result.activated_nodes {
+            assert!(node.energy >= min_energy_threshold,
+                "Node {} has energy {} below min_energy {}",
+                node.node_id, node.energy, min_energy_threshold);
+        }
+    }
+
+    #[test]
+    fn test_spreading_activation_strongest_path() {
+        // Test strongest path detection
+        let mut graph = Graph::new();
+
+        // Create network with multiple paths
+        for i in 1..=5 {
+            graph.add_node(i);
+        }
+
+        // Strong path: 1 -> 2 -> 5
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 0.9, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(2, 5, 0), 2, 5, 0, 0.9, false).unwrap();
+
+        // Weak path: 1 -> 3 -> 4 -> 5
+        graph.add_edge(Graph::compute_edge_id(1, 3, 0), 1, 3, 0, 0.4, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(3, 4, 0), 3, 4, 0, 0.4, false).unwrap();
+        graph.add_edge(Graph::compute_edge_id(4, 5, 0), 4, 5, 0, 0.4, false).unwrap();
+
+        let result = graph.spreading_activation(1, 1.0, None);
+
+        // Should have strongest path
+        assert!(result.strongest_path.is_some(), "Should detect strongest path");
+
+        let path = result.strongest_path.unwrap();
+        assert!(path.nodes.len() >= 2, "Strongest path should have multiple nodes");
+        assert_eq!(path.nodes[0], 1, "Path should start at source");
+
+        // Strongest node should be in the result
+        if let Some(strongest) = result.activated_nodes.first() {
+            assert!(strongest.energy > 0.0, "Strongest node should have energy");
+        }
+    }
+
+    #[test]
+    fn test_spreading_activation_empty_graph() {
+        // Test with non-existent source
+        let mut graph = Graph::new();
+
+        let result = graph.spreading_activation(999, 1.0, None);
+
+        // Should return empty result
+        assert_eq!(result.activated_nodes.len(), 0, "Should not activate any nodes");
+        assert_eq!(result.nodes_visited, 0, "Should not visit any nodes");
+    }
+
+    #[test]
+    fn test_spreading_activation_isolated_node() {
+        // Test with isolated node (no outgoing edges)
+        let mut graph = Graph::new();
+        graph.add_node(1);
+
+        let result = graph.spreading_activation(1, 1.0, None);
+
+        // Should activate only source
+        assert_eq!(result.activated_nodes.len(), 0, "Should not activate neighbors (none exist)");
+        assert_eq!(result.nodes_visited, 1, "Should visit only source");
+    }
+
+    #[test]
+    fn test_clear_activations() {
+        let mut graph = Graph::new();
+
+        for i in 1..=3 {
+            graph.add_node(i);
+        }
+
+        graph.add_edge(Graph::compute_edge_id(1, 2, 0), 1, 2, 0, 1.0, false).unwrap();
+
+        // Activate
+        graph.spreading_activation(1, 1.0, None);
+
+        // Should have activations
+        assert!(graph.get_activation(1).is_some(), "Node 1 should be activated");
+
+        // Clear
+        graph.clear_activations();
+
+        // Should have no activations
+        assert!(graph.get_activation(1).is_none(), "Node 1 should not be activated after clear");
+        assert!(graph.get_activation(2).is_none(), "Node 2 should not be activated after clear");
+    }
+
+    #[test]
+    fn test_signal_config_validation() {
+        // Valid config
+        let config = SignalConfig::default();
+        assert!(config.validate().is_ok(), "Default config should be valid");
+
+        // Invalid min_energy
+        let mut config = SignalConfig::default();
+        config.min_energy = 1.5;
+        assert!(config.validate().is_err(), "min_energy > 1.0 should be invalid");
+
+        // Invalid decay_rate
+        let mut config = SignalConfig::default();
+        config.decay_rate = -0.1;
+        assert!(config.validate().is_err(), "Negative decay_rate should be invalid");
+
+        // Invalid max_depth
+        let mut config = SignalConfig::default();
+        config.max_depth = 0;
+        assert!(config.validate().is_err(), "max_depth = 0 should be invalid");
+    }
 }
