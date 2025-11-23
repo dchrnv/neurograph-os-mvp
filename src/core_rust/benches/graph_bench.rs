@@ -188,6 +188,110 @@ fn bench_graph_get_neighbors(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmark: Spreading activation (target: <1ms for 1k nodes)
+fn bench_spreading_activation(c: &mut Criterion) {
+    let mut group = c.benchmark_group("spreading_activation");
+
+    for size in [100, 500, 1000, 5000].iter() {
+        let mut graph = Graph::new();
+
+        // Create a connected graph with 'size' nodes in a grid pattern
+        // This simulates a realistic semantic network structure
+        for i in 0..*size {
+            graph.add_node(i as u32);
+        }
+
+        // Add edges: each node connects to next 5 neighbors (avg degree = 5)
+        for i in 0..*size {
+            for offset in 1..=5 {
+                let to = ((i + offset) % *size) as u32;
+                let edge_id = Graph::compute_edge_id(i as u32, to, 0);
+                let weight = 0.5 + (offset as f32 * 0.1); // Vary weights 0.6-1.0
+                graph.add_edge(edge_id, i as u32, to, 0, weight, false).ok();
+            }
+        }
+
+        group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
+            b.iter(|| {
+                graph.spreading_activation(
+                    black_box(0),
+                    black_box(1.0),
+                    black_box(None)
+                )
+            })
+        });
+    }
+
+    group.finish();
+}
+
+/// Benchmark: Spreading activation with different configurations
+fn bench_spreading_activation_configs(c: &mut Criterion) {
+    use neurograph_core::{SignalConfig, AccumulationMode};
+
+    let mut graph = Graph::new();
+
+    // Create a 1000-node graph
+    for i in 0..1000 {
+        graph.add_node(i);
+    }
+
+    for i in 0..1000 {
+        for offset in 1..=5 {
+            let to = (i + offset) % 1000;
+            let edge_id = Graph::compute_edge_id(i, to, 0);
+            graph.add_edge(edge_id, i, to, 0, 0.7, false).ok();
+        }
+    }
+
+    let mut group = c.benchmark_group("spreading_activation_configs");
+
+    // Default config
+    group.bench_function("default_config", |b| {
+        b.iter(|| {
+            graph.spreading_activation(black_box(0), black_box(1.0), black_box(None))
+        })
+    });
+
+    // High decay (spreads less)
+    group.bench_function("high_decay", |b| {
+        let mut config = SignalConfig::default();
+        config.decay_rate = 0.5;
+        b.iter(|| {
+            graph.spreading_activation(black_box(0), black_box(1.0), black_box(Some(config.clone())))
+        })
+    });
+
+    // Max depth 3 (shallow spread)
+    group.bench_function("max_depth_3", |b| {
+        let mut config = SignalConfig::default();
+        config.max_depth = 3;
+        b.iter(|| {
+            graph.spreading_activation(black_box(0), black_box(1.0), black_box(Some(config.clone())))
+        })
+    });
+
+    // Accumulation: Max mode
+    group.bench_function("accumulation_max", |b| {
+        let mut config = SignalConfig::default();
+        config.accumulation_mode = AccumulationMode::Max;
+        b.iter(|| {
+            graph.spreading_activation(black_box(0), black_box(1.0), black_box(Some(config.clone())))
+        })
+    });
+
+    // Accumulation: WeightedAverage mode
+    group.bench_function("accumulation_weighted", |b| {
+        let mut config = SignalConfig::default();
+        config.accumulation_mode = AccumulationMode::WeightedAverage;
+        b.iter(|| {
+            graph.spreading_activation(black_box(0), black_box(1.0), black_box(Some(config.clone())))
+        })
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_graph_add_node,
@@ -195,6 +299,8 @@ criterion_group!(
     bench_graph_bfs,
     bench_graph_dfs,
     bench_graph_shortest_path,
-    bench_graph_get_neighbors
+    bench_graph_get_neighbors,
+    bench_spreading_activation,
+    bench_spreading_activation_configs
 );
 criterion_main!(benches);
