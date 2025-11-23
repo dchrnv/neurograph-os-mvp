@@ -199,6 +199,161 @@ impl PartialEq for DijkstraState {
 
 impl Eq for DijkstraState {}
 
+// ============================================================================
+// SignalSystem v1.0 - Neural Dynamics for Graph
+// ============================================================================
+
+/// Accumulation mode for node activation energy
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccumulationMode {
+    /// Energy accumulates (sum)
+    Sum,
+    /// Take maximum energy
+    Max,
+    /// Weighted average based on activation count
+    WeightedAverage,
+}
+
+impl Default for AccumulationMode {
+    fn default() -> Self {
+        AccumulationMode::Sum
+    }
+}
+
+/// Activation state of a node in the graph
+#[derive(Debug, Clone)]
+pub struct NodeActivation {
+    /// Current energy level [0.0, 1.0+]
+    pub energy: f32,
+    /// Timestamp of last activation (microseconds)
+    pub last_activated: u64,
+    /// Number of times this node was activated in current cycle
+    pub activation_count: u32,
+    /// Source node that triggered this activation
+    pub source_id: Option<NodeId>,
+}
+
+impl Default for NodeActivation {
+    fn default() -> Self {
+        Self {
+            energy: 0.0,
+            last_activated: 0,
+            activation_count: 0,
+            source_id: None,
+        }
+    }
+}
+
+impl NodeActivation {
+    /// Create new activation with given energy
+    pub fn new(energy: f32, source_id: Option<NodeId>) -> Self {
+        Self {
+            energy,
+            last_activated: Self::current_timestamp_us(),
+            activation_count: 1,
+            source_id,
+        }
+    }
+
+    /// Get current timestamp in microseconds
+    fn current_timestamp_us() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_micros() as u64
+    }
+}
+
+/// Configuration for spreading activation algorithm
+#[derive(Debug, Clone)]
+pub struct SignalConfig {
+    /// Minimum energy threshold to continue spreading (default: 0.01)
+    pub min_energy: f32,
+    /// Energy decay rate per hop [0.0, 1.0] (default: 0.2)
+    pub decay_rate: f32,
+    /// Maximum depth of spreading (default: 5)
+    pub max_depth: usize,
+    /// Activation threshold for a node to be considered "activated" (default: 0.1)
+    pub activation_threshold: f32,
+    /// How to accumulate energy when node receives multiple signals
+    pub accumulation_mode: AccumulationMode,
+}
+
+impl Default for SignalConfig {
+    fn default() -> Self {
+        Self {
+            min_energy: 0.01,
+            decay_rate: 0.2,
+            max_depth: 5,
+            activation_threshold: 0.1,
+            accumulation_mode: AccumulationMode::Sum,
+        }
+    }
+}
+
+impl SignalConfig {
+    /// Validate configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if self.min_energy < 0.0 || self.min_energy > 1.0 {
+            return Err(format!("min_energy must be in [0.0, 1.0], got {}", self.min_energy));
+        }
+        if self.decay_rate < 0.0 || self.decay_rate > 1.0 {
+            return Err(format!("decay_rate must be in [0.0, 1.0], got {}", self.decay_rate));
+        }
+        if self.max_depth == 0 {
+            return Err("max_depth must be > 0".to_string());
+        }
+        if self.activation_threshold < 0.0 {
+            return Err(format!("activation_threshold must be >= 0.0, got {}", self.activation_threshold));
+        }
+        Ok(())
+    }
+}
+
+/// Result of spreading activation algorithm
+#[derive(Debug, Clone)]
+pub struct ActivationResult {
+    /// List of activated nodes with their energies
+    pub activated_nodes: Vec<ActivatedNode>,
+    /// Total number of nodes visited during spreading
+    pub nodes_visited: usize,
+    /// Maximum depth reached during spreading
+    pub max_depth_reached: usize,
+    /// Execution time in microseconds
+    pub execution_time_us: u64,
+    /// Path with strongest activation (if any)
+    pub strongest_path: Option<Path>,
+}
+
+impl Default for ActivationResult {
+    fn default() -> Self {
+        Self {
+            activated_nodes: Vec::new(),
+            nodes_visited: 0,
+            max_depth_reached: 0,
+            execution_time_us: 0,
+            strongest_path: None,
+        }
+    }
+}
+
+/// Single activated node with metadata
+#[derive(Debug, Clone)]
+pub struct ActivatedNode {
+    /// Node identifier
+    pub node_id: NodeId,
+    /// Final energy at this node
+    pub energy: f32,
+    /// Depth from source (number of hops)
+    pub depth: usize,
+    /// Path from source to this node
+    pub path_from_source: Vec<NodeId>,
+}
+
+// ============================================================================
+// End of SignalSystem structures
+// ============================================================================
+
 /// Graph V2.0 - Topological indexing and navigation
 ///
 /// # Example
@@ -228,6 +383,10 @@ pub struct Graph {
     adjacency_in: HashMap<NodeId, Vec<EdgeId>>,
     /// Edge metadata
     edge_map: HashMap<EdgeId, EdgeInfo>,
+    /// Node activation states (SignalSystem v1.0)
+    activations: HashMap<NodeId, NodeActivation>,
+    /// Spreading activation configuration (SignalSystem v1.0)
+    signal_config: SignalConfig,
 }
 
 impl Graph {
@@ -244,6 +403,8 @@ impl Graph {
             adjacency_out: HashMap::with_capacity(capacity),
             adjacency_in: HashMap::with_capacity(capacity),
             edge_map: HashMap::new(),
+            activations: HashMap::new(),
+            signal_config: SignalConfig::default(),
         }
     }
 

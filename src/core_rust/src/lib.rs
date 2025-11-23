@@ -90,6 +90,12 @@ pub use graph::{
     Path,
     Subgraph,
     EdgeInfo,
+    // SignalSystem v1.0
+    NodeActivation,
+    SignalConfig,
+    AccumulationMode,
+    ActivationResult,
+    ActivatedNode,
 };
 
 pub use cdna::{
