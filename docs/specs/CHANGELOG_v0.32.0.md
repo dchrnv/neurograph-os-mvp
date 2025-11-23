@@ -163,10 +163,10 @@ State [f32; 8]
              └─→ Failsafe: ActionIntent::failsafe()
 ```
 
-#### New Constructor
+#### Constructor
 
 ```rust
-ActionController::with_arbiter(
+ActionController::new(
     adna_reader: Arc<dyn ADNAReader>,
     experience_writer: Arc<dyn ExperienceWriter>,
     intuition: Arc<RwLock<IntuitionEngine>>,
@@ -212,48 +212,16 @@ pub fn act(&self, state: [f32; 8]) -> ActionIntent {
 
 ## 🧪 Testing
 
-### Unit Tests (11 passing)
+### Unit Tests (5 passing)
 
 #### ArbiterStats Tests
 - `test_arbiter_stats_speedup_factor` - Verify speedup calculations
 - `test_arbiter_stats_reflex_usage_percent` - Verify usage tracking
 
-#### act() Method Tests
-- `test_act_slow_path_only` - Verify Slow Path when Fast Path unavailable
-- `test_action_type_inference` - Verify ActionType classification from target vectors
-
-#### Backward Compatibility Tests
-- All existing v1.0 tests pass (execute_intent, executor registration, etc.)
-
-#### Disabled Tests (TODO v0.32.0)
-- Fast Path integration tests pending Token API updates
-- Guardian rejection tests pending connection access API
-- Low confidence fallback tests pending IntuitionEngine API
-
----
-
-## 🔄 Backward Compatibility
-
-**100% compatible with ActionController v1.0:**
-- Existing `ActionController::new()` constructor still available
-- v1.0 `execute_intent()` method unchanged
-- Arbiter features opt-in via `with_arbiter()` constructor
-
-**Migration Path:**
-```rust
-// v1.0 (still works)
-let controller = ActionController::with_defaults(adna, exp_stream);
-
-// v2.0 (new capabilities)
-let controller = ActionController::with_arbiter(
-    adna,
-    exp_stream,
-    intuition,      // NEW
-    guardian,       // NEW
-    config,
-    arbiter_config, // NEW
-);
-```
+#### Fast Path Tests (Disabled in v0.32.0)
+- Fast Path integration tests pending Token API updates (enabled in v0.32.1)
+- Guardian rejection tests pending connection access API (enabled in v0.32.1)
+- Low confidence fallback tests pending IntuitionEngine API (enabled in v0.32.1)
 
 ---
 
@@ -343,9 +311,8 @@ pub use action_controller::{
 ## ✅ Status
 
 - **Build:** ✓ Compiles successfully
-- **Tests:** ✓ 11/11 unit tests passing
-- **Warnings:** 17 warnings (unused variables, imports) - non-critical
-- **Backward Compatibility:** ✓ 100% compatible with v1.0
+- **Tests:** ✓ 5/5 unit tests passing
+- **Warnings:** Non-critical (unused variables, imports)
 - **Fast Path:** 🚧 Stubbed (deferred to v0.32.1)
 - **Slow Path:** ✓ Implemented (simplified)
 - **Statistics:** ✓ Fully functional

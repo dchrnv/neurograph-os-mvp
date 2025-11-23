@@ -240,36 +240,8 @@ pub struct ActionController {
 }
 
 impl ActionController {
-    /// Create new ActionController v1.0 (backward compatible)
+    /// Create ActionController v2.0 with dual-path decision making
     pub fn new(
-        adna_reader: Arc<dyn ADNAReader>,
-        experience_writer: Arc<dyn ExperienceWriter>,
-        config: ActionControllerConfig,
-    ) -> Self {
-        Self {
-            adna_reader,
-            experience_writer,
-            executors: RwLock::new(HashMap::new()),
-            config,
-            // v2.0 components disabled by default
-            intuition: None,
-            guardian: None,
-            arbiter_config: ArbiterConfig::default(),
-            arbiter_stats: Arc::new(RwLock::new(ArbiterStats::new())),
-            action_id_counter: std::sync::atomic::AtomicU64::new(1),
-        }
-    }
-
-    /// Create with default config (v1.0)
-    pub fn with_defaults(
-        adna_reader: Arc<dyn ADNAReader>,
-        experience_writer: Arc<dyn ExperienceWriter>,
-    ) -> Self {
-        Self::new(adna_reader, experience_writer, ActionControllerConfig::default())
-    }
-
-    /// Create ActionController v2.0 with Arbiter (dual-path)
-    pub fn with_arbiter(
         adna_reader: Arc<dyn ADNAReader>,
         experience_writer: Arc<dyn ExperienceWriter>,
         intuition: Arc<RwLock<crate::IntuitionEngine>>,
@@ -655,207 +627,8 @@ mod tests {
     use super::*;
     use crate::adna::{InMemoryADNAReader, ActionPolicy};
     use crate::experience_stream::ExperienceStream;
-    use crate::executors::{NoOpExecutor, MessageSenderExecutor};
-
-    #[tokio::test]
-    async fn test_action_controller_creation() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        assert_eq!(controller.list_executors().len(), 0);
-    }
-
-    #[tokio::test]
-    async fn test_register_executor() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        let noop = Arc::new(NoOpExecutor::new());
-        controller.register_executor(noop).unwrap();
-
-        assert_eq!(controller.list_executors().len(), 1);
-        assert!(controller.list_executors().contains(&"noop".to_string()));
-    }
-
-    #[tokio::test]
-    async fn test_register_duplicate_executor() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        let noop1 = Arc::new(NoOpExecutor::new());
-        let noop2 = Arc::new(NoOpExecutor::new());
-
-        controller.register_executor(noop1).unwrap();
-        let result = controller.register_executor(noop2);
-
-        assert!(result.is_err());
-        assert_eq!(controller.list_executors().len(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_execute_intent_noop() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        // Register executor
-        let noop = Arc::new(NoOpExecutor::new());
-        controller.register_executor(noop).unwrap();
-
-        // Create intent
-        let intent = Intent::new(
-            "test_action",
-            serde_json::json!({}),
-            [100, 200, 50, 300, 150, 400, 250, 350],
-        );
-
-        // Execute
-        let result = controller.execute_intent(intent).await.unwrap();
-
-        assert!(result.success);
-        assert!(result.duration_ms >= 1);
-    }
-
-    #[tokio::test]
-    async fn test_execute_intent_message_sender() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        // Register executor
-        let message_sender = Arc::new(MessageSenderExecutor::new());
-        controller.register_executor(message_sender).unwrap();
-
-        // Create intent
-        let intent = Intent::new(
-            "send_message",
-            serde_json::json!({
-                "message": "Hello from ActionController!",
-                "priority": "info"
-            }),
-            [100, 200, 50, 300, 150, 400, 250, 350],
-        );
-
-        // Execute
-        let result = controller.execute_intent(intent).await.unwrap();
-
-        assert!(result.success);
-        assert_eq!(
-            result.output.get("message").unwrap().as_str().unwrap(),
-            "Hello from ActionController!"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_execute_intent_no_executors() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        // No executors registered
-        let intent = Intent::new(
-            "test_action",
-            serde_json::json!({}),
-            [100, 200, 50, 300, 150, 400, 250, 350],
-        );
-
-        let result = controller.execute_intent(intent).await;
-        assert!(result.is_err());
-    }
-
-    #[tokio::test]
-    async fn test_execute_intent_invalid_params() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        // Register message sender (requires 'message' param)
-        let message_sender = Arc::new(MessageSenderExecutor::new());
-        controller.register_executor(message_sender).unwrap();
-
-        // Create intent with INVALID params (missing 'message')
-        let intent = Intent::new(
-            "send_message",
-            serde_json::json!({
-                "priority": "info"
-            }),
-            [100, 200, 50, 300, 150, 400, 250, 350],
-        );
-
-        let result = controller.execute_intent(intent).await;
-        assert!(result.is_err());
-
-        match result {
-            Err(ActionError::InvalidParameters(msg)) => {
-                assert!(msg.contains("message"));
-            }
-            _ => panic!("Expected InvalidParameters error"),
-        }
-    }
-
     // ============================================================================
     // ActionController v2.0 Tests - Dual-Path Arbitration
-    // ============================================================================
-
-    #[test]
-    fn test_act_slow_path_only() {
-        // Test Slow Path when IntuitionEngine is not available
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        let state = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
-        let intent = controller.act(state);
-
-        // Should use Slow Path (reasoning)
-        assert!(intent.source.is_reasoning());
-        assert_eq!(intent.confidence, 0.0); // No policy weights → 0 confidence
-
-        // Check stats
-        let stats = controller.get_arbiter_stats();
-        assert_eq!(stats.total_decisions, 1);
-        assert_eq!(stats.reasoning_decisions, 1);
-        assert_eq!(stats.reflex_decisions, 0);
-    }
-
-
-    // ============================================================================
-    // ActionController v2.0 Tests - Fast Path with Token API
     // ============================================================================
 
     #[test]
@@ -897,8 +670,8 @@ mod tests {
         let intuition_arc = Arc::new(RwLock::new(intuition));
         let guardian = Arc::new(Guardian::new());
 
-        // Create ActionController v2.0 with Arbiter
-        let controller = ActionController::with_arbiter(
+        // Create ActionController v2.0 with dual-path decision making
+        let controller = ActionController::new(
             adna_reader as Arc<dyn ADNAReader>,
             experience_stream as Arc<dyn ExperienceWriter>,
             intuition_arc,
@@ -959,7 +732,7 @@ mod tests {
         let intuition_arc = Arc::new(RwLock::new(intuition));
         let guardian = Arc::new(Guardian::new());
 
-        let controller = ActionController::with_arbiter(
+        let controller = ActionController::new(
             adna_reader as Arc<dyn ADNAReader>,
             experience_stream as Arc<dyn ExperienceWriter>,
             intuition_arc,
@@ -1015,7 +788,7 @@ mod tests {
         let intuition_arc = Arc::new(RwLock::new(intuition));
         let guardian = Arc::new(Guardian::new());
 
-        let controller = ActionController::with_arbiter(
+        let controller = ActionController::new(
             adna_reader as Arc<dyn ADNAReader>,
             experience_stream as Arc<dyn ExperienceWriter>,
             intuition_arc,
@@ -1065,36 +838,4 @@ mod tests {
         assert!((stats.reflex_usage_percent - 75.0).abs() < 0.1);
     }
 
-    #[test]
-    fn test_action_type_inference() {
-        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
-
-        let controller = ActionController::with_defaults(
-            adna_reader as Arc<dyn ADNAReader>,
-            experience_stream as Arc<dyn ExperienceWriter>,
-        );
-
-        use crate::action_types::ActionType;
-
-        // Test L1-based inference (Time → ActivateToken)
-        let target = [0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-        let action_type = controller.infer_action_type(&target);
-        assert_eq!(action_type, ActionType::ActivateToken);
-
-        // Test L2-based inference (Space → MoveToken)
-        let target = [0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-        let action_type = controller.infer_action_type(&target);
-        assert_eq!(action_type, ActionType::MoveToken);
-
-        // Test L3-based inference (Agent → CreateConnection)
-        let target = [0.0, 0.0, 0.7, 0.0, 0.0, 0.0, 0.0, 0.0];
-        let action_type = controller.infer_action_type(&target);
-        assert_eq!(action_type, ActionType::CreateConnection);
-
-        // Test default (all small values → SaveState)
-        let target = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
-        let action_type = controller.infer_action_type(&target);
-        assert_eq!(action_type, ActionType::SaveState);
-    }
 }

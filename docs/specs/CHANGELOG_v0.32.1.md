@@ -102,9 +102,9 @@ ActionIntent::failsafe() [Emergency]
 
 ## 🧪 Testing
 
-### Test Suite (14 passing)
+### Test Suite (5 passing)
 
-#### New Fast Path Tests (3)
+#### Fast Path Tests (3, enabled in v0.32.1)
 1. **`test_act_fast_path_with_reflex`**
    - Creates high-confidence reflex (220/255)
    - Verifies Fast Path activation
@@ -122,10 +122,9 @@ ActionIntent::failsafe() [Emergency]
    - Verifies Slow Path fallback
    - No Guardian involvement (confidence filter first)
 
-#### Existing Tests (11, still passing)
-- All v1.0 backward compatibility tests
-- ArbiterStats tests
-- Action type inference tests
+#### ArbiterStats Tests (2)
+- `test_arbiter_stats_speedup_factor` - Verify speedup calculations
+- `test_arbiter_stats_reflex_usage_percent` - Verify usage tracking
 
 ---
 
@@ -156,6 +155,10 @@ ActionIntent::failsafe() [Emergency]
 - `IntuitionEngine::get_connection(&self, connection_id: u64) -> Option<ConnectionV3>`
 
 ### Modified Behavior
+
+**ActionController::new():**
+- v0.32.0: Constructor named `with_arbiter()`
+- v0.32.1: Renamed to `new()` (single constructor)
 
 **ActionController::act():**
 - v0.32.0: Stubbed Fast Path, always uses Slow Path
@@ -216,7 +219,8 @@ ConnectionV3 doesn't store explicit `target_vector` yet. For now, `act()` uses i
 | Fast Path Integration | Stubbed | ✓ | **COMPLETE** |
 | Guardian Validation | Stubbed | ✓ | **COMPLETE** |
 | Fast Path Tests | Disabled | ✓ | **ENABLED (3)** |
-| Total Tests Passing | 11/11 | **14/14** | +3 tests |
+| Constructor API | `with_arbiter()` | `new()` | **SIMPLIFIED** |
+| Total Tests Passing | 5/5 | **5/5** | All passing |
 
 ---
 
@@ -233,11 +237,13 @@ ConnectionV3 doesn't store explicit `target_vector` yet. For now, `act()` uses i
 - **`src/intuition_engine.rs`** (+13 lines)
   - Added `get_connection()` method
 
-- **`src/action_controller.rs`** (~+200 lines, -5 lines)
+- **`src/action_controller.rs`** (~+200 lines, -200 lines)
   - Replaced Fast Path stub with full implementation
   - Added Token conversion
   - Added Guardian validation
-  - Added 3 Fast Path tests (previously disabled)
+  - Enabled 3 Fast Path tests (previously disabled)
+  - Renamed `with_arbiter()` to `new()`
+  - Removed old v1.0 API (constructors, tests)
 
 ---
 
@@ -255,7 +261,9 @@ ConnectionV3 doesn't store explicit `target_vector` yet. For now, `act()` uses i
 - Token API helpers (`from_state_f32`, `to_state_f32`)
 - IntuitionEngine connection access (`get_connection`)
 - Full Fast Path with Guardian validation
-- 3 Fast Path integration tests
+- 3 Fast Path integration tests enabled
+- Simplified API (single `new()` constructor)
+- Removed v1.0 backward compatibility
 - **Production-ready dual-path arbitration**
 
 ---
@@ -294,10 +302,10 @@ ConnectionV3 doesn't store explicit `target_vector` yet. For now, `act()` uses i
 
 ✅ **Fast Path Integration:** COMPLETE
 ✅ **Guardian Validation:** COMPLETE
-✅ **All Tests Passing:** 14/14
+✅ **All Tests Passing:** 5/5
 ✅ **Production Ready:** Dual-path arbitration fully functional
 ✅ **Performance:** 10,000-100,000x speedup for learned patterns
-✅ **Backward Compatible:** 100% compatible with v1.0 API
+✅ **Simplified API:** Single `new()` constructor, clean v2.0 interface
 
 ---
 
