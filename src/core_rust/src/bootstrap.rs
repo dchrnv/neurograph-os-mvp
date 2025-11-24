@@ -33,6 +33,8 @@ use ndarray::{Array1, Array2};
 use std::collections::HashMap;
 use std::hash::Hasher;
 use std::path::Path;
+use std::fs::File;
+use std::io::{Write, Read};
 
 // ============================================================================
 // Configuration
@@ -719,6 +721,200 @@ impl BootstrapLibrary {
 }
 
 // ============================================================================
+// Artifact Persistence
+// ============================================================================
+
+impl BootstrapLibrary {
+    /// Save PCA model to binary file
+    ///
+    /// Saves the trained PCA model for later reuse
+    ///
+    /// # Arguments
+    /// * `path` - Path to save the PCA model
+    ///
+    /// # Returns
+    /// Result with number of bytes written
+    pub fn save_pca_model<P: AsRef<Path>>(&self, path: P) -> Result<usize, BootstrapError> {
+        let pca_model = self.pca_model.as_ref()
+            .ok_or_else(|| BootstrapError::NoData("PCA model not trained".to_string()))?;
+
+        let mut file = File::create(path.as_ref())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        // Write format version (u32)
+        let version: u32 = 1;
+        file.write_all(&version.to_le_bytes())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        // Write dimensions
+        file.write_all(&(pca_model.original_dim as u32).to_le_bytes())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        file.write_all(&(pca_model.target_dim as u32).to_le_bytes())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        // Write mean vector
+        for &val in pca_model.mean.iter() {
+            file.write_all(&val.to_le_bytes())
+                .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        }
+
+        // Write components matrix (row-major)
+        for i in 0..pca_model.target_dim {
+            for j in 0..pca_model.original_dim {
+                file.write_all(&pca_model.components[[i, j]].to_le_bytes())
+                    .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+            }
+        }
+
+        // Write explained variance
+        for &val in pca_model.explained_variance.iter() {
+            file.write_all(&val.to_le_bytes())
+                .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        }
+
+        let metadata = std::fs::metadata(path.as_ref())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        Ok(metadata.len() as usize)
+    }
+
+    /// Load PCA model from binary file
+    ///
+    /// # Arguments
+    /// * `path` - Path to the saved PCA model
+    ///
+    /// # Returns
+    /// Result with loaded PCA model
+    pub fn load_pca_model<P: AsRef<Path>>(&mut self, path: P) -> Result<(), BootstrapError> {
+        let mut file = File::open(path.as_ref())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        // Read version
+        let mut version_bytes = [0u8; 4];
+        file.read_exact(&mut version_bytes)
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        let version = u32::from_le_bytes(version_bytes);
+
+        if version != 1 {
+            return Err(BootstrapError::PcaError(
+                format!("Unsupported PCA model version: {}", version)
+            ));
+        }
+
+        // Read dimensions
+        let mut dim_bytes = [0u8; 4];
+        file.read_exact(&mut dim_bytes)
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        let original_dim = u32::from_le_bytes(dim_bytes) as usize;
+
+        file.read_exact(&mut dim_bytes)
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+        let target_dim = u32::from_le_bytes(dim_bytes) as usize;
+
+        // Read mean vector
+        let mut mean = Array1::zeros(original_dim);
+        for i in 0..original_dim {
+            let mut val_bytes = [0u8; 4];
+            file.read_exact(&mut val_bytes)
+                .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+            mean[i] = f32::from_le_bytes(val_bytes);
+        }
+
+        // Read components matrix
+        let mut components = Array2::zeros((target_dim, original_dim));
+        for i in 0..target_dim {
+            for j in 0..original_dim {
+                let mut val_bytes = [0u8; 4];
+                file.read_exact(&mut val_bytes)
+                    .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+                components[[i, j]] = f32::from_le_bytes(val_bytes);
+            }
+        }
+
+        // Read explained variance
+        let mut explained_variance = Array1::zeros(target_dim);
+        for i in 0..target_dim {
+            let mut val_bytes = [0u8; 4];
+            file.read_exact(&mut val_bytes)
+                .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+            explained_variance[i] = f32::from_le_bytes(val_bytes);
+        }
+
+        self.pca_model = Some(PCAModel {
+            mean,
+            components,
+            explained_variance,
+            original_dim,
+            target_dim,
+        });
+
+        Ok(())
+    }
+
+    /// Save bootstrap map (word → concept mapping) to JSON file
+    ///
+    /// Saves a lightweight mapping of words to their IDs and 3D coordinates
+    ///
+    /// # Arguments
+    /// * `path` - Path to save the bootstrap map
+    ///
+    /// # Returns
+    /// Result with number of concepts saved
+    pub fn save_bootstrap_map<P: AsRef<Path>>(&self, path: P) -> Result<usize, BootstrapError> {
+        if self.concepts.is_empty() {
+            return Err(BootstrapError::NoData("No concepts loaded".to_string()));
+        }
+
+        // Create lightweight concept records (without full embedding)
+        let mut records = Vec::new();
+        for concept in self.concepts.values() {
+            records.push(serde_json::json!({
+                "word": concept.word,
+                "id": concept.id,
+                "coords": concept.coords,
+                "color": concept.color,
+                "emotion": concept.emotion,
+            }));
+        }
+
+        let json = serde_json::to_string_pretty(&records)
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        let mut file = File::create(path.as_ref())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        file.write_all(json.as_bytes())
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        Ok(records.len())
+    }
+
+    /// Save all artifacts: PCA model and bootstrap map
+    ///
+    /// # Arguments
+    /// * `output_dir` - Directory to save artifacts
+    ///
+    /// # Returns
+    /// Result with (pca_bytes, concepts_count)
+    pub fn save_artifacts<P: AsRef<Path>>(&self, output_dir: P) -> Result<(usize, usize), BootstrapError> {
+        let output_dir = output_dir.as_ref();
+
+        // Create output directory if it doesn't exist
+        std::fs::create_dir_all(output_dir)
+            .map_err(|e| BootstrapError::IoError(e.to_string()))?;
+
+        // Save PCA model
+        let pca_path = output_dir.join("pca_model.bin");
+        let pca_bytes = self.save_pca_model(&pca_path)?;
+
+        // Save bootstrap map
+        let map_path = output_dir.join("bootstrap_map.json");
+        let concepts_count = self.save_bootstrap_map(&map_path)?;
+
+        Ok((pca_bytes, concepts_count))
+    }
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 
@@ -1110,5 +1306,116 @@ mod tests {
         assert!(table_concept.emotion.is_none());
 
         std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_save_and_load_pca_model() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_embeddings = "/tmp/test_pca_save.txt";
+        let mut file = File::create(temp_embeddings).unwrap();
+        for i in 0..5 {
+            writeln!(file, "word{} {} {} {}", i, i as f32 * 0.1, i as f32 * 0.2, i as f32 * 0.3).unwrap();
+        }
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+        config.target_dim = 3;
+
+        // Train PCA
+        let mut bootstrap = BootstrapLibrary::new(config.clone());
+        bootstrap.load_embeddings(temp_embeddings).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+
+        // Save PCA model
+        let pca_path = "/tmp/test_pca_model.bin";
+        let bytes = bootstrap.save_pca_model(pca_path).unwrap();
+        assert!(bytes > 0, "Should write bytes");
+
+        // Load PCA model into new instance
+        let mut bootstrap2 = BootstrapLibrary::new(config);
+        bootstrap2.load_pca_model(pca_path).unwrap();
+
+        // Verify model was loaded
+        assert!(bootstrap2.pca_model.is_some());
+        let model = bootstrap2.pca_model.as_ref().unwrap();
+        assert_eq!(model.original_dim, 3);
+        assert_eq!(model.target_dim, 3);
+
+        // Clean up
+        std::fs::remove_file(temp_embeddings).ok();
+        std::fs::remove_file(pca_path).ok();
+    }
+
+    #[test]
+    fn test_save_bootstrap_map() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_map_save.txt";
+        let mut file = File::create(temp_path).unwrap();
+        writeln!(file, "cat 0.1 0.2 0.3").unwrap();
+        writeln!(file, "dog 0.4 0.5 0.6").unwrap();
+        writeln!(file, "red 0.7 0.8 0.9").unwrap();
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+        config.target_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+        bootstrap.add_color_anchors();
+
+        // Save bootstrap map
+        let map_path = "/tmp/test_bootstrap_map.json";
+        let count = bootstrap.save_bootstrap_map(map_path).unwrap();
+        assert_eq!(count, 3);
+
+        // Verify file exists and contains JSON
+        let map_content = std::fs::read_to_string(map_path).unwrap();
+        assert!(map_content.contains("cat"));
+        assert!(map_content.contains("dog"));
+        assert!(map_content.contains("red"));
+
+        // Clean up
+        std::fs::remove_file(temp_path).ok();
+        std::fs::remove_file(map_path).ok();
+    }
+
+    #[test]
+    fn test_save_all_artifacts() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_artifacts.txt";
+        let mut file = File::create(temp_path).unwrap();
+        for i in 0..5 {
+            writeln!(file, "word{} {} {} {}", i, i as f32 * 0.1, i as f32 * 0.2, i as f32 * 0.3).unwrap();
+        }
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+        config.target_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+
+        // Save all artifacts to directory
+        let output_dir = "/tmp/test_bootstrap_artifacts";
+        let (pca_bytes, concepts_count) = bootstrap.save_artifacts(output_dir).unwrap();
+
+        assert!(pca_bytes > 0);
+        assert_eq!(concepts_count, 5);
+
+        // Verify files exist
+        assert!(std::path::Path::new(&format!("{}/pca_model.bin", output_dir)).exists());
+        assert!(std::path::Path::new(&format!("{}/bootstrap_map.json", output_dir)).exists());
+
+        // Clean up
+        std::fs::remove_file(temp_path).ok();
+        std::fs::remove_dir_all(output_dir).ok();
     }
 }
