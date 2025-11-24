@@ -1418,4 +1418,198 @@ mod tests {
         std::fs::remove_file(temp_path).ok();
         std::fs::remove_dir_all(output_dir).ok();
     }
+
+    #[test]
+    fn test_semantic_similarity_cat_dog_car() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_semantic_sim.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create embeddings where:
+        // - cat and dog are close (both animals, similar vectors)
+        // - cat and car are far (animal vs vehicle, different vectors)
+        // Using 5D embeddings for testing
+
+        // Animals cluster (cat, dog, bird, fish)
+        writeln!(file, "cat 1.0 0.9 0.1 0.0 0.0").unwrap();   // Animal cluster
+        writeln!(file, "dog 0.9 1.0 0.1 0.0 0.0").unwrap();   // Very close to cat
+        writeln!(file, "bird 0.8 0.7 0.2 0.1 0.0").unwrap();  // Somewhat close
+        writeln!(file, "fish 0.7 0.6 0.3 0.1 0.0").unwrap();  // Animal but more distant
+
+        // Vehicles cluster (car, truck, bus)
+        writeln!(file, "car 0.0 0.0 0.1 1.0 0.9").unwrap();   // Vehicle cluster, far from cat
+        writeln!(file, "truck 0.0 0.0 0.1 0.9 1.0").unwrap(); // Close to car
+        writeln!(file, "bus 0.1 0.0 0.2 0.8 0.8").unwrap();   // Vehicle cluster
+
+        // Neutral words
+        writeln!(file, "table 0.5 0.5 0.5 0.5 0.5").unwrap(); // Midpoint
+        writeln!(file, "chair 0.4 0.6 0.5 0.5 0.4").unwrap(); // Similar to table
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 5;
+        config.target_dim = 3;
+        config.knn_k = 3; // Find 3 nearest neighbors
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+        bootstrap.populate_graph().unwrap();
+        bootstrap.populate_grid().unwrap();
+        bootstrap.weave_connections().unwrap();
+
+        // Get concepts
+        let cat = bootstrap.get_concept("cat").unwrap();
+        let dog = bootstrap.get_concept("dog").unwrap();
+        let car = bootstrap.get_concept("car").unwrap();
+
+        // Calculate Euclidean distances in 3D projected space
+        let cat_dog_dist = (
+            (cat.coords[0] - dog.coords[0]).powi(2) +
+            (cat.coords[1] - dog.coords[1]).powi(2) +
+            (cat.coords[2] - dog.coords[2]).powi(2)
+        ).sqrt();
+
+        let cat_car_dist = (
+            (cat.coords[0] - car.coords[0]).powi(2) +
+            (cat.coords[1] - car.coords[1]).powi(2) +
+            (cat.coords[2] - car.coords[2]).powi(2)
+        ).sqrt();
+
+        // Assert: cat-dog distance should be much smaller than cat-car distance
+        assert!(
+            cat_dog_dist < cat_car_dist,
+            "Cat-Dog distance ({}) should be less than Cat-Car distance ({})",
+            cat_dog_dist, cat_car_dist
+        );
+
+        // Additionally, cat-dog distance should be significantly smaller (at least 2x)
+        assert!(
+            cat_car_dist > cat_dog_dist * 2.0,
+            "Cat-Car distance should be at least 2x Cat-Dog distance"
+        );
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_spreading_activation_on_semantic_graph() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_spreading.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create a semantic network with animal and vehicle clusters
+        // Animals
+        writeln!(file, "cat 1.0 0.9 0.1 0.0 0.0").unwrap();
+        writeln!(file, "dog 0.9 1.0 0.1 0.0 0.0").unwrap();
+        writeln!(file, "mouse 0.8 0.8 0.2 0.0 0.0").unwrap();
+
+        // Vehicles
+        writeln!(file, "car 0.0 0.0 0.1 1.0 0.9").unwrap();
+        writeln!(file, "truck 0.0 0.0 0.1 0.9 1.0").unwrap();
+
+        // Bridge words (have some similarity to both)
+        writeln!(file, "toy 0.5 0.5 0.3 0.5 0.5").unwrap();
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 5;
+        config.target_dim = 3;
+        config.knn_k = 2;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+        bootstrap.populate_graph().unwrap();
+        bootstrap.populate_grid().unwrap();
+        bootstrap.weave_connections().unwrap();
+
+        // Get IDs before spreading activation
+        let cat_id = bootstrap.get_concept("cat").unwrap().id;
+        let dog_id = bootstrap.get_concept("dog").unwrap().id;
+
+        // Perform spreading activation starting from "cat"
+        let result = bootstrap.graph_mut().spreading_activation(cat_id, 1.0, None);
+
+        // Verify result structure - should activate neighbors, not the source
+        assert!(result.activated_nodes.len() > 0, "Should activate at least one node");
+        assert!(!result.activated_nodes.is_empty(), "Should have activated nodes");
+        assert!(result.nodes_visited >= 2, "Should visit at least source + neighbors");
+
+        // Dog should be activated (neighbor of cat)
+        let dog_activated = result.activated_nodes.iter()
+            .find(|n| n.node_id == dog_id);
+        assert!(dog_activated.is_some(), "Dog should be activated as neighbor");
+        assert!(dog_activated.unwrap().energy > 0.0, "Dog should have positive activation");
+
+        // Verify that activation spreads with decay
+        // Neighbor nodes should have energy < 1.0 (source had 1.0, but neighbors decay)
+        let max_activation = result.activated_nodes.iter()
+            .map(|n| n.energy)
+            .fold(0.0f32, f32::max);
+        assert!(max_activation < 1.0, "Neighbor nodes should have decayed energy < 1.0");
+        assert!(max_activation > 0.0, "Activated nodes should have positive energy");
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_integration_bootstrap_full_pipeline() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_full_integration.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create a small realistic semantic network
+        writeln!(file, "happy 0.9 0.8 0.1 0.0 0.0").unwrap();
+        writeln!(file, "joy 0.85 0.9 0.1 0.0 0.0").unwrap();
+        writeln!(file, "sad 0.1 0.2 0.1 0.0 0.0").unwrap();
+        writeln!(file, "red 0.0 0.0 1.0 0.0 0.0").unwrap();
+        writeln!(file, "blue 0.0 0.0 0.9 0.1 0.0").unwrap();
+        writeln!(file, "green 0.0 0.0 0.85 0.2 0.0").unwrap();
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 5;
+        config.target_dim = 3;
+        config.knn_k = 2;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+
+        // Full pipeline
+        let (concepts, edges) = bootstrap.bootstrap_from_embeddings(temp_path).unwrap();
+        assert_eq!(concepts, 6);
+        assert!(edges > 0);
+
+        // Add multimodal anchors
+        let (colors, emotions) = bootstrap.enrich_multimodal();
+        assert_eq!(colors, 3, "Should enrich red, blue, green");
+        assert_eq!(emotions, 3, "Should enrich happy, joy, sad");
+
+        // Test spreading activation
+        let happy_id = bootstrap.get_concept("happy").unwrap().id;
+        let joy_id = bootstrap.get_concept("joy").unwrap().id;
+        let result = bootstrap.graph_mut().spreading_activation(happy_id, 1.0, None);
+
+        assert!(result.activated_nodes.len() > 1, "Should activate multiple nodes");
+
+        // Joy should be activated (similar emotion)
+        let joy_activated = result.activated_nodes.iter()
+            .find(|n| n.node_id == joy_id);
+        assert!(joy_activated.is_some(), "Joy should be activated from happy");
+
+        // Verify multimodal data
+        let red_concept = bootstrap.get_concept("red").unwrap();
+        assert!(red_concept.color.is_some(), "Red should have color");
+        assert_eq!(red_concept.color.unwrap(), [1.0, 0.0, 0.0]);
+
+        let happy_concept = bootstrap.get_concept("happy").unwrap();
+        assert!(happy_concept.emotion.is_some(), "Happy should have emotion");
+        let vad = happy_concept.emotion.unwrap();
+        assert!(vad[0] > 0.0, "Happy should have positive valence");
+
+        std::fs::remove_file(temp_path).ok();
+    }
 }
