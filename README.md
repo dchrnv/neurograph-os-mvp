@@ -109,8 +109,9 @@
 
 ## Производительность
 
-### Текущие метрики (v0.32.1)
+### Текущие метрики (v0.33.0)
 
+- **SignalSystem Spreading Activation:** ~14.4 μs для глубины 2 (66× быстрее таргета)
 - **ActionController Fast Path:** ~50-150ns (reflex lookup + Guardian validation)
 - **ActionController Slow Path:** ~1-10ms (ADNA policy computation)
 - **Speedup (Fast vs Slow):** 10,000-200,000× для изученных паттернов
@@ -193,6 +194,7 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 - **Connection V3.0** (64 bytes) - обучаемые связи с Guardian-валидацией
 - **Grid V2.0** - 8D пространственная индексация (K-D деревья)
 - **Graph V2.0** - топологическая навигация (BFS/DFS/Dijkstra)
+- **SignalSystem V1.0** - spreading activation по графу с энергетическим затуханием
 
 ### DNA System
 
@@ -213,6 +215,13 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 - **PostgreSQL Backend** - персистентность событий, политик, конфигураций
 - **Retention Policies** - автоархивирование старых данных
 - **Versioned State Management** - отслеживание эволюции
+
+### Bootstrap Library
+
+- **Bootstrap V1.2** - семантическая инициализация графа из эмбеддингов
+- **PCA Pipeline** - снижение размерности (300D → 3D) для визуализации
+- **Multimodal Anchors** - базовые концепты (27 цветов, 30 эмоций)
+- **Artifact Persistence** - сохранение PCA моделей и bootstrap карт
 
 ---
 
