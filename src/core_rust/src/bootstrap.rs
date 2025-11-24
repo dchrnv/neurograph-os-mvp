@@ -568,6 +568,157 @@ impl BootstrapLibrary {
 }
 
 // ============================================================================
+// Multimodal Anchors
+// ============================================================================
+
+impl BootstrapLibrary {
+    /// Enrich concepts with color information
+    ///
+    /// Adds RGB color values to concepts that represent colors or have strong color associations
+    ///
+    /// # Returns
+    /// Number of concepts enriched with color
+    pub fn add_color_anchors(&mut self) -> usize {
+        let color_map = Self::get_color_lexicon();
+        let mut enriched = 0;
+
+        for concept in self.concepts.values_mut() {
+            if let Some(&color) = color_map.get(concept.word.as_str()) {
+                concept.color = Some(color);
+                enriched += 1;
+            }
+        }
+
+        enriched
+    }
+
+    /// Enrich concepts with emotion information
+    ///
+    /// Adds VAD (Valence-Arousal-Dominance) values to emotion-related concepts
+    ///
+    /// # Returns
+    /// Number of concepts enriched with emotion
+    pub fn add_emotion_anchors(&mut self) -> usize {
+        let emotion_map = Self::get_emotion_lexicon();
+        let mut enriched = 0;
+
+        for concept in self.concepts.values_mut() {
+            if let Some(&emotion) = emotion_map.get(concept.word.as_str()) {
+                concept.emotion = Some(emotion);
+                enriched += 1;
+            }
+        }
+
+        enriched
+    }
+
+    /// Get color lexicon mapping words to RGB values
+    ///
+    /// Returns HashMap of color words to normalized RGB [0.0-1.0]
+    fn get_color_lexicon() -> HashMap<&'static str, [f32; 3]> {
+        let mut map = HashMap::new();
+
+        // Basic colors
+        map.insert("red", [1.0, 0.0, 0.0]);
+        map.insert("green", [0.0, 1.0, 0.0]);
+        map.insert("blue", [0.0, 0.0, 1.0]);
+        map.insert("yellow", [1.0, 1.0, 0.0]);
+        map.insert("cyan", [0.0, 1.0, 1.0]);
+        map.insert("magenta", [1.0, 0.0, 1.0]);
+        map.insert("white", [1.0, 1.0, 1.0]);
+        map.insert("black", [0.0, 0.0, 0.0]);
+        map.insert("gray", [0.5, 0.5, 0.5]);
+        map.insert("grey", [0.5, 0.5, 0.5]);
+
+        // Extended colors
+        map.insert("orange", [1.0, 0.65, 0.0]);
+        map.insert("purple", [0.5, 0.0, 0.5]);
+        map.insert("pink", [1.0, 0.75, 0.8]);
+        map.insert("brown", [0.65, 0.16, 0.16]);
+        map.insert("violet", [0.93, 0.51, 0.93]);
+        map.insert("indigo", [0.29, 0.0, 0.51]);
+        map.insert("turquoise", [0.25, 0.88, 0.82]);
+        map.insert("gold", [1.0, 0.84, 0.0]);
+        map.insert("silver", [0.75, 0.75, 0.75]);
+        map.insert("beige", [0.96, 0.96, 0.86]);
+
+        // Nature-associated colors
+        map.insert("sky", [0.53, 0.81, 0.92]);
+        map.insert("ocean", [0.0, 0.5, 1.0]);
+        map.insert("grass", [0.0, 0.8, 0.0]);
+        map.insert("forest", [0.13, 0.55, 0.13]);
+        map.insert("sun", [1.0, 1.0, 0.0]);
+        map.insert("fire", [1.0, 0.27, 0.0]);
+        map.insert("blood", [0.72, 0.0, 0.0]);
+
+        map
+    }
+
+    /// Get emotion lexicon mapping words to VAD (Valence-Arousal-Dominance)
+    ///
+    /// Returns HashMap of emotion words to VAD values [-1.0 to 1.0]
+    /// - Valence: negative to positive
+    /// - Arousal: calm to excited
+    /// - Dominance: submissive to dominant
+    fn get_emotion_lexicon() -> HashMap<&'static str, [f32; 3]> {
+        let mut map = HashMap::new();
+
+        // Basic emotions (Ekman's 6)
+        map.insert("happy", [0.8, 0.6, 0.5]);      // positive, energized, moderate control
+        map.insert("sad", [-0.7, -0.5, -0.4]);     // negative, low energy, low control
+        map.insert("angry", [-0.6, 0.8, 0.7]);     // negative, high arousal, dominant
+        map.insert("fear", [-0.8, 0.7, -0.6]);     // very negative, high arousal, submissive
+        map.insert("disgust", [-0.7, 0.3, 0.3]);   // negative, moderate arousal
+        map.insert("surprise", [0.2, 0.8, 0.0]);   // slightly positive, high arousal, neutral
+
+        // Extended emotions
+        map.insert("joy", [0.9, 0.7, 0.6]);
+        map.insert("love", [0.9, 0.4, 0.4]);
+        map.insert("hate", [-0.8, 0.7, 0.5]);
+        map.insert("anxiety", [-0.6, 0.7, -0.5]);
+        map.insert("calm", [0.5, -0.8, 0.2]);
+        map.insert("excited", [0.7, 0.9, 0.5]);
+        map.insert("bored", [-0.3, -0.7, -0.3]);
+        map.insert("proud", [0.7, 0.4, 0.8]);
+        map.insert("shame", [-0.6, 0.3, -0.7]);
+        map.insert("guilt", [-0.7, 0.4, -0.6]);
+
+        // Valence variations
+        map.insert("depressed", [-0.9, -0.6, -0.7]);
+        map.insert("cheerful", [0.8, 0.5, 0.5]);
+        map.insert("melancholy", [-0.5, -0.4, -0.3]);
+        map.insert("ecstatic", [1.0, 0.9, 0.7]);
+        map.insert("miserable", [-0.9, -0.5, -0.6]);
+        map.insert("content", [0.6, -0.2, 0.3]);
+        map.insert("satisfied", [0.7, 0.0, 0.5]);
+
+        // Arousal variations
+        map.insert("relaxed", [0.6, -0.7, 0.3]);
+        map.insert("tense", [-0.4, 0.8, -0.2]);
+        map.insert("alert", [0.3, 0.8, 0.6]);
+        map.insert("tired", [-0.2, -0.8, -0.4]);
+
+        // Social emotions
+        map.insert("lonely", [-0.6, -0.3, -0.5]);
+        map.insert("grateful", [0.8, 0.2, 0.3]);
+        map.insert("jealous", [-0.5, 0.6, 0.0]);
+        map.insert("envious", [-0.4, 0.5, -0.2]);
+
+        map
+    }
+
+    /// Complete multimodal enrichment: add colors and emotions
+    ///
+    /// # Returns
+    /// (colors_added, emotions_added)
+    pub fn enrich_multimodal(&mut self) -> (usize, usize) {
+        let colors = self.add_color_anchors();
+        let emotions = self.add_emotion_anchors();
+        (colors, emotions)
+    }
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 
@@ -841,6 +992,122 @@ mod tests {
 
         assert!(edges > 0, "Should create connections");
         assert_eq!(bootstrap.graph().edge_count(), edges);
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_color_anchors() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_colors.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Include color words
+        writeln!(file, "red 0.1 0.2 0.3").unwrap();
+        writeln!(file, "green 0.4 0.5 0.6").unwrap();
+        writeln!(file, "blue 0.7 0.8 0.9").unwrap();
+        writeln!(file, "cat 0.1 0.1 0.1").unwrap(); // non-color word
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let enriched = bootstrap.add_color_anchors();
+
+        assert_eq!(enriched, 3, "Should enrich 3 color words");
+
+        // Check that color was added
+        let red_concept = bootstrap.get_concept("red").unwrap();
+        assert!(red_concept.color.is_some());
+        assert_eq!(red_concept.color.unwrap(), [1.0, 0.0, 0.0]);
+
+        // Check that non-color word has no color
+        let cat_concept = bootstrap.get_concept("cat").unwrap();
+        assert!(cat_concept.color.is_none());
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_emotion_anchors() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_emotions.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Include emotion words
+        writeln!(file, "happy 0.1 0.2 0.3").unwrap();
+        writeln!(file, "sad 0.4 0.5 0.6").unwrap();
+        writeln!(file, "angry 0.7 0.8 0.9").unwrap();
+        writeln!(file, "table 0.1 0.1 0.1").unwrap(); // non-emotion word
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let enriched = bootstrap.add_emotion_anchors();
+
+        assert_eq!(enriched, 3, "Should enrich 3 emotion words");
+
+        // Check that emotion was added (VAD values)
+        let happy_concept = bootstrap.get_concept("happy").unwrap();
+        assert!(happy_concept.emotion.is_some());
+        let vad = happy_concept.emotion.unwrap();
+        assert!(vad[0] > 0.0, "Happy should have positive valence");
+        assert!(vad[1] > 0.0, "Happy should have positive arousal");
+
+        // Check that non-emotion word has no emotion
+        let table_concept = bootstrap.get_concept("table").unwrap();
+        assert!(table_concept.emotion.is_none());
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_multimodal_enrichment() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_multimodal.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Mix of color, emotion, and neutral words
+        writeln!(file, "red 0.1 0.2 0.3").unwrap();
+        writeln!(file, "happy 0.4 0.5 0.6").unwrap();
+        writeln!(file, "blue 0.7 0.8 0.9").unwrap();
+        writeln!(file, "sad 0.2 0.3 0.4").unwrap();
+        writeln!(file, "table 0.1 0.1 0.1").unwrap();
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let (colors, emotions) = bootstrap.enrich_multimodal();
+
+        assert_eq!(colors, 2, "Should enrich 2 color words");
+        assert_eq!(emotions, 2, "Should enrich 2 emotion words");
+
+        // Verify mixed enrichment
+        let red_concept = bootstrap.get_concept("red").unwrap();
+        assert!(red_concept.color.is_some());
+        assert!(red_concept.emotion.is_none());
+
+        let happy_concept = bootstrap.get_concept("happy").unwrap();
+        assert!(happy_concept.color.is_none());
+        assert!(happy_concept.emotion.is_some());
+
+        let table_concept = bootstrap.get_concept("table").unwrap();
+        assert!(table_concept.color.is_none());
+        assert!(table_concept.emotion.is_none());
 
         std::fs::remove_file(temp_path).ok();
     }
