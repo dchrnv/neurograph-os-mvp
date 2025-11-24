@@ -411,6 +411,163 @@ impl BootstrapLibrary {
 }
 
 // ============================================================================
+// Graph Population and Connection Weaving
+// ============================================================================
+
+impl BootstrapLibrary {
+    /// Populate Graph with all loaded concepts as nodes
+    ///
+    /// Adds each SemanticConcept as a node in the Graph
+    ///
+    /// # Returns
+    /// Result with number of nodes added
+    pub fn populate_graph(&mut self) -> Result<usize, BootstrapError> {
+        if self.concepts.is_empty() {
+            return Err(BootstrapError::NoData("No concepts loaded".to_string()));
+        }
+
+        let mut added = 0;
+
+        for concept in self.concepts.values() {
+            self.graph.add_node(concept.id);
+            added += 1;
+        }
+
+        Ok(added)
+    }
+
+    /// Populate Grid with concept coordinates for spatial queries
+    ///
+    /// Adds each concept's 3D coordinates to the Grid for KNN lookup
+    ///
+    /// # Returns
+    /// Result with number of tokens added to grid
+    pub fn populate_grid(&mut self) -> Result<usize, BootstrapError> {
+        use crate::Token;
+
+        if self.concepts.is_empty() {
+            return Err(BootstrapError::NoData("No concepts loaded".to_string()));
+        }
+
+        // Check that PCA has been run (coords are set)
+        if self.pca_model.is_none() {
+            return Err(BootstrapError::NoData(
+                "PCA model not trained - run PCA first".to_string()
+            ));
+        }
+
+        let mut added = 0;
+
+        for concept in self.concepts.values() {
+            // Create token with concept's coordinates
+            let token = Token::from_state_f32(concept.id, &[
+                concept.coords[0],
+                concept.coords[1],
+                concept.coords[2],
+                0.0, 0.0, 0.0, 0.0, 0.0, // Fill remaining with zeros
+            ]);
+
+            if let Ok(_) = self.grid.add(token) {
+                added += 1;
+            }
+        }
+
+        Ok(added)
+    }
+
+    /// Weave connections between concepts using Grid KNN
+    ///
+    /// For each concept, finds K nearest neighbors and creates edges
+    ///
+    /// # Returns
+    /// Result with number of edges created
+    pub fn weave_connections(&mut self) -> Result<usize, BootstrapError> {
+        if self.concepts.is_empty() {
+            return Err(BootstrapError::NoData("No concepts loaded".to_string()));
+        }
+
+        if self.pca_model.is_none() {
+            return Err(BootstrapError::NoData(
+                "PCA model not trained - run PCA first".to_string()
+            ));
+        }
+
+        let mut edges_created = 0;
+        let k = self.config.knn_k;
+        let decay = self.config.connection_decay;
+
+        // For each concept, find KNN and create edges
+        for concept in self.concepts.values() {
+            // Find K nearest neighbors using Grid
+            // Use large radius to get all neighbors, then limit by max_results
+            let neighbors = self.grid.find_neighbors(
+                concept.id,
+                crate::CoordinateSpace::L1Physical, // Use L1 physical coordinate space
+                100.0, // Large radius to include all
+                k + 1, // +1 to exclude self potentially
+            );
+
+            // Create edges to neighbors
+            for (i, &(neighbor_id, distance)) in neighbors.iter().enumerate() {
+                // Skip self
+                if neighbor_id == concept.id {
+                    continue;
+                }
+
+                // Calculate weight based on distance
+                // Closer neighbors (smaller distance) get higher weight
+                let weight = 1.0 / (1.0 + distance * decay);
+
+                // Create bidirectional edge
+                let edge_id = crate::Graph::compute_edge_id(concept.id, neighbor_id, 0);
+
+                if let Ok(_) = self.graph.add_edge(
+                    edge_id,
+                    concept.id,
+                    neighbor_id,
+                    0, // layer
+                    weight,
+                    false, // not directed
+                ) {
+                    edges_created += 1;
+                }
+            }
+        }
+
+        Ok(edges_created)
+    }
+
+    /// Complete bootstrap pipeline: load → PCA → populate → weave
+    ///
+    /// # Arguments
+    /// * `embeddings_path` - Path to embeddings file
+    ///
+    /// # Returns
+    /// Result with (num_concepts, num_edges)
+    pub fn bootstrap_from_embeddings<P: AsRef<Path>>(
+        &mut self,
+        embeddings_path: P,
+    ) -> Result<(usize, usize), BootstrapError> {
+        // Load embeddings
+        let loaded = self.load_embeddings(embeddings_path)?;
+
+        // Run PCA
+        let (_variance, _projected) = self.run_pca_pipeline()?;
+
+        // Populate graph
+        let _nodes = self.populate_graph()?;
+
+        // Populate grid
+        let _grid_items = self.populate_grid()?;
+
+        // Weave connections
+        let edges = self.weave_connections()?;
+
+        Ok((loaded, edges))
+    }
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 
@@ -587,6 +744,103 @@ mod tests {
 
         assert_eq!(loaded, 10);
         assert_eq!(bootstrap.concept_count(), 10);
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_populate_graph() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_populate.txt";
+        let mut file = File::create(temp_path).unwrap();
+        for i in 0..5 {
+            writeln!(file, "word{} 0.1 0.2 0.3", i).unwrap();
+        }
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+        config.target_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+
+        let nodes_added = bootstrap.populate_graph().unwrap();
+        assert_eq!(nodes_added, 5);
+
+        // Check that graph has nodes
+        assert_eq!(bootstrap.graph().node_count(), 5);
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_complete_pipeline() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_complete.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create 10 words with distinct 5D embeddings
+        for i in 0..10 {
+            let v1 = (i as f32) * 0.1;
+            let v2 = (i as f32) * 0.2;
+            let v3 = (i as f32) * 0.05;
+            let v4 = (i as f32) * -0.1;
+            let v5 = (i as f32) * 0.15;
+            writeln!(file, "word{} {} {} {} {} {}", i, v1, v2, v3, v4, v5).unwrap();
+        }
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 5;
+        config.target_dim = 3;
+        config.knn_k = 3; // Each node connects to 3 neighbors
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        let (concepts, edges) = bootstrap.bootstrap_from_embeddings(temp_path).unwrap();
+
+        assert_eq!(concepts, 10);
+        assert!(edges > 0, "Should have created edges");
+
+        // Check graph state
+        assert_eq!(bootstrap.graph().node_count(), 10);
+        assert_eq!(bootstrap.graph().edge_count(), edges);
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_weave_connections_weights() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_weights.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create 5 words in a line (should connect to nearest neighbors)
+        for i in 0..5 {
+            writeln!(file, "word{} {} 0.0 0.0", i, i as f32).unwrap();
+        }
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+        config.target_dim = 3;
+        config.knn_k = 2;
+        config.connection_decay = 0.1;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+        bootstrap.populate_graph().unwrap();
+        bootstrap.populate_grid().unwrap();
+
+        let edges = bootstrap.weave_connections().unwrap();
+
+        assert!(edges > 0, "Should create connections");
+        assert_eq!(bootstrap.graph().edge_count(), edges);
 
         std::fs::remove_file(temp_path).ok();
     }
