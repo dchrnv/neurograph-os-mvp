@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.33.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.34.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -98,6 +98,7 @@
 
 - [docs/token_extended_spec.md](docs/token_extended_spec.md) - Token V2.0 (64 bytes)
 - [docs/specs/Connection_V3_UNIFIED.md](docs/specs/Connection_V3_UNIFIED.md) - Connection V3.0 (learning-capable, 64 bytes)
+- [docs/specs/CHANGELOG_v0.34.0.md](docs/specs/CHANGELOG_v0.34.0.md) - **Target Vector Storage + ADNA Integration Complete** ✅ v0.34.0
 - [docs/specs/CHANGELOG_v0.32.1.md](docs/specs/CHANGELOG_v0.32.1.md) - **ActionController v2.0 Arbitrator** (Fast Path complete) ✅ v0.32.1
 - [docs/specs/CHANGELOG_v0.31.4.md](docs/specs/CHANGELOG_v0.31.4.md) - IntuitionEngine v3.0 (adaptive tuning, collision resolution)
 - [docs/specs/IntuitionEngine_v2.2.md](docs/specs/IntuitionEngine_v2.2.md) - Hybrid Learning (ADNA + Connections)
@@ -109,12 +110,13 @@
 
 ## Производительность
 
-### Текущие метрики (v0.33.0)
+### Текущие метрики (v0.34.0)
 
 - **SignalSystem Spreading Activation:** ~14.4 μs для глубины 2 (66× быстрее таргета)
-- **ActionController Fast Path:** ~50-150ns (reflex lookup + Guardian validation)
-- **ActionController Slow Path:** ~1-10ms (ADNA policy computation)
+- **ActionController Fast Path:** ~50-160ns (reflex lookup + target extraction + Guardian validation)
+- **ActionController Slow Path:** ~1-10ms (real ADNA policy computation)
 - **Speedup (Fast vs Slow):** 10,000-200,000× для изученных паттернов
+- **Shadow Mode overhead:** +1-10ms (только для мониторинга в dev/staging)
 - **Обработка событий:** ~10,000+ событий/сек
 - **Создание токенов:** <10 ns (target)
 - **Grid KNN search:** <5 μs для k=10 из 10k токенов
@@ -191,8 +193,8 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 ### Core Structures
 
 - **Token V2.0** (64 bytes) - базовая единица информации с 8D координатами
-- **Connection V3.0** (64 bytes) - обучаемые связи с Guardian-валидацией
-- **Grid V2.0** - 8D пространственная индексация (K-D деревья)
+- **Connection V3.1** (64 bytes) - обучаемые связи с target vector storage и Guardian-валидацией
+- **Grid V2.0** - 8D пространственная индексация (K-D деревьи)
 - **Graph V2.0** - топологическая навигация (BFS/DFS/Dijkstra)
 - **SignalSystem V1.0** - spreading activation по графу с энергетическим затуханием
 
@@ -206,7 +208,8 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 
 - **ExperienceStream V2.1** - циркулярный буфер событий (128 bytes/event)
 - **IntuitionEngine V3.0** - рефлексы и быстрое обучение паттернов (адаптивная настройка)
-- **ActionController V2.0** - **двухпутевое принятие решений** (Fast Path ~100ns / Slow Path ~5ms)
+- **ActionController V2.1** - **целенаправленное двухпутевое принятие решений** (Fast Path ~100ns + target extraction / Slow Path ~5ms с real ADNA)
+- **Shadow Mode** - параллельное выполнение Fast+Slow для мониторинга и валидации
 - **EvolutionManager** - безопасная эволюция ADNA политик
 - **HybridLearning V2.2** - интеграция ADNA ↔ Connection feedback loops
 
