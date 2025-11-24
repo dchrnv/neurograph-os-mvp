@@ -64,6 +64,7 @@ pub mod executors;
 pub mod persistence;
 pub mod hybrid_learning;  // NEW: v2.2 Hybrid Learning Integration (v0.30.2)
 pub mod reflex_layer;     // NEW: v3.0 Reflex System (v0.31.0)
+pub mod bootstrap;        // NEW: v1.2 Bootstrap Library (v0.33.0)
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -271,4 +272,12 @@ pub use persistence::{
 #[cfg(feature = "persistence")]
 pub use persistence::{
     PostgresBackend,
+};
+
+// Bootstrap Library v1.2
+pub use bootstrap::{
+    BootstrapLibrary,
+    BootstrapConfig,
+    SemanticConcept,
+    PCAModel,
 };

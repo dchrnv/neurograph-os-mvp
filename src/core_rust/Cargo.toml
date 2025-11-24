@@ -43,6 +43,18 @@ sqlx = { version = "0.7", features = ["postgres", "runtime-tokio", "macros", "uu
 # For .env support in persistence
 dotenv = { version = "0.15", optional = true }
 
+# Bootstrap Library v1.2 dependencies
+# Linear algebra and ML
+ndarray = "0.15"
+linfa = "0.7"
+linfa-reduction = "0.7"  # For PCA
+
+# Fast deterministic hashing
+fasthash = "0.4"
+
+# Parallel processing
+rayon = "1.10"
+
 [dev-dependencies]
 # Testing dependencies
 rand = "0.8"
