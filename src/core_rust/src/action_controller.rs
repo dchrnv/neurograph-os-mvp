@@ -469,10 +469,8 @@ impl ActionController {
                         }
 
                         // Fast Path SUCCESS
-                        // NOTE: ConnectionV3 doesn't store explicit target_vector yet
-                        // For now, use state as action parameters (simplified)
-                        // In v0.33.0, we'll add proper target storage to reflex connections
-                        let target_state = state; // Placeholder for now
+                        // Extract target_vector from connection (NEW in v0.34.0)
+                        let target_state = expand_target_to_state(&connection.target_vector);
                         let action_type = self.infer_action_type(&target_state);
                         let action_id = self.next_action_id();
 
@@ -622,6 +620,33 @@ impl ActionController {
     }
 }
 
+// ============================================================================
+// Helper Functions for Target Vector Expansion
+// ============================================================================
+
+/// Expand compressed 8D target vector to full [f32; 8] state
+/// Converts i16 coordinates back to f32 using Token's decode_coordinate
+fn expand_target_to_state(target_8d: &[i16; 8]) -> [f32; 8] {
+    use crate::CoordinateSpace;
+
+    let mut state = [0.0f32; 8];
+    for i in 0..8 {
+        let space = match i {
+            0 => CoordinateSpace::L1Physical,
+            1 => CoordinateSpace::L2Sensory,
+            2 => CoordinateSpace::L3Motor,
+            3 => CoordinateSpace::L4Emotional,
+            4 => CoordinateSpace::L5Cognitive,
+            5 => CoordinateSpace::L6Social,
+            6 => CoordinateSpace::L7Temporal,
+            7 => CoordinateSpace::L8Abstract,
+            _ => unreachable!(),
+        };
+        state[i] = crate::Token::decode_coordinate(target_8d[i], space);
+    }
+    state
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -663,6 +688,7 @@ mod tests {
         connection.mutability = ConnectionMutability::Immutable as u8;
         connection.rigidity = 200; // 0.8 * 255
         connection.pull_strength = 50.0;
+        connection.set_target_from_token(&target_token);  // Store target vector
 
         // Consolidate the reflex (adds to fast path)
         intuition.consolidate_reflex(&source_token, connection);
@@ -836,6 +862,80 @@ mod tests {
 
         // 3 reflex / 4 total = 75%
         assert!((stats.reflex_usage_percent - 75.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn test_target_vector_storage_and_extraction() {
+        use crate::{IntuitionEngine, IntuitionConfig};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        // Different states: source vs target to verify no copying
+        let source = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];  // Different from reflex test!
+        let target = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2];  // Clearly different
+
+        let source_token = crate::Token::from_state_f32(10, &source);
+        let target_token = crate::Token::from_state_f32(11, &target);
+
+        // Create connection with target vector
+        let mut connection = ConnectionV3::new(10, 11);
+        connection.confidence = 250; // Very high
+        connection.mutability = ConnectionMutability::Immutable as u8;
+        connection.rigidity = 200;
+        connection.pull_strength = 50.0;
+        connection.set_target_from_token(&target_token);  // Store target!
+
+        // Verify target_vector storage
+        for i in 0..8 {
+            let expected_coord = target_token.coordinates[i][0];
+            assert_eq!(connection.target_vector[i], expected_coord);
+        }
+
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(crate::Guardian::new());
+
+        let controller = ActionController::new(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            ArbiterConfig::default(),
+        );
+
+        // Call with source state
+        let intent = controller.act(source);
+
+        // Should find reflex (high confidence)
+        assert!(intent.source.is_reflex(), "Expected Reflex, got {:?}", intent.source);
+
+        // CRITICAL TEST: params should be TARGET, not SOURCE
+        for i in 0..8 {
+            let diff = (intent.params[i] - target[i]).abs();
+            assert!(diff < 0.05,
+                "params[{}] = {:.3}, target[{}] = {:.3}, diff = {:.3} (should use target, not source!)",
+                i, intent.params[i], i, target[i], diff);
+        }
+
+        // Verify params != source (proof we're not copying input)
+        let source_similarity: f32 = source.iter().zip(&intent.params)
+            .map(|(s, p)| (s - p).abs())
+            .sum();
+        assert!(source_similarity > 0.5, "params should NOT match source! similarity = {}", source_similarity);
     }
 
 }

@@ -320,7 +320,7 @@ pub struct ConnectionV3 {
     pub decay_rate: u8,
     pub _padding1: u16,
     pub source_id: u32,
-    pub reserved: [u8; 16],
+    pub target_vector: [i16; 8],  // NEW v3.1: Action target (8D compressed), 16 bytes
 }
 
 impl ConnectionV3 {
@@ -358,7 +358,7 @@ impl ConnectionV3 {
             decay_rate: 16,     // 0.0625
             _padding1: 0,
             source_id: 0,  // Manual creation
-            reserved: [0; 16],
+            target_vector: [0; 8],  // Zero target by default
         }
     }
 
@@ -370,6 +370,14 @@ impl ConnectionV3 {
         // Immutable connections always have full confidence
         if self.mutability == ConnectionMutability::Immutable as u8 {
             self.confidence = 255;
+        }
+    }
+
+    /// Set target vector from a Token (extracts 8D compressed coordinates)
+    /// Takes X-axis from each of the 8 dimensions
+    pub fn set_target_from_token(&mut self, target_token: &crate::Token) {
+        for i in 0..8 {
+            self.target_vector[i] = target_token.coordinates[i][0];
         }
     }
 
