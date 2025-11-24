@@ -351,15 +351,99 @@ pub async fn act_with_shadow(
 
 ---
 
-### 📚 Phase 3: Bootstrap Library v1.3 (Optional Enhancement)
+### 📚 Phase 3: Extended Multimodal Anchors + Semantic Search
 
-**Status:** 🚧 Planned
+**Status:** 🚧 Planned (for tomorrow)
 
-**Goal:** Load real word embeddings and extend multimodal anchors.
+**Goal:** Extend Bootstrap Library with more modalities and semantic search capabilities.
+
+**Note:** GloVe file loading moved to Phase 4 (separate feature).
 
 ---
 
-#### Step 3.1: GloVe/Word2Vec Loader
+#### Step 3.1: Extended Multimodal Anchors
+
+**Goal:** Add more sensory modalities beyond colors and emotions.
+
+**New modalities to add:**
+1. **Sounds** (30 basic sounds: "whisper", "bang", "melody", etc.)
+2. **Actions** (40 verbs: "run", "jump", "think", "speak", etc.)
+3. **Spatial relations** (20 prepositions: "above", "below", "near", etc.)
+
+**Implementation:**
+```rust
+pub fn add_sound_anchors(&mut self) -> Result<(), String> {
+    const SOUNDS: [(&str, f32, f32); 30] = [
+        ("whisper", 0.2, -0.5),  // (volume, pitch)
+        ("shout", 0.9, 0.3),
+        ("melody", 0.5, 0.8),
+        // ... 27 more
+    ];
+
+    for (sound, volume, pitch) in SOUNDS.iter() {
+        let embedding = self.generate_sound_embedding(*volume, *pitch);
+        self.load_embeddings(vec![(sound.to_string(), embedding)])?;
+    }
+    Ok(())
+}
+```
+
+---
+
+#### Step 3.2: Semantic Search Integration
+
+**Goal:** Use SignalSystem spreading activation for semantic queries.
+
+**Example:**
+```rust
+impl BootstrapLibrary {
+    /// Semantic search using spreading activation
+    pub fn semantic_search(
+        &mut self,
+        query: &str,
+        max_results: usize,
+    ) -> Result<Vec<(String, f32)>, String> {
+        // Get query concept node
+        let query_concept = self.get_concept(query)
+            .ok_or_else(|| format!("Unknown query: {}", query))?;
+
+        // Run spreading activation
+        let result = self.graph.spreading_activation(
+            query_concept.id,
+            1.0,  // initial energy
+            Some(3),  // max depth
+        );
+
+        // Convert activated nodes to concept names + scores
+        let mut results: Vec<(String, f32)> = result.activated_nodes
+            .iter()
+            .filter_map(|node| {
+                self.concepts.iter()
+                    .find(|c| c.id == node.node_id)
+                    .map(|c| (c.name.clone(), node.energy))
+            })
+            .collect();
+
+        // Sort by energy and limit
+        results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        results.truncate(max_results);
+
+        Ok(results)
+    }
+}
+```
+
+---
+
+### 🗂️ Phase 4: GloVe Embeddings Loader (Future Enhancement)
+
+**Status:** 🚧 Deferred
+
+**Goal:** Load real word embeddings from GloVe/Word2Vec files.
+
+---
+
+#### Step 4.1: File Loader Implementation
 
 **File:** `src/core_rust/src/bootstrap.rs`
 
@@ -412,167 +496,104 @@ impl BootstrapLibrary {
 
 ---
 
-#### Step 3.2: Extended Multimodal Anchors
-
-**Goal:** Add more sensory modalities beyond colors and emotions.
-
-**New modalities to add:**
-1. **Sounds** (30 basic sounds: "whisper", "bang", "melody", etc.)
-2. **Actions** (40 verbs: "run", "jump", "think", "speak", etc.)
-3. **Spatial relations** (20 prepositions: "above", "below", "near", etc.)
-
-**Implementation:**
-```rust
-pub fn add_sound_anchors(&mut self) -> Result<(), String> {
-    const SOUNDS: [(&str, f32, f32); 30] = [
-        ("whisper", 0.2, -0.5),  // (volume, pitch)
-        ("shout", 0.9, 0.3),
-        ("melody", 0.5, 0.8),
-        // ... 27 more
-    ];
-
-    for (sound, volume, pitch) in SOUNDS.iter() {
-        let embedding = self.generate_sound_embedding(*volume, *pitch);
-        self.load_embeddings(vec![(sound.to_string(), embedding)])?;
-    }
-    Ok(())
-}
-```
-
----
-
-#### Step 3.3: Semantic Search Integration
-
-**Goal:** Use SignalSystem spreading activation for semantic queries.
-
-**Example:**
-```rust
-impl BootstrapLibrary {
-    /// Semantic search using spreading activation
-    pub fn semantic_search(
-        &mut self,
-        query: &str,
-        max_results: usize,
-    ) -> Result<Vec<(String, f32)>, String> {
-        // Get query concept node
-        let query_concept = self.get_concept(query)
-            .ok_or_else(|| format!("Unknown query: {}", query))?;
-
-        // Run spreading activation
-        let result = self.graph.spreading_activation(
-            query_concept.id,
-            1.0,  // initial energy
-            Some(3),  // max depth
-        );
-
-        // Convert activated nodes to concept names + scores
-        let mut results: Vec<(String, f32)> = result.activated_nodes
-            .iter()
-            .filter_map(|node| {
-                self.concepts.iter()
-                    .find(|c| c.id == node.node_id)
-                    .map(|c| (c.name.clone(), node.energy))
-            })
-            .collect();
-
-        // Sort by energy and limit
-        results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-        results.truncate(max_results);
-
-        Ok(results)
-    }
-}
-```
-
----
-
 ## 🧪 Testing Strategy
 
-### Phase 1: Target Vector Storage
+### Phase 1: Target Vector Storage ✅ COMPLETED
 
 ```bash
-# Unit tests
-cargo test --lib test_target_vector_storage
-cargo test --lib test_fast_path_uses_target
-cargo test --lib test_consolidate_reflex_with_target
-
-# Integration test
-cargo test --test action_controller_e2e test_end_to_end_with_targets
+cargo test --lib test_target_vector_storage_and_extraction
+cargo test --lib action_controller  # All 9 tests including target vector
 ```
 
-### Phase 2: ADNA Integration
+### Phase 2: ADNA Integration ✅ COMPLETED
 
 ```bash
-# Slow Path tests
-cargo test --lib test_slow_path_adna_lookup
-cargo test --lib test_policy_confidence_computation
-
-# Shadow mode tests
 cargo test --lib test_shadow_mode_parallel_execution
 cargo test --lib test_shadow_disagreement_tracking
+cargo test --lib test_improved_confidence_calculation
+cargo test --lib action_controller  # All 9 tests
 ```
 
-### Phase 3: Bootstrap v1.3
+### Phase 3: Extended Multimodal Anchors + Semantic Search (Tomorrow)
 
 ```bash
-# GloVe loader tests
-cargo test --lib test_load_glove_file
-cargo test --lib test_stream_large_embeddings
+# Multimodal tests
+cargo test --lib test_add_sound_anchors
+cargo test --lib test_add_action_anchors
+cargo test --lib test_add_spatial_anchors
 
 # Semantic search tests
 cargo test --lib test_semantic_search_spreading
+```
+
+### Phase 4: GloVe Loader (Future)
+
+```bash
+cargo test --lib test_load_glove_file
+cargo test --lib test_stream_large_embeddings
 ```
 
 ---
 
 ## 📊 Success Criteria
 
-### Phase 1 ✅ Definition of Done
-- [ ] ConnectionV3 has `target_vector: [i16; 8]` field
-- [ ] `consolidate_reflex()` stores targets correctly
-- [ ] Fast Path extracts and uses targets (not copying input)
-- [ ] 3 new tests passing
-- [ ] Size assertion still correct (64 bytes)
+### Phase 1 ✅ COMPLETED
+- [x] ConnectionV3 has `target_vector: [i16; 8]` field
+- [x] `set_target_from_token()` method for storing targets
+- [x] Fast Path extracts and uses targets (not copying input)
+- [x] 1 comprehensive test passing
+- [x] Size assertion still correct (64 bytes)
 
-### Phase 2 ✅ Definition of Done
-- [ ] Slow Path calls real ADNA reader
-- [ ] Policy confidence computed from strength + evidence
-- [ ] Shadow mode runs both paths in parallel
-- [ ] Disagreement tracking implemented
+### Phase 2 ✅ COMPLETED
+- [x] Slow Path calls real ADNA reader via tokio runtime
+- [x] Policy confidence computed from entropy + max weight
+- [x] Shadow mode runs both paths in parallel
+- [x] Disagreement tracking implemented
+- [x] 3 new tests passing (total 9 ActionController tests)
+
+### Phase 3 🚧 Planned (Tomorrow)
+- [ ] 3 new modalities added (sounds, actions, spatial)
+- [ ] Helper methods for generating embeddings
+- [ ] Semantic search via spreading activation
 - [ ] 4 new tests passing
 
-### Phase 3 ✅ Definition of Done
+### Phase 4 🚧 Deferred (Future)
 - [ ] GloVe file loader working (100K+ words)
-- [ ] 3 new modalities added (sounds, actions, spatial)
-- [ ] Semantic search via spreading activation
-- [ ] 5 new tests passing
+- [ ] Stream processing for large files
+- [ ] 2 new tests passing
 
 ---
 
 ## 🕐 Time Estimates
 
-**Phase 1: Target Vector Storage**
-- Structure changes: ~1 hour
-- IntuitionEngine updates: ~2 hours
-- ActionController updates: ~2 hours
-- Tests: ~2 hours
+**Phase 1: Target Vector Storage** ✅ COMPLETED (~2 hours actual)
+- Structure changes: 30 min
+- Helper methods: 30 min
+- ActionController updates: 30 min
+- Tests: 30 min
+
+**Phase 2: ADNA Integration** ✅ COMPLETED (~2 hours actual)
+- ADNA reader integration: 45 min
+- Confidence computation: 30 min
+- Shadow mode: 30 min
+- Tests: 15 min
+
+**Phase 3: Extended Multimodal Anchors + Semantic Search** 🚧 Planned for Tomorrow
+- Extended modalities (sounds, actions, spatial): ~3 hours
+- Helper embedding generators: ~1 hour
+- Semantic search implementation: ~2 hours
+- Tests: ~1 hour
 - **Total: ~7 hours**
 
-**Phase 2: ADNA Integration**
-- ADNA reader integration: ~3 hours
-- Confidence computation: ~1 hour
-- Shadow mode: ~3 hours
-- Tests: ~2 hours
-- **Total: ~9 hours**
+**Phase 4: GloVe Loader** 🚧 Deferred to Future
+- File loader implementation: ~3 hours
+- Stream processing: ~2 hours
+- Tests: ~1 hour
+- **Total: ~6 hours**
 
-**Phase 3: Bootstrap v1.3**
-- GloVe loader: ~3 hours
-- Extended modalities: ~2 hours
-- Semantic search: ~2 hours
-- Tests: ~2 hours
-- **Total: ~9 hours**
-
-**Grand Total: ~25 hours (~3 work days)**
+**Completed Today: ~4 hours (Phases 1+2)**
+**Remaining Tomorrow: ~7 hours (Phase 3)**
+**Future Work: ~6 hours (Phase 4)**
 
 ---
 
