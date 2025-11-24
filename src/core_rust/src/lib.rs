@@ -280,4 +280,5 @@ pub use bootstrap::{
     BootstrapConfig,
     SemanticConcept,
     PCAModel,
+    BootstrapError,
 };
