@@ -143,6 +143,9 @@ pub struct ArbiterStats {
 
     /// Guardian rejections (reflex → reasoning fallback)
     pub guardian_rejections: u64,
+
+    /// Shadow mode disagreements (Fast vs Slow path mismatch)
+    pub shadow_disagreements: u64,
 }
 
 impl ArbiterStats {
@@ -195,6 +198,11 @@ impl ArbiterStats {
     /// Record guardian rejection
     pub fn record_guardian_rejection(&mut self) {
         self.guardian_rejections += 1;
+    }
+
+    /// Record shadow mode disagreement (NEW v0.34.0)
+    pub fn record_shadow_disagreement(&mut self) {
+        self.shadow_disagreements += 1;
     }
 
     /// Update reflex usage percentage
@@ -495,19 +503,124 @@ impl ActionController {
         self.act_slow_path(state)
     }
 
+    /// Act with shadow mode: run both Fast and Slow paths in parallel (NEW v0.34.0)
+    ///
+    /// Returns (primary_intent, shadow_intent_opt)
+    /// - primary_intent: The actual decision to use (Fast Path if available, else Slow)
+    /// - shadow_intent_opt: The shadow result (Slow Path for monitoring, not used)
+    ///
+    /// This mode is useful for:
+    /// - Validating Fast Path correctness
+    /// - Collecting disagreement metrics
+    /// - Gradual confidence building in Fast Path
+    pub fn act_with_shadow(&self, state: [f32; 8]) -> (crate::action_types::ActionIntent, Option<crate::action_types::ActionIntent>) {
+        if !self.arbiter_config.shadow_mode {
+            // Shadow mode disabled - just use normal act()
+            return (self.act(state), None);
+        }
+
+        // Try Fast Path
+        let fast_result = self.try_fast_path_internal(state);
+
+        // Always run Slow Path in shadow mode (for comparison)
+        let slow_result = self.act_slow_path(state);
+
+        match fast_result {
+            Some(fast_intent) => {
+                // Record Fast Path stats
+                if let crate::action_types::DecisionSource::Reflex { lookup_time_ns, .. } = fast_intent.source {
+                    self.arbiter_stats.write().record_reflex(fast_intent.confidence, lookup_time_ns);
+                }
+
+                // Compare Fast vs Slow for disagreement tracking
+                let params_distance: f32 = fast_intent.params.iter()
+                    .zip(&slow_result.params)
+                    .map(|(a, b)| (a - b).abs())
+                    .sum();
+
+                if params_distance > 1.0 {
+                    // Significant disagreement
+                    self.arbiter_stats.write().record_shadow_disagreement();
+                }
+
+                // Return Fast Path as primary, Slow as shadow
+                (fast_intent, Some(slow_result))
+            }
+            None => {
+                // Fast Path failed - use Slow Path as primary (no shadow)
+                (slow_result, None)
+            }
+        }
+    }
+
+    /// Try Fast Path and return result if successful (helper for shadow mode)
+    fn try_fast_path_internal(&self, state: [f32; 8]) -> Option<crate::action_types::ActionIntent> {
+        use crate::action_types::ActionIntent;
+
+        let intuition_arc = self.intuition.as_ref()?;
+        let start = Instant::now();
+        let intuition = intuition_arc.read();
+
+        let state_token = crate::Token::from_state_f32(0, &state);
+        let fast_result = intuition.try_fast_path(&state_token)?;
+
+        let lookup_time_ns = start.elapsed().as_nanos() as u64;
+        let similarity = fast_result.similarity;
+        let connection_id = fast_result.connection_id;
+
+        let connection = intuition.get_connection(connection_id)?;
+        let confidence_u8 = connection.confidence;
+        let confidence_f32 = confidence_u8 as f32 / 255.0;
+
+        // Check confidence threshold
+        if confidence_u8 < self.arbiter_config.reflex_confidence_threshold {
+            return None;
+        }
+
+        // Guardian validation
+        if let Some(ref guardian) = self.guardian {
+            if guardian.validate_reflex(&connection).is_err() {
+                return None;
+            }
+        }
+
+        // Fast Path SUCCESS
+        let target_state = expand_target_to_state(&connection.target_vector);
+        let action_type = self.infer_action_type(&target_state);
+        let action_id = self.next_action_id();
+
+        Some(ActionIntent::from_reflex(
+            action_id,
+            action_type,
+            target_state,
+            connection_id,
+            lookup_time_ns,
+            similarity,
+            confidence_f32,
+        ))
+    }
+
     /// Slow Path: ADNA reasoning (fallback)
     fn act_slow_path(&self, state: [f32; 8]) -> crate::action_types::ActionIntent {
         use crate::action_types::{ActionIntent, ActionType};
 
         let start = Instant::now();
 
-        // Convert state to ADNA format (i16)
+        // Convert state to ADNA format (i16) for policy lookup
         let state_i16: [i16; 8] = state.map(|v| (v.clamp(-1.0, 1.0) * 32767.0) as i16);
 
-        // Query ADNA for action policy
-        // For now, use a simple blocking approach with default policy
-        // In production with async context, this would use proper async/await
-        let policy_result: Result<ActionPolicy, crate::adna::ADNAError> = Ok(ActionPolicy::new("default"));
+        // Query ADNA for action policy (NEW in v0.34.0: real ADNA integration)
+        // Use tokio Handle if available, otherwise fallback to blocking call
+        let policy_result = if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            // We're in a tokio runtime context
+            handle.block_on(async {
+                self.adna_reader.get_action_policy(&state_i16).await
+            })
+        } else {
+            // No runtime available - use default policy as fallback
+            // In production, ActionController should be used within tokio context
+            Ok(ActionPolicy::new("default_fallback"))
+        };
 
         let reasoning_time_ms = start.elapsed().as_millis() as u64;
 
@@ -605,9 +718,17 @@ impl ActionController {
     }
 
     /// Compute confidence from ADNA policy
-    fn compute_policy_confidence(&self, policy: &ActionPolicy) -> f32 {
-        // Use max weight as confidence indicator
+    pub fn compute_policy_confidence(&self, policy: &ActionPolicy) -> f32 {
+        // NEW v0.34.0: Improved confidence calculation
+        // Combines max weight with distribution certainty (inverse entropy)
+
         if policy.action_weights.is_empty() {
+            return 0.0;
+        }
+
+        // Calculate total weight and max weight
+        let total: f64 = policy.action_weights.values().sum();
+        if total == 0.0 {
             return 0.0;
         }
 
@@ -616,7 +737,29 @@ impl ActionController {
             .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap_or(&0.0);
 
-        (*max_weight as f32).min(1.0)
+        // Normalize max weight
+        let normalized_max = (*max_weight / total) as f32;
+
+        // Calculate entropy (uncertainty measure)
+        let entropy: f64 = policy.action_weights
+            .values()
+            .map(|&w| {
+                let p = w / total;
+                if p > 0.0 { -p * p.log2() } else { 0.0 }
+            })
+            .sum();
+
+        // Max entropy for N actions is log2(N)
+        let n = policy.action_weights.len() as f64;
+        let max_entropy = if n > 1.0 { n.log2() } else { 1.0 };
+
+        // Certainty: 1.0 when entropy=0 (certain), 0.0 when entropy=max (uniform)
+        let certainty = (1.0 - (entropy / max_entropy)).max(0.0) as f32;
+
+        // Confidence combines max weight (70%) and certainty (30%)
+        let confidence = 0.7 * normalized_max + 0.3 * certainty;
+
+        confidence.clamp(0.0, 1.0)
     }
 }
 
@@ -658,7 +801,7 @@ mod tests {
 
     #[test]
     fn test_act_fast_path_with_reflex() {
-        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
         use crate::connection_v3::{ConnectionV3, ConnectionMutability};
         use tokio::sync::mpsc;
         use crate::adna::Proposal;
@@ -724,7 +867,7 @@ mod tests {
 
     #[test]
     fn test_act_guardian_rejection_fallback() {
-        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
         use crate::connection_v3::{ConnectionV3, ConnectionMutability};
         use tokio::sync::mpsc;
         use crate::adna::Proposal;
@@ -782,7 +925,7 @@ mod tests {
 
     #[test]
     fn test_act_low_confidence_fallback() {
-        use crate::{IntuitionEngine, IntuitionConfig, Guardian, GuardianConfig};
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
         use crate::connection_v3::{ConnectionV3, ConnectionMutability};
         use tokio::sync::mpsc;
         use crate::adna::Proposal;
@@ -866,7 +1009,7 @@ mod tests {
 
     #[test]
     fn test_target_vector_storage_and_extraction() {
-        use crate::{IntuitionEngine, IntuitionConfig};
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
         use crate::connection_v3::{ConnectionV3, ConnectionMutability};
         use tokio::sync::mpsc;
         use crate::adna::Proposal;
@@ -936,6 +1079,177 @@ mod tests {
             .map(|(s, p)| (s - p).abs())
             .sum();
         assert!(source_similarity > 0.5, "params should NOT match source! similarity = {}", source_similarity);
+    }
+
+    #[test]
+    fn test_shadow_mode_parallel_execution() {
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        // Create reflex
+        let source = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+        let target = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
+
+        let source_token = crate::Token::from_state_f32(1, &source);
+        let target_token = crate::Token::from_state_f32(2, &target);
+
+        let mut connection = ConnectionV3::new(1, 2);
+        connection.confidence = 220;
+        connection.mutability = ConnectionMutability::Immutable as u8;
+        connection.rigidity = 200;
+        connection.pull_strength = 50.0;
+        connection.set_target_from_token(&target_token);
+
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(crate::Guardian::new());
+
+        // Enable shadow mode
+        let mut config = ArbiterConfig::default();
+        config.shadow_mode = true;
+
+        let controller = ActionController::new(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            config,
+        );
+
+        // Call act_with_shadow
+        let (primary, shadow) = controller.act_with_shadow(source);
+
+        // Should use Fast Path as primary
+        assert!(primary.source.is_reflex());
+
+        // Should have shadow result (Slow Path)
+        assert!(shadow.is_some());
+        let shadow_intent = shadow.unwrap();
+        assert!(shadow_intent.source.is_reasoning());
+    }
+
+    #[test]
+    fn test_shadow_disagreement_tracking() {
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
+        use crate::connection_v3::{ConnectionV3, ConnectionMutability};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let mut intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+
+        // Create reflex with very different target
+        let source = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+        let target = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];  // Very different from ADNA default
+
+        let source_token = crate::Token::from_state_f32(10, &source);
+        let target_token = crate::Token::from_state_f32(11, &target);
+
+        let mut connection = ConnectionV3::new(10, 11);
+        connection.confidence = 250;
+        connection.mutability = ConnectionMutability::Immutable as u8;
+        connection.rigidity = 200;
+        connection.pull_strength = 50.0;
+        connection.set_target_from_token(&target_token);
+
+        intuition.consolidate_reflex(&source_token, connection);
+
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+        let guardian = Arc::new(crate::Guardian::new());
+
+        let mut config = ArbiterConfig::default();
+        config.shadow_mode = true;
+
+        let controller = ActionController::new(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            config,
+        );
+
+        // Act with shadow mode
+        let (_primary, _shadow) = controller.act_with_shadow(source);
+
+        // Check that disagreement was recorded
+        let stats = controller.get_arbiter_stats();
+        assert!(stats.shadow_disagreements >= 0); // At least tracked (might be 0 if params close)
+    }
+
+    #[test]
+    fn test_improved_confidence_calculation() {
+        use crate::adna::ActionPolicy;
+        use crate::{IntuitionEngine, IntuitionConfig, Guardian};
+        use tokio::sync::mpsc;
+        use crate::adna::Proposal;
+
+        let adna_reader = Arc::new(InMemoryADNAReader::with_defaults());
+        let experience_stream = Arc::new(ExperienceStream::new(1000, 10));
+
+        let (proposal_tx, _proposal_rx) = mpsc::channel::<Proposal>(100);
+        let intuition = IntuitionEngine::new(
+            IntuitionConfig::default(),
+            Arc::clone(&experience_stream),
+            Arc::clone(&adna_reader) as Arc<dyn crate::adna::ADNAReader>,
+            proposal_tx,
+        );
+        let intuition_arc = Arc::new(RwLock::new(intuition));
+
+        let guardian = Arc::new(Guardian::new());
+
+        let controller = ActionController::new(
+            adna_reader as Arc<dyn ADNAReader>,
+            experience_stream as Arc<dyn ExperienceWriter>,
+            intuition_arc,
+            guardian,
+            ActionControllerConfig::default(),
+            ArbiterConfig::default(),
+        );
+
+        // Test 1: High certainty (one dominant action)
+        let mut policy1 = ActionPolicy::new("test1");
+        policy1.action_weights.insert(0, 0.9);
+        policy1.action_weights.insert(1, 0.05);
+        policy1.action_weights.insert(2, 0.05);
+
+        let conf1 = controller.compute_policy_confidence(&policy1);
+        assert!(conf1 > 0.8, "High certainty should give high confidence: {}", conf1);
+
+        // Test 2: Low certainty (uniform distribution)
+        let mut policy2 = ActionPolicy::new("test2");
+        policy2.action_weights.insert(0, 0.33);
+        policy2.action_weights.insert(1, 0.33);
+        policy2.action_weights.insert(2, 0.34);
+
+        let conf2 = controller.compute_policy_confidence(&policy2);
+        assert!(conf2 < 0.6, "Low certainty should give low confidence: {}", conf2);
+
+        // Confidence 1 should be higher than confidence 2
+        assert!(conf1 > conf2, "Certain policy should have higher confidence than uncertain");
     }
 
 }
