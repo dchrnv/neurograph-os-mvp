@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.32.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.33.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -332,14 +332,14 @@ cargo test --lib
 
 ---
 
-**Текущая версия:** v0.32.1 - ActionController v2.0 Fast Path Complete ✅
-**Следующая версия:** v0.33.0 - Target Vector Storage & ADNA Integration 🚧
+**Текущая версия:** v0.33.0 - SignalSystem v1.0 + Bootstrap Library v1.2 Complete ✅
+**Следующая версия:** v0.34.0 - Target Vector Storage & ADNA Integration 🚧
 
 **Недавние релизы:**
+- **v0.33.0** - SignalSystem v1.0 (spreading activation) + Bootstrap Library v1.2 (semantic initialization) ✅
 - **v0.32.1** - Fast Path интеграция завершена (Token API, Guardian validation, все тесты) ✅
 - **v0.32.0** - ActionController v2.0 "Arbitrator" (двухпутевое принятие решений) ✅
 - **v0.31.4** - IntuitionEngine v3.0 адаптивная настройка ✅
 - **v0.31.3** - IntuitionEngine v3.0 collision resolution ✅
-- **v0.30.2** - HybridLearning v2.2 интеграция ✅
 
-См. [ROADMAP.md](ROADMAP.md) для планов развития, [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) для полной истории, и [docs/specs/CHANGELOG_v0.32.1.md](docs/specs/CHANGELOG_v0.32.1.md) для деталей последнего релиза.
+См. [ROADMAP.md](ROADMAP.md) для планов развития, [docs/PROJECT_HISTORY.md](docs/PROJECT_HISTORY.md) для полной истории, и [docs/specs/CHANGELOG_v0.33.0.md](docs/specs/CHANGELOG_v0.33.0.md) для деталей последнего релиза.
