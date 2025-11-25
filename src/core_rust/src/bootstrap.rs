@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Bootstrap Library v1.2
+//! Bootstrap Library v1.3
 //!
 //! Provides semantic graph initialization from pre-trained embeddings.
 //!
@@ -22,7 +22,15 @@
 //! - Deterministic ID generation (MurmurHash3)
 //! - GloVe/Word2Vec embedding loading
 //! - PCA dimensionality reduction (300D → 3D)
-//! - Multimodal anchor creation (concept + color + emotion)
+//! - Extended multimodal anchors (5 modalities):
+//!   * Colors (27 RGB values)
+//!   * Emotions (30 VAD values)
+//!   * Sounds (30 volume/pitch/duration) [NEW v1.3]
+//!   * Actions (40 energy/speed/direction/impact) [NEW v1.3]
+//!   * Spatial relations (20 proximity/verticality/containment) [NEW v1.3]
+//! - Semantic search via spreading activation [NEW v1.3]
+//! - Multi-query search with score combination [NEW v1.3]
+//! - Semantic analogy completion [NEW v1.3]
 //! - Connection weaving via Grid KNN
 //! - Artifact persistence (PCA model, bootstrap map)
 
@@ -101,6 +109,9 @@ pub struct SemanticConcept {
     /// Multimodal anchors (optional)
     pub color: Option<[f32; 3]>,      // RGB
     pub emotion: Option<[f32; 3]>,    // Valence, Arousal, Dominance
+    pub sound: Option<[f32; 3]>,      // Volume, Pitch, Duration (NEW v1.3)
+    pub action: Option<[f32; 4]>,     // Energy, Speed, Direction, Impact (NEW v1.3)
+    pub spatial: Option<[f32; 3]>,    // Proximity, Verticality, Containment (NEW v1.3)
 }
 
 /// PCA model for dimensionality reduction
@@ -274,6 +285,9 @@ impl BootstrapLibrary {
                 coords: [0.0, 0.0, 0.0], // Will be filled by PCA
                 color: None,
                 emotion: None,
+                sound: None,
+                action: None,
+                spatial: None,
             };
 
             self.concepts.insert(word, concept);
@@ -709,6 +723,230 @@ impl BootstrapLibrary {
         map
     }
 
+    /// Enrich concepts with sound information (NEW v1.3)
+    ///
+    /// Adds sound characteristics (volume, pitch, duration) to sound-related concepts
+    ///
+    /// # Returns
+    /// Number of concepts enriched with sound
+    pub fn add_sound_anchors(&mut self) -> usize {
+        let sound_map = Self::get_sound_lexicon();
+        let mut enriched = 0;
+
+        for concept in self.concepts.values_mut() {
+            if let Some(&sound) = sound_map.get(concept.word.as_str()) {
+                concept.sound = Some(sound);
+                enriched += 1;
+            }
+        }
+
+        enriched
+    }
+
+    /// Enrich concepts with action information (NEW v1.3)
+    ///
+    /// Adds action characteristics (energy, speed, direction, impact) to verb concepts
+    ///
+    /// # Returns
+    /// Number of concepts enriched with action
+    pub fn add_action_anchors(&mut self) -> usize {
+        let action_map = Self::get_action_lexicon();
+        let mut enriched = 0;
+
+        for concept in self.concepts.values_mut() {
+            if let Some(&action) = action_map.get(concept.word.as_str()) {
+                concept.action = Some(action);
+                enriched += 1;
+            }
+        }
+
+        enriched
+    }
+
+    /// Enrich concepts with spatial relation information (NEW v1.3)
+    ///
+    /// Adds spatial characteristics (proximity, verticality, containment) to preposition concepts
+    ///
+    /// # Returns
+    /// Number of concepts enriched with spatial relations
+    pub fn add_spatial_anchors(&mut self) -> usize {
+        let spatial_map = Self::get_spatial_lexicon();
+        let mut enriched = 0;
+
+        for concept in self.concepts.values_mut() {
+            if let Some(&spatial) = spatial_map.get(concept.word.as_str()) {
+                concept.spatial = Some(spatial);
+                enriched += 1;
+            }
+        }
+
+        enriched
+    }
+
+    /// Get sound lexicon mapping words to sound characteristics
+    ///
+    /// Returns HashMap of sound words to (volume, pitch, duration) values [-1.0 to 1.0]
+    /// - Volume: quiet to loud
+    /// - Pitch: low to high
+    /// - Duration: short to long
+    fn get_sound_lexicon() -> HashMap<&'static str, [f32; 3]> {
+        let mut map = HashMap::new();
+
+        // Quiet sounds
+        map.insert("whisper", [-0.8, 0.2, 0.3]);
+        map.insert("rustle", [-0.7, -0.3, 0.2]);
+        map.insert("murmur", [-0.6, -0.2, 0.5]);
+        map.insert("hum", [-0.4, 0.0, 0.7]);
+        map.insert("tick", [-0.7, 0.5, -0.8]);
+
+        // Moderate sounds
+        map.insert("talk", [0.0, 0.3, 0.5]);
+        map.insert("chatter", [0.2, 0.4, 0.6]);
+        map.insert("laugh", [0.3, 0.5, 0.4]);
+        map.insert("cry", [0.2, 0.6, 0.8]);
+        map.insert("sing", [0.1, 0.7, 0.9]);
+
+        // Loud sounds
+        map.insert("shout", [0.8, 0.6, 0.3]);
+        map.insert("scream", [0.9, 0.9, 0.4]);
+        map.insert("yell", [0.8, 0.5, 0.3]);
+        map.insert("roar", [1.0, -0.5, 0.6]);
+        map.insert("thunder", [1.0, -0.7, 0.7]);
+
+        // Musical sounds
+        map.insert("melody", [0.0, 0.8, 0.9]);
+        map.insert("harmony", [0.1, 0.6, 0.9]);
+        map.insert("rhythm", [0.2, 0.0, 0.8]);
+        map.insert("beat", [0.4, -0.3, -0.5]);
+        map.insert("tone", [0.0, 0.5, 0.6]);
+
+        // Impact sounds
+        map.insert("bang", [0.9, 0.2, -0.9]);
+        map.insert("crash", [1.0, -0.2, -0.7]);
+        map.insert("slam", [0.8, -0.4, -0.8]);
+        map.insert("thud", [0.6, -0.8, -0.6]);
+        map.insert("boom", [1.0, -0.6, 0.3]);
+
+        // Nature sounds
+        map.insert("wind", [0.3, -0.1, 0.8]);
+        map.insert("rain", [0.4, -0.5, 0.9]);
+        map.insert("wave", [0.5, -0.3, 0.7]);
+        map.insert("chirp", [-0.3, 0.9, -0.7]);
+        map.insert("howl", [0.7, 0.4, 0.6]);
+
+        map
+    }
+
+    /// Get action lexicon mapping verbs to action characteristics
+    ///
+    /// Returns HashMap of action words to (energy, speed, direction, impact) values [-1.0 to 1.0]
+    /// - Energy: low to high physical exertion
+    /// - Speed: slow to fast
+    /// - Direction: inward/downward to outward/upward
+    /// - Impact: gentle to forceful
+    fn get_action_lexicon() -> HashMap<&'static str, [f32; 4]> {
+        let mut map = HashMap::new();
+
+        // Low energy actions
+        map.insert("sleep", [-0.9, -0.9, -0.5, -0.9]);
+        map.insert("rest", [-0.8, -0.8, -0.3, -0.8]);
+        map.insert("sit", [-0.7, -0.7, -0.6, -0.6]);
+        map.insert("lie", [-0.8, -0.8, -0.8, -0.7]);
+        map.insert("wait", [-0.6, -0.5, 0.0, -0.5]);
+
+        // Moderate energy actions
+        map.insert("walk", [0.2, 0.1, 0.3, 0.1]);
+        map.insert("stand", [0.0, -0.3, 0.5, 0.0]);
+        map.insert("talk", [0.1, 0.2, 0.4, 0.2]);
+        map.insert("think", [-0.2, 0.0, 0.6, -0.3]);
+        map.insert("look", [-0.1, 0.3, 0.4, 0.0]);
+
+        // High energy actions
+        map.insert("run", [0.8, 0.9, 0.7, 0.6]);
+        map.insert("jump", [0.9, 0.7, 0.9, 0.7]);
+        map.insert("fight", [0.9, 0.8, 0.5, 0.9]);
+        map.insert("dance", [0.7, 0.6, 0.6, 0.4]);
+        map.insert("climb", [0.8, 0.4, 0.8, 0.5]);
+
+        // Manipulative actions
+        map.insert("push", [0.5, 0.3, 0.8, 0.7]);
+        map.insert("pull", [0.5, 0.3, -0.8, 0.6]);
+        map.insert("lift", [0.6, 0.2, 0.9, 0.5]);
+        map.insert("drop", [0.1, 0.6, -0.9, 0.4]);
+        map.insert("throw", [0.7, 0.9, 0.8, 0.8]);
+
+        // Cognitive actions
+        map.insert("learn", [0.2, 0.1, 0.7, 0.1]);
+        map.insert("remember", [0.0, 0.2, 0.5, 0.0]);
+        map.insert("forget", [-0.2, 0.0, -0.3, -0.1]);
+        map.insert("understand", [0.1, 0.3, 0.6, 0.2]);
+        map.insert("know", [0.0, 0.0, 0.4, 0.0]);
+
+        // Social actions
+        map.insert("help", [0.3, 0.4, 0.7, 0.3]);
+        map.insert("give", [0.2, 0.3, 0.8, 0.4]);
+        map.insert("take", [0.3, 0.5, -0.6, 0.5]);
+        map.insert("share", [0.2, 0.2, 0.6, 0.2]);
+        map.insert("love", [0.4, 0.1, 0.9, 0.3]);
+
+        // Communication actions
+        map.insert("speak", [0.2, 0.4, 0.7, 0.3]);
+        map.insert("write", [0.1, 0.0, 0.5, 0.1]);
+        map.insert("read", [0.0, 0.2, 0.4, 0.0]);
+        map.insert("listen", [-0.1, 0.0, -0.4, 0.0]);
+        map.insert("hear", [-0.2, 0.1, -0.3, 0.0]);
+
+        // Creative actions
+        map.insert("create", [0.5, 0.3, 0.8, 0.4]);
+        map.insert("build", [0.6, 0.2, 0.7, 0.5]);
+        map.insert("make", [0.4, 0.3, 0.6, 0.4]);
+        map.insert("destroy", [0.7, 0.6, -0.5, 0.9]);
+        map.insert("break", [0.5, 0.7, -0.4, 0.8]);
+
+        map
+    }
+
+    /// Get spatial relations lexicon mapping prepositions to spatial characteristics
+    ///
+    /// Returns HashMap of spatial words to (proximity, verticality, containment) values [-1.0 to 1.0]
+    /// - Proximity: far to near
+    /// - Verticality: below to above
+    /// - Containment: outside to inside
+    fn get_spatial_lexicon() -> HashMap<&'static str, [f32; 3]> {
+        let mut map = HashMap::new();
+
+        // Proximity relations
+        map.insert("near", [0.9, 0.0, 0.0]);
+        map.insert("close", [0.9, 0.0, 0.0]);
+        map.insert("beside", [0.8, 0.0, 0.0]);
+        map.insert("next", [0.8, 0.0, 0.0]);
+        map.insert("far", [-0.9, 0.0, 0.0]);
+        map.insert("distant", [-0.9, 0.0, 0.0]);
+
+        // Vertical relations
+        map.insert("above", [0.0, 0.9, 0.0]);
+        map.insert("over", [0.2, 0.9, 0.0]);
+        map.insert("top", [0.0, 1.0, 0.0]);
+        map.insert("below", [0.0, -0.9, 0.0]);
+        map.insert("under", [0.2, -0.9, 0.0]);
+        map.insert("bottom", [0.0, -1.0, 0.0]);
+
+        // Containment relations
+        map.insert("in", [0.5, 0.0, 0.9]);
+        map.insert("inside", [0.3, 0.0, 1.0]);
+        map.insert("within", [0.4, 0.0, 0.9]);
+        map.insert("out", [0.0, 0.0, -0.9]);
+        map.insert("outside", [0.0, 0.0, -1.0]);
+
+        // Combined relations
+        map.insert("behind", [0.3, 0.0, -0.3]);
+        map.insert("front", [0.3, 0.0, 0.3]);
+        map.insert("between", [0.6, 0.0, 0.0]);
+        map.insert("among", [0.8, 0.0, 0.2]);
+
+        map
+    }
+
     /// Complete multimodal enrichment: add colors and emotions
     ///
     /// # Returns
@@ -717,6 +955,222 @@ impl BootstrapLibrary {
         let colors = self.add_color_anchors();
         let emotions = self.add_emotion_anchors();
         (colors, emotions)
+    }
+
+    /// Complete extended multimodal enrichment (NEW v1.3)
+    ///
+    /// Adds all 5 modalities: colors, emotions, sounds, actions, spatial relations
+    ///
+    /// # Returns
+    /// (colors, emotions, sounds, actions, spatial)
+    pub fn enrich_extended_multimodal(&mut self) -> (usize, usize, usize, usize, usize) {
+        let colors = self.add_color_anchors();
+        let emotions = self.add_emotion_anchors();
+        let sounds = self.add_sound_anchors();
+        let actions = self.add_action_anchors();
+        let spatial = self.add_spatial_anchors();
+        (colors, emotions, sounds, actions, spatial)
+    }
+}
+
+// ============================================================================
+// Semantic Search (NEW v1.3)
+// ============================================================================
+
+impl BootstrapLibrary {
+    /// Semantic search using spreading activation (NEW v1.3)
+    ///
+    /// Searches for concepts semantically related to a query word by activating
+    /// its node in the graph and spreading energy through connections.
+    ///
+    /// # Arguments
+    /// * `query` - Query word to search for
+    /// * `max_results` - Maximum number of results to return
+    /// * `max_depth` - Optional maximum depth for spreading (default: 3)
+    ///
+    /// # Returns
+    /// Vector of (word, activation_score) tuples, sorted by relevance
+    ///
+    /// # Example
+    /// ```ignore
+    /// let results = bootstrap.semantic_search("cat", 10, None)?;
+    /// // Returns: [("dog", 0.85), ("animal", 0.72), ("pet", 0.68), ...]
+    /// ```
+    pub fn semantic_search(
+        &mut self,
+        query: &str,
+        max_results: usize,
+        max_depth: Option<usize>,
+    ) -> Result<Vec<(String, f32)>, BootstrapError> {
+        // Get query concept
+        let query_concept = self.concepts.get(query)
+            .ok_or_else(|| BootstrapError::NoData(
+                format!("Unknown query word: '{}'", query)
+            ))?;
+
+        let query_id = query_concept.id;
+
+        // Create SignalConfig with custom max_depth if specified
+        let config = if let Some(depth) = max_depth {
+            Some(crate::SignalConfig {
+                max_depth: depth,
+                ..Default::default()
+            })
+        } else {
+            None  // Use default config (max_depth: 5)
+        };
+
+        // Run spreading activation from query node
+        let result = self.graph.spreading_activation(
+            query_id,
+            1.0,  // initial energy
+            config,
+        );
+
+        // Convert activated nodes to (word, score) pairs
+        let mut results: Vec<(String, f32)> = Vec::new();
+
+        for activated_node in &result.activated_nodes {
+            // Find concept matching this node ID
+            if let Some(concept) = self.concepts.values()
+                .find(|c| c.id == activated_node.node_id)
+            {
+                // Skip query word itself
+                if concept.word != query {
+                    results.push((concept.word.clone(), activated_node.energy));
+                }
+            }
+        }
+
+        // Sort by energy (descending) and limit to max_results
+        results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        results.truncate(max_results);
+
+        Ok(results)
+    }
+
+    /// Multi-query semantic search (NEW v1.3)
+    ///
+    /// Performs semantic search for multiple query words and combines results.
+    /// Useful for concept intersection (e.g., "red" AND "car" → "fire truck")
+    ///
+    /// # Arguments
+    /// * `queries` - Vector of query words
+    /// * `max_results` - Maximum number of results to return
+    /// * `combination_mode` - How to combine scores: "sum", "max", "avg"
+    ///
+    /// # Returns
+    /// Vector of (word, combined_score) tuples
+    pub fn semantic_search_multi(
+        &mut self,
+        queries: &[&str],
+        max_results: usize,
+        combination_mode: &str,
+    ) -> Result<Vec<(String, f32)>, BootstrapError> {
+        if queries.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Collect results from all queries
+        let mut all_results: HashMap<String, Vec<f32>> = HashMap::new();
+
+        for &query in queries {
+            let results = self.semantic_search(query, max_results * 2, Some(3))?;  // max_depth = 3
+
+            for (word, score) in results {
+                all_results.entry(word).or_insert_with(Vec::new).push(score);
+            }
+        }
+
+        // Combine scores based on mode
+        let mut combined_results: Vec<(String, f32)> = all_results
+            .into_iter()
+            .map(|(word, scores)| {
+                let combined_score = match combination_mode {
+                    "sum" => scores.iter().sum(),
+                    "max" => scores.iter().copied().fold(0.0f32, f32::max),
+                    "avg" => scores.iter().sum::<f32>() / scores.len() as f32,
+                    _ => scores.iter().sum(), // default to sum
+                };
+                (word, combined_score)
+            })
+            .collect();
+
+        // Sort by combined score and limit
+        combined_results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        combined_results.truncate(max_results);
+
+        Ok(combined_results)
+    }
+
+    /// Find semantic analogies (NEW v1.3)
+    ///
+    /// Finds concepts that complete an analogy: "A is to B as C is to ?"
+    /// Example: "king" is to "queen" as "man" is to "woman"
+    ///
+    /// # Arguments
+    /// * `a` - First word in analogy
+    /// * `b` - Second word in analogy
+    /// * `c` - Third word in analogy
+    /// * `max_results` - Maximum number of results
+    ///
+    /// # Returns
+    /// Vector of (word, score) candidates for completing the analogy
+    pub fn semantic_analogy(
+        &mut self,
+        a: &str,
+        b: &str,
+        c: &str,
+        max_results: usize,
+    ) -> Result<Vec<(String, f32)>, BootstrapError> {
+        // Get concepts
+        let concept_a = self.concepts.get(a)
+            .ok_or_else(|| BootstrapError::NoData(format!("Unknown word: '{}'", a)))?;
+        let concept_b = self.concepts.get(b)
+            .ok_or_else(|| BootstrapError::NoData(format!("Unknown word: '{}'", b)))?;
+        let concept_c = self.concepts.get(c)
+            .ok_or_else(|| BootstrapError::NoData(format!("Unknown word: '{}'", c)))?;
+
+        // Compute vector offset: B - A
+        let offset = [
+            concept_b.coords[0] - concept_a.coords[0],
+            concept_b.coords[1] - concept_a.coords[1],
+            concept_b.coords[2] - concept_a.coords[2],
+        ];
+
+        // Compute target: C + offset
+        let target = [
+            concept_c.coords[0] + offset[0],
+            concept_c.coords[1] + offset[1],
+            concept_c.coords[2] + offset[2],
+        ];
+
+        // Find concepts closest to target
+        let mut results: Vec<(String, f32)> = Vec::new();
+
+        for concept in self.concepts.values() {
+            // Skip input words
+            if concept.word == a || concept.word == b || concept.word == c {
+                continue;
+            }
+
+            // Compute Euclidean distance to target
+            let distance = (
+                (concept.coords[0] - target[0]).powi(2) +
+                (concept.coords[1] - target[1]).powi(2) +
+                (concept.coords[2] - target[2]).powi(2)
+            ).sqrt();
+
+            // Convert distance to similarity score (inverse)
+            let similarity = 1.0 / (1.0 + distance);
+            results.push((concept.word.clone(), similarity));
+        }
+
+        // Sort by similarity and limit
+        results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        results.truncate(max_results);
+
+        Ok(results)
     }
 }
 
@@ -873,6 +1327,9 @@ impl BootstrapLibrary {
                 "coords": concept.coords,
                 "color": concept.color,
                 "emotion": concept.emotion,
+                "sound": concept.sound,
+                "action": concept.action,
+                "spatial": concept.spatial,
             }));
         }
 
@@ -1609,6 +2066,270 @@ mod tests {
         assert!(happy_concept.emotion.is_some(), "Happy should have emotion");
         let vad = happy_concept.emotion.unwrap();
         assert!(vad[0] > 0.0, "Happy should have positive valence");
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    // ========================================================================
+    // NEW v1.3 TESTS
+    // ========================================================================
+
+    #[test]
+    fn test_sound_anchors() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_sounds.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Include sound words
+        writeln!(file, "whisper 0.1 0.2 0.3").unwrap();
+        writeln!(file, "shout 0.4 0.5 0.6").unwrap();
+        writeln!(file, "melody 0.7 0.8 0.9").unwrap();
+        writeln!(file, "bang 0.2 0.3 0.4").unwrap();
+        writeln!(file, "table 0.1 0.1 0.1").unwrap(); // non-sound word
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let enriched = bootstrap.add_sound_anchors();
+
+        assert_eq!(enriched, 4, "Should enrich 4 sound words");
+
+        // Check that sound was added
+        let whisper_concept = bootstrap.get_concept("whisper").unwrap();
+        assert!(whisper_concept.sound.is_some());
+        let sound = whisper_concept.sound.unwrap();
+        assert!(sound[0] < 0.0, "Whisper should have low volume");
+
+        let shout_concept = bootstrap.get_concept("shout").unwrap();
+        assert!(shout_concept.sound.is_some());
+        let shout_sound = shout_concept.sound.unwrap();
+        assert!(shout_sound[0] > 0.0, "Shout should have high volume");
+
+        // Check that non-sound word has no sound
+        let table_concept = bootstrap.get_concept("table").unwrap();
+        assert!(table_concept.sound.is_none());
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_action_anchors() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_actions.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Include action words (verbs)
+        writeln!(file, "run 0.1 0.2 0.3").unwrap();
+        writeln!(file, "sleep 0.4 0.5 0.6").unwrap();
+        writeln!(file, "jump 0.7 0.8 0.9").unwrap();
+        writeln!(file, "think 0.2 0.3 0.4").unwrap();
+        writeln!(file, "table 0.1 0.1 0.1").unwrap(); // non-action word
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let enriched = bootstrap.add_action_anchors();
+
+        assert_eq!(enriched, 4, "Should enrich 4 action words");
+
+        // Check that action was added (Energy, Speed, Direction, Impact)
+        let run_concept = bootstrap.get_concept("run").unwrap();
+        assert!(run_concept.action.is_some());
+        let run_action = run_concept.action.unwrap();
+        assert!(run_action[0] > 0.0, "Run should have high energy");
+        assert!(run_action[1] > 0.0, "Run should have high speed");
+
+        let sleep_concept = bootstrap.get_concept("sleep").unwrap();
+        assert!(sleep_concept.action.is_some());
+        let sleep_action = sleep_concept.action.unwrap();
+        assert!(sleep_action[0] < 0.0, "Sleep should have low energy");
+        assert!(sleep_action[1] < 0.0, "Sleep should have low speed");
+
+        // Check that non-action word has no action
+        let table_concept = bootstrap.get_concept("table").unwrap();
+        assert!(table_concept.action.is_none());
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_spatial_anchors() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_spatial.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Include spatial words (prepositions)
+        writeln!(file, "above 0.1 0.2 0.3").unwrap();
+        writeln!(file, "below 0.4 0.5 0.6").unwrap();
+        writeln!(file, "inside 0.7 0.8 0.9").unwrap();
+        writeln!(file, "near 0.2 0.3 0.4").unwrap();
+        writeln!(file, "table 0.1 0.1 0.1").unwrap(); // non-spatial word
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let enriched = bootstrap.add_spatial_anchors();
+
+        assert_eq!(enriched, 4, "Should enrich 4 spatial words");
+
+        // Check that spatial was added (Proximity, Verticality, Containment)
+        let above_concept = bootstrap.get_concept("above").unwrap();
+        assert!(above_concept.spatial.is_some());
+        let above_spatial = above_concept.spatial.unwrap();
+        assert!(above_spatial[1] > 0.0, "Above should have positive verticality");
+
+        let below_concept = bootstrap.get_concept("below").unwrap();
+        assert!(below_concept.spatial.is_some());
+        let below_spatial = below_concept.spatial.unwrap();
+        assert!(below_spatial[1] < 0.0, "Below should have negative verticality");
+
+        let inside_concept = bootstrap.get_concept("inside").unwrap();
+        assert!(inside_concept.spatial.is_some());
+        let inside_spatial = inside_concept.spatial.unwrap();
+        assert!(inside_spatial[2] > 0.0, "Inside should have high containment");
+
+        // Check that non-spatial word has no spatial
+        let table_concept = bootstrap.get_concept("table").unwrap();
+        assert!(table_concept.spatial.is_none());
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_semantic_search() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_semantic_search.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Create semantic clusters
+        // Animals
+        writeln!(file, "cat 1.0 0.9 0.1 0.0 0.0").unwrap();
+        writeln!(file, "dog 0.9 1.0 0.1 0.0 0.0").unwrap();
+        writeln!(file, "mouse 0.8 0.8 0.2 0.0 0.0").unwrap();
+        writeln!(file, "bird 0.7 0.7 0.3 0.1 0.0").unwrap();
+
+        // Vehicles
+        writeln!(file, "car 0.0 0.0 0.1 1.0 0.9").unwrap();
+        writeln!(file, "truck 0.0 0.0 0.1 0.9 1.0").unwrap();
+        writeln!(file, "bus 0.1 0.0 0.2 0.8 0.8").unwrap();
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 5;
+        config.target_dim = 3;
+        config.knn_k = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+        bootstrap.run_pca_pipeline().unwrap();
+        bootstrap.populate_graph().unwrap();
+        bootstrap.populate_grid().unwrap();
+        bootstrap.weave_connections().unwrap();
+
+        // Semantic search for "cat" should return related animals
+        let results = bootstrap.semantic_search("cat", 5, None).unwrap();
+
+        assert!(results.len() > 0, "Should return results");
+        assert!(results.len() <= 5, "Should not exceed max_results");
+
+        // Results should be sorted by relevance (descending energy)
+        for i in 1..results.len() {
+            assert!(
+                results[i-1].1 >= results[i].1,
+                "Results should be sorted by relevance"
+            );
+        }
+
+        // Should find other animals ("dog", "mouse", "bird") higher than vehicles
+        let dog_score = results.iter().find(|(w, _)| w == "dog").map(|(_, s)| *s);
+        let car_score = results.iter().find(|(w, _)| w == "car").map(|(_, s)| *s);
+
+        if let (Some(dog), Some(car)) = (dog_score, car_score) {
+            assert!(
+                dog > car,
+                "Dog (animal) should be more relevant to cat than car (vehicle)"
+            );
+        }
+
+        std::fs::remove_file(temp_path).ok();
+    }
+
+    #[test]
+    fn test_extended_multimodal_enrichment() {
+        use std::io::Write;
+        use std::fs::File;
+
+        let temp_path = "/tmp/test_extended_multimodal.txt";
+        let mut file = File::create(temp_path).unwrap();
+
+        // Mix of all modalities
+        writeln!(file, "red 0.1 0.2 0.3").unwrap();      // color
+        writeln!(file, "happy 0.4 0.5 0.6").unwrap();    // emotion
+        writeln!(file, "whisper 0.7 0.8 0.9").unwrap();  // sound
+        writeln!(file, "run 0.2 0.3 0.4").unwrap();      // action
+        writeln!(file, "above 0.5 0.6 0.7").unwrap();    // spatial
+        writeln!(file, "table 0.1 0.1 0.1").unwrap();    // none
+
+        let mut config = BootstrapConfig::default();
+        config.embedding_dim = 3;
+
+        let mut bootstrap = BootstrapLibrary::new(config);
+        bootstrap.load_embeddings(temp_path).unwrap();
+
+        let (colors, emotions, sounds, actions, spatial) = bootstrap.enrich_extended_multimodal();
+
+        assert_eq!(colors, 1, "Should enrich 1 color");
+        assert_eq!(emotions, 1, "Should enrich 1 emotion");
+        assert_eq!(sounds, 1, "Should enrich 1 sound");
+        assert_eq!(actions, 1, "Should enrich 1 action");
+        assert_eq!(spatial, 1, "Should enrich 1 spatial");
+
+        // Verify each modality
+        let red = bootstrap.get_concept("red").unwrap();
+        assert!(red.color.is_some());
+        assert!(red.emotion.is_none());
+        assert!(red.sound.is_none());
+        assert!(red.action.is_none());
+        assert!(red.spatial.is_none());
+
+        let happy = bootstrap.get_concept("happy").unwrap();
+        assert!(happy.color.is_none());
+        assert!(happy.emotion.is_some());
+        assert!(happy.sound.is_none());
+        assert!(happy.action.is_none());
+        assert!(happy.spatial.is_none());
+
+        let whisper = bootstrap.get_concept("whisper").unwrap();
+        assert!(whisper.sound.is_some());
+
+        let run = bootstrap.get_concept("run").unwrap();
+        assert!(run.action.is_some());
+
+        let above = bootstrap.get_concept("above").unwrap();
+        assert!(above.spatial.is_some());
+
+        let table = bootstrap.get_concept("table").unwrap();
+        assert!(table.color.is_none());
+        assert!(table.emotion.is_none());
+        assert!(table.sound.is_none());
+        assert!(table.action.is_none());
+        assert!(table.spatial.is_none());
 
         std::fs::remove_file(temp_path).ok();
     }
