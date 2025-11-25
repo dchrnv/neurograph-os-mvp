@@ -221,9 +221,10 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 
 ### Bootstrap Library
 
-- **Bootstrap V1.2** - семантическая инициализация графа из эмбеддингов
+- **Bootstrap V1.3** - семантическая инициализация графа из эмбеддингов
 - **PCA Pipeline** - снижение размерности (300D → 3D) для визуализации
-- **Multimodal Anchors** - базовые концепты (27 цветов, 30 эмоций)
+- **Extended Multimodal Anchors** - 5 модальностей (27 цветов, 30 эмоций, 30 звуков, 40 действий, 20 пространственных отношений)
+- **Semantic Search** - поиск по семантике через spreading activation
 - **Artifact Persistence** - сохранение PCA моделей и bootstrap карт
 
 ---
