@@ -1,22 +1,27 @@
 use neurograph_core::{
     adapters::console::{ConsoleConfig, ConsoleInputAdapter, ConsoleOutputAdapter},
     adapters::{OutputAdapter, OutputContext},
+    adna::{AppraiserConfig, InMemoryADNAReader},
     bootstrap::{BootstrapConfig, BootstrapLibrary},
+    experience_stream::ExperienceStream,
+    feedback::{DetailedFeedbackType, FeedbackProcessor, FeedbackSignal},
     gateway::Gateway,
+    intuition_engine::IntuitionEngine,
     GatewayConfig,
     ProcessedSignal,
 };
+use std::io::{self, Write};
 use std::sync::RwLock;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use tokio::sync::mpsc;
 use tokio::time::timeout;
 
 /// Print welcome banner
 fn print_welcome() {
     println!("\n╔═══════════════════════════════════════════════════════════╗");
-    println!("║           NeuroGraph OS v0.36.0 - REPL                   ║");
-    println!("║     Когнитивная архитектура с Gateway v1.0               ║");
+    println!("║           NeuroGraph OS v0.37.0 - REPL                   ║");
+    println!("║     Когнитивная архитектура с Gateway + Feedback         ║");
     println!("╚═══════════════════════════════════════════════════════════╝\n");
     println!("Type /help for commands, /quit to exit\n");
 }
@@ -29,7 +34,11 @@ fn print_help() {
     println!("  /stats      - Show Gateway statistics");
     println!("  /quit       - Exit REPL");
     println!("  /exit       - Exit REPL (alias for /quit)");
-    println!("\nOr just type any text to query the system!\n");
+    println!("\nOr just type any text to query the system!");
+    println!("\n💬 After each response, provide feedback:");
+    println!("  y  - Positive (helpful)");
+    println!("  n  - Negative (not helpful)");
+    println!("  c  - Correction (provide correct answer)\n");
 }
 
 /// Print system status
@@ -64,6 +73,77 @@ async fn print_stats(gateway: &Arc<Gateway>) {
     println!();
 }
 
+/// Ask for feedback on a response
+async fn ask_for_feedback(
+    signal_id: u64,
+    feedback_processor: &Arc<FeedbackProcessor>,
+) -> Result<(), String> {
+    print!("\n[y/n/c] Was this helpful? ");
+    io::stdout().flush().unwrap();
+
+    let mut feedback_input = String::new();
+    io::stdin()
+        .read_line(&mut feedback_input)
+        .map_err(|e| format!("Failed to read feedback: {}", e))?;
+
+    let feedback_input = feedback_input.trim().to_lowercase();
+
+    if feedback_input.is_empty() {
+        // Skip feedback if user just pressed Enter
+        return Ok(());
+    }
+
+    let feedback_type = match feedback_input.as_str() {
+        "y" | "yes" => DetailedFeedbackType::Positive { strength: 1.0 },
+        "n" | "no" => DetailedFeedbackType::Negative { strength: 1.0 },
+        "c" | "correct" | "correction" => {
+            print!("Enter correct answer: ");
+            io::stdout().flush().unwrap();
+
+            let mut correction = String::new();
+            io::stdin()
+                .read_line(&mut correction)
+                .map_err(|e| format!("Failed to read correction: {}", e))?;
+
+            DetailedFeedbackType::Correction {
+                correct_value: correction.trim().to_string(),
+            }
+        }
+        _ => {
+            println!("⚠️  Invalid feedback option. Use y/n/c or press Enter to skip.");
+            return Ok(());
+        }
+    };
+
+    let feedback_signal = FeedbackSignal {
+        reference_id: signal_id,
+        feedback_type,
+        timestamp: SystemTime::now(),
+        explanation: None,
+    };
+
+    match feedback_processor.process(feedback_signal).await {
+        Ok(result) => {
+            if result.success {
+                println!("✅ Feedback recorded: {}", result.changes_made.join(", "));
+            } else {
+                println!("⚠️  Feedback partially applied:");
+                for change in result.changes_made {
+                    println!("  ✅ {}", change);
+                }
+                for error in result.errors {
+                    println!("  ❌ {}", error);
+                }
+            }
+        }
+        Err(e) => {
+            println!("❌ Feedback error: {}", e);
+        }
+    }
+
+    Ok(())
+}
+
 /// Process a command
 async fn process_command(
     cmd: &str,
@@ -95,6 +175,7 @@ async fn process_command(
 async fn run_repl(
     gateway: Arc<Gateway>,
     output_adapter: Arc<ConsoleOutputAdapter>,
+    feedback_processor: Arc<FeedbackProcessor>,
     mut signal_receiver: mpsc::Receiver<ProcessedSignal>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let input_adapter = ConsoleInputAdapter::new(gateway.clone());
@@ -173,6 +254,11 @@ async fn run_repl(
                                 Ok(formatted) => {
                                     if let Err(e) = output_adapter.send(formatted).await {
                                         eprintln!("❌ Output error: {}", e);
+                                    } else {
+                                        // Ask for feedback after successful output
+                                        if let Err(e) = ask_for_feedback(signal_id, &feedback_processor).await {
+                                            eprintln!("⚠️  Feedback error: {}", e);
+                                        }
                                     }
                                 }
                                 Err(e) => {
@@ -205,6 +291,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bootstrap_config = BootstrapConfig::default();
     let bootstrap = Arc::new(RwLock::new(BootstrapLibrary::new(bootstrap_config)));
 
+    // Initialize ExperienceStream
+    let experience_stream_raw = Arc::new(ExperienceStream::new(100_000, 1000));
+    let experience_stream = Arc::new(RwLock::new(ExperienceStream::new(100_000, 1000)));
+
+    // Initialize ADNA for IntuitionEngine
+    let adna_config = AppraiserConfig::default();
+    let adna = Arc::new(InMemoryADNAReader::new(adna_config));
+
+    // Create proposal channel for IntuitionEngine
+    let (proposal_tx, mut _proposal_rx) = mpsc::channel(100);
+
+    // Initialize IntuitionEngine
+    let intuition_engine = Arc::new(RwLock::new(IntuitionEngine::new(
+        Default::default(),
+        experience_stream_raw,
+        adna,
+        proposal_tx,
+    )));
+
     // Create signal queue
     let (signal_tx, signal_rx) = mpsc::channel::<ProcessedSignal>(1000);
 
@@ -220,8 +325,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let console_config = ConsoleConfig::default();
     let output_adapter = Arc::new(ConsoleOutputAdapter::new(console_config));
 
+    // Create feedback processor
+    let feedback_processor = Arc::new(FeedbackProcessor::new(
+        bootstrap.clone(),
+        experience_stream,
+        intuition_engine,
+    ));
+
     // Run REPL
-    run_repl(gateway, output_adapter, signal_rx).await?;
+    run_repl(gateway, output_adapter, feedback_processor, signal_rx).await?;
 
     Ok(())
 }
