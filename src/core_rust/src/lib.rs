@@ -66,6 +66,7 @@ pub mod hybrid_learning;  // NEW: v2.2 Hybrid Learning Integration (v0.30.2)
 pub mod reflex_layer;     // NEW: v3.0 Reflex System (v0.31.0)
 pub mod bootstrap;        // NEW: v1.2 Bootstrap Library (v0.33.0)
 pub mod gateway;          // NEW: v1.0 Gateway (v0.35.0)
+pub mod adapters;         // NEW: v1.0 Output/Input Adapters (v0.36.0)
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -303,6 +304,7 @@ pub use gateway::signals::{
     SystemCommand,
     FeedbackType,
     TokenOperation,
+    ProcessedMetadata,
 };
 
 pub use gateway::channels::{
@@ -312,4 +314,20 @@ pub use gateway::channels::{
 
 pub use gateway::stats::{
     GatewayStats,
+};
+
+// Adapters v1.0
+pub use adapters::{
+    OutputAdapter,
+    OutputContext,
+    FormattedOutput,
+    OutputError,
+    SignalSource as AdapterSignalSource,
+    SignalType as AdapterSignalType,
+};
+
+pub use adapters::console::{
+    ConsoleOutputAdapter,
+    ConsoleInputAdapter,
+    ConsoleConfig,
 };

@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.35.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.36.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -148,6 +148,20 @@
 ```bash
 # Установить Rust (если еще не установлен)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### REPL Interface (v0.36.0)
+
+```bash
+# Запустить интерактивный REPL
+cd src/core_rust
+cargo run --bin neurograph-repl
+
+# Доступные команды:
+# /help   - Показать справку
+# /status - Статус системы
+# /stats  - Статистика Gateway
+# /quit   - Выход
 ```
 
 ### Desktop UI v2.0
