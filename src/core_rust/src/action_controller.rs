@@ -230,6 +230,7 @@ impl ArbiterStats {
 /// - IntuitionEngine (Fast Path reflexes)
 /// - ADNA (Slow Path reasoning)
 /// - Guardian (Constitutional validation)
+/// - CuriosityDrive (Autonomous exploration) - v0.38.0
 /// - ActionExecutors (Concrete actions)
 /// - ExperienceStream (Learning & memory)
 pub struct ActionController {
@@ -245,6 +246,9 @@ pub struct ActionController {
     arbiter_config: ArbiterConfig,
     arbiter_stats: Arc<RwLock<ArbiterStats>>,
     action_id_counter: std::sync::atomic::AtomicU64,
+
+    // v0.38.0 component (Curiosity-driven exploration)
+    curiosity: Option<Arc<crate::curiosity::CuriosityDrive>>,
 }
 
 impl ActionController {
@@ -267,7 +271,42 @@ impl ActionController {
             arbiter_config,
             arbiter_stats: Arc::new(RwLock::new(ArbiterStats::new())),
             action_id_counter: std::sync::atomic::AtomicU64::new(1),
+            curiosity: None, // Optional, can be added later
         }
+    }
+
+    /// Create ActionController v2.1 with curiosity-driven exploration
+    pub fn with_curiosity(
+        adna_reader: Arc<dyn ADNAReader>,
+        experience_writer: Arc<dyn ExperienceWriter>,
+        intuition: Arc<RwLock<crate::IntuitionEngine>>,
+        guardian: Arc<crate::Guardian>,
+        curiosity: Arc<crate::curiosity::CuriosityDrive>,
+        config: ActionControllerConfig,
+        arbiter_config: ArbiterConfig,
+    ) -> Self {
+        Self {
+            adna_reader,
+            experience_writer,
+            executors: RwLock::new(HashMap::new()),
+            config,
+            intuition: Some(intuition),
+            guardian: Some(guardian),
+            arbiter_config,
+            arbiter_stats: Arc::new(RwLock::new(ArbiterStats::new())),
+            action_id_counter: std::sync::atomic::AtomicU64::new(1),
+            curiosity: Some(curiosity),
+        }
+    }
+
+    /// Set curiosity drive (can be added after creation)
+    pub fn set_curiosity(&mut self, curiosity: Arc<crate::curiosity::CuriosityDrive>) {
+        self.curiosity = Some(curiosity);
+    }
+
+    /// Get curiosity drive
+    pub fn curiosity(&self) -> Option<&Arc<crate::curiosity::CuriosityDrive>> {
+        self.curiosity.as_ref()
     }
 
     /// Get arbiter statistics
@@ -760,6 +799,194 @@ impl ActionController {
         let confidence = 0.7 * normalized_max + 0.3 * certainty;
 
         confidence.clamp(0.0, 1.0)
+    }
+
+    // ========================================================================
+    // Curiosity-Driven Exploration (v0.38.0)
+    // ========================================================================
+
+    /// Act with curiosity-driven exploration
+    ///
+    /// This extends the dual-path arbitration with autonomous exploration:
+    /// 1. Calculate curiosity score for current state
+    /// 2. If curiosity triggers exploration → explore uncertain regions
+    /// 3. Otherwise → standard Fast/Slow path decision
+    /// 4. Feed surprise back to CuriosityDrive for learning
+    ///
+    /// # Arguments
+    /// * `state` - Current 8D state
+    ///
+    /// # Returns
+    /// ActionIntent (may be exploratory or standard decision)
+    pub fn act_with_curiosity(&self, state: [f32; 8]) -> crate::action_types::ActionIntent {
+        use crate::action_types::{ActionIntent, DecisionSource};
+        use crate::curiosity::{CuriosityContext, CuriosityScore};
+
+        // Check if curiosity is available
+        let curiosity = match &self.curiosity {
+            Some(c) => c,
+            None => return self.act(state), // No curiosity → fallback to standard
+        };
+
+        // Convert f32 state to f64 for curiosity
+        let state_f64: [f64; 8] = state.iter().map(|&x| x as f64).collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+
+        // Calculate curiosity score
+        let context = CuriosityContext {
+            current_state: state_f64,
+            predicted_state: None,
+            actual_state: None,
+            prediction_accuracy: None,
+        };
+
+        let curiosity_score = curiosity.calculate_curiosity(&context);
+
+        // If curiosity triggers exploration
+        if curiosity_score.triggers_exploration {
+            return self.explore_curious_target(state, &curiosity_score);
+        }
+
+        // Standard act (Fast/Slow path)
+        self.act(state)
+    }
+
+    /// Explore a curious target (high uncertainty/surprise/novelty)
+    fn explore_curious_target(
+        &self,
+        current_state: [f32; 8],
+        curiosity_score: &crate::curiosity::CuriosityScore,
+    ) -> crate::action_types::ActionIntent {
+        use crate::action_types::{ActionIntent, ActionType, DecisionSource};
+
+        let curiosity = self.curiosity.as_ref().unwrap();
+
+        // Try to get exploration target from queue or suggestion
+        let target = curiosity.get_next_target()
+            .or_else(|| curiosity.suggest_exploration());
+
+        if let Some(exploration_target) = target {
+            // Convert exploration target state to f32
+            let target_state: [f32; 8] = exploration_target.state
+                .iter()
+                .map(|&x| x as f32)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+
+            let action_id = self.next_action_id();
+
+            // Create exploration action
+            return ActionIntent {
+                action_id,
+                action_type: ActionType::Explore,
+                params: target_state,
+                source: DecisionSource::Curiosity {
+                    curiosity_score: curiosity_score.overall,
+                    exploration_reason: format!("{:?}", exploration_target.reason),
+                },
+                confidence: curiosity_score.overall,
+                estimated_reward: 0.0,
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
+            };
+        }
+
+        // No exploration target available → fallback to standard
+        self.act(current_state)
+    }
+
+    /// Update curiosity with actual outcome (for surprise calculation)
+    ///
+    /// Call this after executing an action to feed the result back to curiosity
+    pub fn update_curiosity(&self, predicted_state: [f32; 8], actual_state: [f32; 8]) {
+        if let Some(ref curiosity) = self.curiosity {
+            // Convert to f64
+            let predicted_f64: [f64; 8] = predicted_state.iter()
+                .map(|&x| x as f64)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+
+            let actual_f64: [f64; 8] = actual_state.iter()
+                .map(|&x| x as f64)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+
+            // Calculate prediction accuracy (inverse of distance)
+            let distance: f64 = predicted_f64.iter()
+                .zip(actual_f64.iter())
+                .map(|(p, a)| (p - a).powi(2))
+                .sum::<f64>()
+                .sqrt();
+
+            let accuracy = (1.0 / (1.0 + distance)) as f32;
+
+            // Update curiosity context with surprise
+            let context = crate::curiosity::CuriosityContext {
+                current_state: actual_f64,
+                predicted_state: Some(predicted_f64),
+                actual_state: Some(actual_f64),
+                prediction_accuracy: Some(accuracy),
+            };
+
+            curiosity.calculate_curiosity(&context);
+        }
+    }
+
+    /// Manual exploration command (for REPL /explore)
+    ///
+    /// Forces exploration of uncertain regions regardless of curiosity threshold
+    pub fn explore(&self) -> Option<crate::action_types::ActionIntent> {
+        use crate::action_types::{ActionIntent, ActionType, DecisionSource};
+
+        let curiosity = self.curiosity.as_ref()?;
+
+        // Find most uncertain region
+        let uncertain_regions = curiosity.find_uncertain_regions(1);
+        if let Some((state, uncertainty)) = uncertain_regions.first() {
+            let state_f32: [f32; 8] = state.iter()
+                .map(|&x| x as f32)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+
+            let action_id = self.next_action_id();
+
+            return Some(ActionIntent {
+                action_id,
+                action_type: ActionType::Explore,
+                params: state_f32,
+                source: DecisionSource::Curiosity {
+                    curiosity_score: *uncertainty,
+                    exploration_reason: "Manual exploration".to_string(),
+                },
+                confidence: *uncertainty,
+                estimated_reward: 0.0,
+                timestamp: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
+            });
+        }
+
+        None
+    }
+
+    /// Get curiosity statistics
+    pub fn curiosity_stats(&self) -> Option<crate::curiosity::CuriosityStats> {
+        self.curiosity.as_ref().map(|c| c.stats())
+    }
+
+    /// Enable/disable autonomous curiosity exploration
+    pub fn set_autonomous_exploration(&self, enabled: bool) {
+        if let Some(ref curiosity) = self.curiosity {
+            curiosity.set_autonomous(enabled);
+        }
     }
 }
 

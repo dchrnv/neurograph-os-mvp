@@ -68,6 +68,7 @@ pub mod bootstrap;        // NEW: v1.2 Bootstrap Library (v0.33.0)
 pub mod gateway;          // NEW: v1.0 Gateway (v0.35.0)
 pub mod adapters;         // NEW: v1.0 Output/Input Adapters (v0.36.0)
 pub mod feedback;         // NEW: v1.0 Feedback System (v0.37.0)
+pub mod curiosity;        // NEW: v1.0 Curiosity Drive (v0.38.0)
 
 #[cfg(feature = "python")]
 pub mod ffi;
@@ -340,4 +341,17 @@ pub use feedback::{
     FeedbackResult,
     FeedbackError,
     DetailedFeedbackType,
+};
+
+// Curiosity v1.0
+pub use curiosity::{
+    CuriosityDrive,
+    CuriosityConfig,
+    CuriosityScore,
+    CuriosityContext,
+    CuriosityStats,
+    ExplorationMode,
+    ExplorationTarget,
+    ExplorationReason,
+    ExplorationPriority,
 };

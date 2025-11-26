@@ -46,6 +46,9 @@ pub enum ActionType {
     TriggerLearning,
     SaveState,
 
+    // Exploration (v0.38.0 Curiosity Drive)
+    Explore,
+
     // External actions (extensible)
     External(u32),
 }
@@ -66,6 +69,7 @@ impl ActionType {
             ActionType::UpdatePolicy => "update_policy",
             ActionType::TriggerLearning => "trigger_learning",
             ActionType::SaveState => "save_state",
+            ActionType::Explore => "explore",
             ActionType::External(_) => "external",
         }
     }
@@ -97,6 +101,14 @@ pub enum DecisionSource {
         /// Reason for failsafe activation
         reason: String,
     },
+
+    /// Curiosity-driven exploration (v0.38.0)
+    Curiosity {
+        /// Curiosity score that triggered exploration
+        curiosity_score: f32,
+        /// Reason for exploration (uncertainty/surprise/novelty)
+        exploration_reason: String,
+    },
 }
 
 impl DecisionSource {
@@ -115,12 +127,18 @@ impl DecisionSource {
         matches!(self, DecisionSource::Failsafe { .. })
     }
 
+    /// Check if decision is curiosity-driven
+    pub fn is_curiosity(&self) -> bool {
+        matches!(self, DecisionSource::Curiosity { .. })
+    }
+
     /// Get execution time in nanoseconds (for metrics)
     pub fn execution_time_ns(&self) -> u64 {
         match self {
             DecisionSource::Reflex { lookup_time_ns, .. } => *lookup_time_ns,
             DecisionSource::Reasoning { reasoning_time_ms, .. } => reasoning_time_ms * 1_000_000,
             DecisionSource::Failsafe { .. } => 0,
+            DecisionSource::Curiosity { .. } => 0, // Exploration doesn't have decision time
         }
     }
 }
@@ -214,7 +232,7 @@ impl ActionIntent {
 }
 
 /// Get current Unix timestamp in milliseconds
-fn current_timestamp_ms() -> u64 {
+pub fn current_timestamp_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()

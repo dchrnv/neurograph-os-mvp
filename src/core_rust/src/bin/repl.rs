@@ -7,6 +7,7 @@ use neurograph_core::{
     feedback::{DetailedFeedbackType, FeedbackProcessor, FeedbackSignal},
     gateway::Gateway,
     intuition_engine::IntuitionEngine,
+    curiosity::{CuriosityDrive, CuriosityConfig},
     GatewayConfig,
     ProcessedSignal,
 };
@@ -20,8 +21,8 @@ use tokio::time::timeout;
 /// Print welcome banner
 fn print_welcome() {
     println!("\n╔═══════════════════════════════════════════════════════════╗");
-    println!("║           NeuroGraph OS v0.37.0 - REPL                   ║");
-    println!("║     Когнитивная архитектура с Gateway + Feedback         ║");
+    println!("║           NeuroGraph OS v0.38.0 - REPL                   ║");
+    println!("║   Когнитивная архитектура + Curiosity Drive              ║");
     println!("╚═══════════════════════════════════════════════════════════╝\n");
     println!("Type /help for commands, /quit to exit\n");
 }
@@ -32,6 +33,8 @@ fn print_help() {
     println!("  /help       - Show this help message");
     println!("  /status     - Show system status");
     println!("  /stats      - Show Gateway statistics");
+    println!("  /curiosity  - Show curiosity drive statistics");
+    println!("  /explore    - Manually explore uncertain regions");
     println!("  /quit       - Exit REPL");
     println!("  /exit       - Exit REPL (alias for /quit)");
     println!("\nOr just type any text to query the system!");
@@ -70,6 +73,74 @@ async fn print_stats(gateway: &Arc<Gateway>) {
         stats.avg_processing_time_us()
     );
     println!("  Success rate: {:.1}%", stats.success_rate() * 100.0);
+    println!();
+}
+
+/// Print curiosity drive statistics
+async fn print_curiosity_stats(curiosity: &Arc<CuriosityDrive>) {
+    let stats = curiosity.stats();
+
+    println!("\n🧠 Curiosity Drive Statistics:\n");
+
+    println!("  Uncertainty Tracking:");
+    println!("    - Total cells explored: {}", stats.uncertainty.total_cells);
+    println!("    - Total visits: {}", stats.uncertainty.total_visits);
+    println!("    - Average confidence: {:.3}", stats.uncertainty.avg_confidence);
+    println!("    - Average visits per cell: {:.1}", stats.uncertainty.avg_visits);
+
+    println!("\n  Surprise Detection:");
+    println!("    - Current surprise: {:.3}", stats.surprise.current_surprise);
+    println!("    - Average surprise: {:.3}", stats.surprise.avg_surprise);
+    println!("    - Max recent surprise: {:.3}", stats.surprise.max_recent_surprise);
+    println!("    - History size: {}", stats.surprise.history_size);
+    println!("    - Total events: {}", stats.surprise.total_events);
+
+    println!("\n  Novelty Tracking:");
+    println!("    - Unique states seen: {}", stats.novelty.unique_states);
+    println!("    - Total observations: {}", stats.novelty.total_observations);
+    println!("    - Total unique ever: {}", stats.novelty.total_unique_seen);
+
+    println!("\n  Exploration Queue:");
+    println!("    - Queue size: {}", stats.exploration.queue_size);
+    println!("    - Total added: {}", stats.exploration.total_added);
+    println!("    - Total explored: {}", stats.exploration.total_explored);
+
+    println!("\n  Status:");
+    println!("    - Autonomous exploration: {}", if stats.autonomous_enabled { "✅ enabled" } else { "❌ disabled" });
+
+    println!();
+}
+
+/// Manually trigger exploration
+async fn trigger_exploration(curiosity: &Arc<CuriosityDrive>) {
+    println!("\n🔍 Exploring uncertain regions...\n");
+
+    // Find most uncertain regions
+    let uncertain_regions = curiosity.find_uncertain_regions(5);
+
+    if uncertain_regions.is_empty() {
+        println!("  No uncertain regions found. System is fully confident!\n");
+        return;
+    }
+
+    println!("  Top {} uncertain regions:\n", uncertain_regions.len());
+    for (i, (state, uncertainty)) in uncertain_regions.iter().enumerate() {
+        println!("  {}. Uncertainty: {:.3}", i + 1, uncertainty);
+        println!("      State: [{:.2}, {:.2}, {:.2}, {:.2}, {:.2}, {:.2}, {:.2}, {:.2}]",
+            state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
+    }
+
+    // Add top region to exploration queue if available
+    if let Some((state, score)) = uncertain_regions.first() {
+        let target = neurograph_core::curiosity::ExplorationTarget::new(
+            *state,
+            *score,
+            neurograph_core::curiosity::ExplorationReason::Manual,
+        );
+        curiosity.add_exploration_target(target);
+        println!("\n  ✅ Top region added to exploration queue");
+    }
+
     println!();
 }
 
@@ -149,6 +220,7 @@ async fn process_command(
     cmd: &str,
     _args: Vec<&str>,
     gateway: &Arc<Gateway>,
+    curiosity: &Arc<CuriosityDrive>,
 ) -> Result<bool, String> {
     match cmd {
         "/help" | "/h" => {
@@ -161,6 +233,14 @@ async fn process_command(
         }
         "/stats" => {
             print_stats(gateway).await;
+            Ok(false)
+        }
+        "/curiosity" | "/c" => {
+            print_curiosity_stats(curiosity).await;
+            Ok(false)
+        }
+        "/explore" | "/e" => {
+            trigger_exploration(curiosity).await;
             Ok(false)
         }
         "/quit" | "/exit" | "/q" => {
@@ -176,6 +256,7 @@ async fn run_repl(
     gateway: Arc<Gateway>,
     output_adapter: Arc<ConsoleOutputAdapter>,
     feedback_processor: Arc<FeedbackProcessor>,
+    curiosity: Arc<CuriosityDrive>,
     mut signal_receiver: mpsc::Receiver<ProcessedSignal>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let input_adapter = ConsoleInputAdapter::new(gateway.clone());
@@ -206,7 +287,7 @@ async fn run_repl(
             let cmd = parts[0];
             let args = parts[1..].to_vec();
 
-            match process_command(cmd, args, &gateway).await {
+            match process_command(cmd, args, &gateway, &curiosity).await {
                 Ok(should_quit) => {
                     if should_quit {
                         break;
@@ -332,8 +413,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         intuition_engine,
     ));
 
+    // Initialize Curiosity Drive (v0.38.0)
+    let curiosity_config = CuriosityConfig::default();
+    let curiosity = Arc::new(CuriosityDrive::new(curiosity_config));
+
     // Run REPL
-    run_repl(gateway, output_adapter, feedback_processor, signal_rx).await?;
+    run_repl(gateway, output_adapter, feedback_processor, curiosity, signal_rx).await?;
 
     Ok(())
 }
