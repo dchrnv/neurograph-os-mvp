@@ -3,7 +3,7 @@
 
 > **Высокопроизводительная система пространственных вычислений на основе токенов на Rust**
 
-[![Version](https://img.shields.io/badge/version-v0.34.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.35.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -219,13 +219,18 @@ cat src/core_rust/PERSISTENCE_SETUP.md
 - **Retention Policies** - автоархивирование старых данных
 - **Versioned State Management** - отслеживание эволюции
 
-### Bootstrap Library
+### Bootstrap Library & Gateway
 
 - **Bootstrap V1.3** - семантическая инициализация графа из эмбеддингов
 - **PCA Pipeline** - снижение размерности (300D → 3D) для визуализации
 - **Extended Multimodal Anchors** - 5 модальностей (27 цветов, 30 эмоций, 30 звуков, 40 действий, 20 пространственных отношений)
 - **Semantic Search** - поиск по семантике через spreading activation
 - **Artifact Persistence** - сохранение PCA моделей и bootstrap карт
+- **Gateway V1.0** - единая точка входа для всех сигналов с response channels
+  - Text normalization → state[8] через Bootstrap
+  - Request/Response pattern с oneshot channels
+  - Signal classification (queries, actions, commands)
+  - Статистика и мониторинг
 
 ---
 
