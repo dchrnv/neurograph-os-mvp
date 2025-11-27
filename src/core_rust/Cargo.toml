@@ -55,6 +55,14 @@ fasthash = "0.4"
 # Parallel processing
 rayon = "1.10"
 
+# REST API (v0.39.0)
+axum = { version = "0.7", features = ["ws"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3"
+
 [dev-dependencies]
 # Testing dependencies
 rand = "0.8"
@@ -82,6 +90,10 @@ persistence = ["sqlx", "dotenv"]  # Enable PostgreSQL persistence with --feature
 [[bin]]
 name = "neurograph-repl"
 path = "src/bin/repl.rs"
+
+[[bin]]
+name = "neurograph-api"
+path = "src/bin/api.rs"
 
 #[[bin]]
 #name = "connection-demo"
