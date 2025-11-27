@@ -225,12 +225,17 @@ InputSignal → Gateway.inject() → ProcessedSignal → Queue → ActionControl
 - [ ] explore()
 
 **Шаг 9: REPL команды (20 мин)**
+- [x] `/curiosity`, `/explore`
+
+**Шаг 10: Тесты (40 мин)**
+**Шаг 9: REPL команды (20 мин)**
 - [ ] `/curiosity`, `/explore`
 
 **Шаг 10: Тесты (40 мин)**
 
----
+> **📝 Отложено на post-MVP:** Incremental cleanup (performance), Curiosity rewards (intrinsic motivation), Prometheus metrics. См. CHANGELOG_v0.38.0.md "Future Enhancements"
 
+---
 ## v0.39.0 — REST API
 
 **Цель:** HTTP доступ  
