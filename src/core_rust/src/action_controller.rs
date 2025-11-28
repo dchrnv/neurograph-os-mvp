@@ -249,6 +249,9 @@ pub struct ActionController {
 
     // v0.38.0 component (Curiosity-driven exploration)
     curiosity: Option<Arc<crate::curiosity::CuriosityDrive>>,
+
+    // v0.39.1 component (Gateway integration)
+    gateway: Option<Arc<crate::gateway::Gateway>>,
 }
 
 impl ActionController {
@@ -272,6 +275,7 @@ impl ActionController {
             arbiter_stats: Arc::new(RwLock::new(ArbiterStats::new())),
             action_id_counter: std::sync::atomic::AtomicU64::new(1),
             curiosity: None, // Optional, can be added later
+            gateway: None,   // Optional, can be added later (v0.39.1)
         }
     }
 
@@ -296,6 +300,7 @@ impl ActionController {
             arbiter_stats: Arc::new(RwLock::new(ArbiterStats::new())),
             action_id_counter: std::sync::atomic::AtomicU64::new(1),
             curiosity: Some(curiosity),
+            gateway: None,   // Optional, can be added later (v0.39.1)
         }
     }
 
@@ -307,6 +312,16 @@ impl ActionController {
     /// Get curiosity drive
     pub fn curiosity(&self) -> Option<&Arc<crate::curiosity::CuriosityDrive>> {
         self.curiosity.as_ref()
+    }
+
+    /// Set gateway for request completion (v0.39.1)
+    pub fn set_gateway(&mut self, gateway: Arc<crate::gateway::Gateway>) {
+        self.gateway = Some(gateway);
+    }
+
+    /// Get gateway
+    pub fn gateway(&self) -> Option<&Arc<crate::gateway::Gateway>> {
+        self.gateway.as_ref()
     }
 
     /// Get arbiter statistics
@@ -403,6 +418,58 @@ impl ActionController {
                  intent.intent_type, executor_id, total_duration);
 
         Ok(result)
+    }
+
+    /// Process a signal from Gateway and complete the request (v0.39.1)
+    ///
+    /// This method:
+    /// 1. Converts ProcessedSignal into Intent
+    /// 2. Executes the intent via execute_intent()
+    /// 3. Calls Gateway.complete_request() with the result
+    ///
+    /// This closes the Gateway → ActionController loop.
+    pub async fn process_signal(&self, signal: crate::gateway::signals::ProcessedSignal) {
+        let signal_id = signal.signal_id;
+
+        // Convert ProcessedSignal state [f32; 8] to Intent state [i16; 8]
+        let state_i16: [i16; 8] = [
+            signal.state[0] as i16,
+            signal.state[1] as i16,
+            signal.state[2] as i16,
+            signal.state[3] as i16,
+            signal.state[4] as i16,
+            signal.state[5] as i16,
+            signal.state[6] as i16,
+            signal.state[7] as i16,
+        ];
+
+        // Convert ProcessedSignal to Intent
+        let intent = Intent {
+            state: state_i16,
+            intent_type: format!("{:?}", signal.signal_type),
+            context: serde_json::json!({
+                "signal_type": format!("{:?}", signal.signal_type),
+                "source": format!("{:?}", signal.source),
+                "metadata": signal.metadata,
+                "interpretation_confidence": signal.interpretation_confidence,
+            }),
+        };
+
+        // Execute the intent
+        let result = self.execute_intent(intent).await.unwrap_or_else(|e| {
+            // If execution failed, create error result
+            ActionResult {
+                success: false,
+                output: serde_json::json!({"error": e.to_string()}),
+                duration_ms: 0,
+                error: Some(e.to_string()),
+            }
+        });
+
+        // Complete the Gateway request if gateway is set
+        if let Some(gateway) = &self.gateway {
+            gateway.complete_request(signal_id, result);
+        }
     }
 
     /// Select executor based on policy using epsilon-greedy strategy
