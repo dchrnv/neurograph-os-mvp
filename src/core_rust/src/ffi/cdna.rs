@@ -35,7 +35,8 @@ impl PyProfileId {
             1 => ProfileId::Explorer,
             2 => ProfileId::Analyst,
             3 => ProfileId::Creative,
-            v => ProfileId::Custom(v),
+            255 => ProfileId::Custom,
+            _ => ProfileId::Default, // Fallback to default
         };
         Ok(PyProfileId { inner })
     }
@@ -61,8 +62,8 @@ impl PyProfileId {
     }
 
     #[staticmethod]
-    fn custom(value: u32) -> Self {
-        PyProfileId { inner: ProfileId::Custom(value) }
+    fn custom() -> Self {
+        PyProfileId { inner: ProfileId::Custom }
     }
 
     fn to_u32(&self) -> u32 {
@@ -75,7 +76,7 @@ impl PyProfileId {
             ProfileId::Explorer => "ProfileId.Explorer".to_string(),
             ProfileId::Analyst => "ProfileId.Analyst".to_string(),
             ProfileId::Creative => "ProfileId.Creative".to_string(),
-            ProfileId::Custom(v) => format!("ProfileId.Custom({})", v),
+            ProfileId::Custom => "ProfileId.Custom".to_string(),
         }
     }
 

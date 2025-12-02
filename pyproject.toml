@@ -1,0 +1,41 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "neurograph"
+version = "0.40.0"
+description = "NeuroGraph OS - High-performance spatial computing system with 8D semantic space"
+authors = [{name = "Chernov Denys"}]
+license = {text = "AGPL-3.0"}
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["neurograph", "cognitive-architecture", "spatial-computing", "ai", "ml"]
+
+[project.urls]
+Homepage = "https://github.com/chrnv/neurograph-os"
+Repository = "https://github.com/chrnv/neurograph-os"
+
+[tool.maturin]
+python-source = "python"
+module-name = "neurograph._neurograph"
+features = ["python"]
+manifest-path = "src/core_rust/Cargo.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

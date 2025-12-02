@@ -17,6 +17,7 @@
 //! Python bindings for Connection V3.0 structure
 
 use crate::connection_v3::{ConnectionV3, ConnectionType, ConnectionMutability};
+use crate::Connection;
 use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 

@@ -6,8 +6,9 @@ authors = ["NeuroGraph OS Team"]
 description = "Core Rust implementation of NeuroGraph OS: Token + Connection + Grid + Graph + Guardian/CDNA + ADNA v3.0 Policy Engine with Python FFI"
 
 [dependencies]
-# PyO3 for Python FFI bindings
-pyo3 = { version = "0.20", features = ["extension-module"], optional = true }
+# PyO3 for Python FFI bindings (v0.40.0)
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+numpy = { version = "0.22", optional = true }
 
 # Parking lot for efficient RwLock
 parking_lot = "0.12"
@@ -78,7 +79,7 @@ crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
 
 [features]
 default = []
-python = ["pyo3"]  # Enable Python bindings with --features python
+python = ["pyo3", "numpy"]  # Enable Python bindings with --features python
 demo-tokio = ["tokio/rt-multi-thread", "tokio/time"]
 persistence = ["sqlx", "dotenv"]  # Enable PostgreSQL persistence with --features persistence
 

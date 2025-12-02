@@ -71,8 +71,13 @@ pub mod feedback;         // NEW: v1.0 Feedback System (v0.37.0)
 pub mod curiosity;        // NEW: v1.0 Curiosity Drive (v0.38.0)
 pub mod api;              // NEW: v1.0 REST API (v0.39.0)
 
+// Python bindings v1.0 (v0.40.0) - PyO3 FFI
 #[cfg(feature = "python")]
-pub mod ffi;
+pub mod python;
+
+// Old FFI (deprecated, will be removed in favor of python module)
+// #[cfg(feature = "python")]
+// pub mod ffi;
 
 pub use token::{
     Token,
