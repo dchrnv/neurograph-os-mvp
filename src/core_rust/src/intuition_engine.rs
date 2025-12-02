@@ -42,7 +42,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use crate::experience_stream::{ExperienceStream, ExperienceBatch, SamplingStrategy};
-use crate::adna::{ADNAReader, Proposal};
+use crate::adna::{ADNAReader, Proposal, InMemoryADNAReader, AppraiserConfig};
 use crate::token::Token;
 use crate::connection_v3::{ConnectionV3, ConnectionMutability};
 use crate::reflex_layer::{
@@ -617,6 +617,181 @@ impl IntuitionEngine {
 
         Ok(proposals)
     }
+
+    /// Create a builder for IntuitionEngine
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use neurograph::intuition_engine::IntuitionEngine;
+    ///
+    /// // Simple case - all defaults
+    /// let intuition = IntuitionEngine::builder()
+    ///     .build()
+    ///     .unwrap();
+    ///
+    /// // Custom configuration
+    /// let intuition = IntuitionEngine::builder()
+    ///     .with_config(custom_config)
+    ///     .with_capacity(50_000)
+    ///     .build()
+    ///     .unwrap();
+    /// ```
+    pub fn builder() -> IntuitionEngineBuilder {
+        IntuitionEngineBuilder::new()
+    }
+
+    /// Create IntuitionEngine with all default settings
+    ///
+    /// This is a convenience constructor for quick testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use neurograph::intuition_engine::IntuitionEngine;
+    ///
+    /// let intuition = IntuitionEngine::with_defaults();
+    /// ```
+    pub fn with_defaults() -> Self {
+        IntuitionEngineBuilder::new()
+            .build()
+            .expect("Default configuration should always work")
+    }
+}
+
+// ==================== Builder Pattern ====================
+
+/// Builder for IntuitionEngine v3.0
+///
+/// Simplifies creation by providing defaults for complex dependencies.
+///
+/// # Example
+///
+/// ```rust
+/// use neurograph::intuition_engine::{IntuitionEngine, IntuitionConfig};
+///
+/// // Minimal usage
+/// let intuition = IntuitionEngine::builder()
+///     .build()
+///     .unwrap();
+///
+/// // With custom components
+/// let intuition = IntuitionEngine::builder()
+///     .with_config(custom_config)
+///     .with_experience(shared_experience_stream)
+///     .with_adna_reader(custom_adna)
+///     .build()
+///     .unwrap();
+/// ```
+pub struct IntuitionEngineBuilder {
+    config: IntuitionConfig,
+    experience_stream: Option<Arc<ExperienceStream>>,
+    adna_reader: Option<Arc<dyn ADNAReader>>,
+    proposal_sender: Option<mpsc::Sender<Proposal>>,
+
+    // Optional capacity overrides
+    experience_capacity: Option<usize>,
+    experience_channel_size: Option<usize>,
+}
+
+impl IntuitionEngineBuilder {
+    /// Create new builder with default configuration
+    pub fn new() -> Self {
+        Self {
+            config: IntuitionConfig::default(),
+            experience_stream: None,
+            adna_reader: None,
+            proposal_sender: None,
+            experience_capacity: None,
+            experience_channel_size: None,
+        }
+    }
+
+    /// Set custom IntuitionConfig
+    pub fn with_config(mut self, config: IntuitionConfig) -> Self {
+        self.config = config;
+        self
+    }
+
+    /// Set custom ExperienceStream
+    pub fn with_experience(mut self, experience: Arc<ExperienceStream>) -> Self {
+        self.experience_stream = Some(experience);
+        self
+    }
+
+    /// Set custom ADNA reader
+    pub fn with_adna_reader(mut self, adna: Arc<dyn ADNAReader>) -> Self {
+        self.adna_reader = Some(adna);
+        self
+    }
+
+    /// Set custom proposal channel sender
+    pub fn with_proposal_sender(mut self, sender: mpsc::Sender<Proposal>) -> Self {
+        self.proposal_sender = Some(sender);
+        self
+    }
+
+    /// Set experience stream capacity (if creating default stream)
+    ///
+    /// Only used if `with_experience()` was not called.
+    pub fn with_capacity(mut self, capacity: usize) -> Self {
+        self.experience_capacity = Some(capacity);
+        self
+    }
+
+    /// Set experience stream channel size (if creating default stream)
+    ///
+    /// Only used if `with_experience()` was not called.
+    pub fn with_channel_size(mut self, channel_size: usize) -> Self {
+        self.experience_channel_size = Some(channel_size);
+        self
+    }
+
+    /// Build IntuitionEngine, creating default dependencies if not provided
+    ///
+    /// # Returns
+    ///
+    /// - `Ok(IntuitionEngine)` with all dependencies initialized
+    /// - `Err(String)` if configuration is invalid
+    ///
+    /// # Defaults
+    ///
+    /// - **ExperienceStream**: capacity=10,000, channel_size=1,000
+    /// - **ADNAReader**: InMemoryADNAReader with default config
+    /// - **Proposal channel**: mpsc channel with capacity=100
+    pub fn build(self) -> Result<IntuitionEngine, String> {
+        // Create ExperienceStream if not provided
+        let experience = self.experience_stream.unwrap_or_else(|| {
+            let capacity = self.experience_capacity.unwrap_or(10_000);
+            let channel_size = self.experience_channel_size.unwrap_or(1_000);
+            Arc::new(ExperienceStream::new(capacity, channel_size))
+        });
+
+        // Create ADNA reader if not provided
+        let adna = self.adna_reader.unwrap_or_else(|| {
+            Arc::new(InMemoryADNAReader::new(AppraiserConfig::default()))
+        });
+
+        // Create proposal channel if not provided
+        let proposal_sender = self.proposal_sender.unwrap_or_else(|| {
+            let (tx, _rx) = mpsc::channel(100);
+            tx
+        });
+
+        // Build IntuitionEngine
+        Ok(IntuitionEngine::new(
+            self.config,
+            experience,
+            adna,
+            proposal_sender,
+        ))
+    }
+}
+
+impl Default for IntuitionEngineBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
@@ -631,6 +806,118 @@ mod tests {
         assert_eq!(config.analysis_interval_secs, 60);
         assert_eq!(config.batch_size, 1000);
         assert_eq!(config.min_confidence, 0.7);
+    }
+
+    // ==================== Builder Pattern Tests ====================
+
+    #[test]
+    fn test_builder_with_defaults() {
+        // Should create IntuitionEngine with all default dependencies
+        let intuition = IntuitionEngine::builder()
+            .build()
+            .expect("Builder should succeed with defaults");
+
+        // Verify default configuration
+        assert_eq!(intuition.config.analysis_interval_secs, 60);
+        assert_eq!(intuition.config.batch_size, 1000);
+        assert_eq!(intuition.config.min_confidence, 0.7);
+        assert!(intuition.config.enable_fast_path);
+
+        // Verify stats are initialized
+        let stats = intuition.get_stats();
+        assert_eq!(stats.reflexes_created, 0);
+        assert_eq!(stats.total_reflexes, 0);
+    }
+
+    #[test]
+    fn test_with_defaults_convenience() {
+        // Test convenience constructor
+        let intuition = IntuitionEngine::with_defaults();
+
+        assert_eq!(intuition.config.analysis_interval_secs, 60);
+        assert!(intuition.config.enable_fast_path);
+    }
+
+    #[test]
+    fn test_builder_with_custom_config() {
+        let custom_config = IntuitionConfig {
+            analysis_interval_secs: 30,
+            batch_size: 500,
+            min_confidence: 0.8,
+            ..Default::default()
+        };
+
+        let intuition = IntuitionEngine::builder()
+            .with_config(custom_config.clone())
+            .build()
+            .expect("Builder should succeed with custom config");
+
+        assert_eq!(intuition.config.analysis_interval_secs, 30);
+        assert_eq!(intuition.config.batch_size, 500);
+        assert_eq!(intuition.config.min_confidence, 0.8);
+    }
+
+    #[test]
+    fn test_builder_with_custom_capacity() {
+        let intuition = IntuitionEngine::builder()
+            .with_capacity(50_000)
+            .with_channel_size(5_000)
+            .build()
+            .expect("Builder should succeed with custom capacity");
+
+        // We can't directly verify capacity, but we can verify the engine was created
+        assert!(intuition.config.enable_fast_path);
+    }
+
+    #[test]
+    fn test_builder_with_shared_experience() {
+        // Create a shared ExperienceStream
+        let experience = Arc::new(ExperienceStream::new(20_000, 2_000));
+
+        // Create two engines sharing the same experience stream
+        let intuition1 = IntuitionEngine::builder()
+            .with_experience(experience.clone())
+            .build()
+            .expect("Builder should succeed");
+
+        let intuition2 = IntuitionEngine::builder()
+            .with_experience(experience.clone())
+            .build()
+            .expect("Builder should succeed");
+
+        // Both should work (we can't test Arc equality, but creation proves it works)
+        assert!(intuition1.config.enable_fast_path);
+        assert!(intuition2.config.enable_fast_path);
+    }
+
+    #[test]
+    fn test_builder_with_custom_proposal_channel() {
+        let (tx, _rx) = mpsc::channel(500);
+
+        let intuition = IntuitionEngine::builder()
+            .with_proposal_sender(tx)
+            .build()
+            .expect("Builder should succeed with custom channel");
+
+        assert!(intuition.config.enable_fast_path);
+    }
+
+    #[test]
+    fn test_builder_fluent_api() {
+        // Test chaining multiple builder methods
+        let custom_config = IntuitionConfig {
+            min_confidence: 0.9,
+            ..Default::default()
+        };
+
+        let intuition = IntuitionEngine::builder()
+            .with_config(custom_config)
+            .with_capacity(100_000)
+            .with_channel_size(10_000)
+            .build()
+            .expect("Builder should succeed with chained calls");
+
+        assert_eq!(intuition.config.min_confidence, 0.9);
     }
 
     #[test]

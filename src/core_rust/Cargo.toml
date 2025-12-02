@@ -161,3 +161,7 @@ harness = false
 [[bench]]
 name = "connection_v3_bench"
 harness = false
+
+[[bench]]
+name = "system_integration_bench"
+harness = false

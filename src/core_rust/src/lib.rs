@@ -193,6 +193,7 @@ pub use policy::{
 
 pub use intuition_engine::{
     IntuitionEngine,
+    IntuitionEngineBuilder,
     IntuitionConfig,
     IdentifiedPattern,
 };
