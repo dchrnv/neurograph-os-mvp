@@ -922,12 +922,11 @@ mod tests {
 
     #[test]
     fn test_quantize_state() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let engine = IntuitionEngine::builder()
+            .with_capacity(1000)
+            .with_channel_size(100)
+            .build()
+            .unwrap();
 
         // Test state quantization
         let state1 = [0.0; 8]; // All zeros
@@ -946,12 +945,7 @@ mod tests {
 
     #[test]
     fn test_variance() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let engine = IntuitionEngine::with_defaults();
 
         let values = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let mean = 3.0;
@@ -970,8 +964,6 @@ mod tests {
         };
 
         let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
 
         // Write test events: action 1 consistently gets higher rewards than action 2
         for i in 0..20 {
@@ -995,7 +987,11 @@ mod tests {
             stream.write_event(event).unwrap();
         }
 
-        let engine = IntuitionEngine::new(config, stream.clone(), dna_reader, tx);
+        let engine = IntuitionEngine::builder()
+            .with_config(config)
+            .with_experience(stream.clone())
+            .build()
+            .unwrap();
 
         // Sample and analyze
         let batch = stream.sample_batch(20, SamplingStrategy::Uniform);
@@ -1016,12 +1012,7 @@ mod tests {
 
     #[test]
     fn test_auto_consolidate_eligible() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let mut engine = IntuitionEngine::with_defaults();
         let guardian = crate::Guardian::new();
 
         // Create eligible connection: high confidence, evidence, learnable
@@ -1046,12 +1037,7 @@ mod tests {
 
     #[test]
     fn test_auto_consolidate_low_confidence() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let mut engine = IntuitionEngine::with_defaults();
 
         // Low confidence (<75%)
         let mut connection = ConnectionV3::new(1, 2);
@@ -1073,12 +1059,7 @@ mod tests {
 
     #[test]
     fn test_auto_consolidate_low_evidence() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let mut engine = IntuitionEngine::with_defaults();
 
         // Low evidence count
         let mut connection = ConnectionV3::new(1, 2);
@@ -1100,12 +1081,7 @@ mod tests {
 
     #[test]
     fn test_auto_consolidate_hypothesis() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let mut engine = IntuitionEngine::with_defaults();
 
         // Hypothesis connection (not stable enough)
         let mut connection = ConnectionV3::new(1, 2);
@@ -1127,12 +1103,7 @@ mod tests {
 
     #[test]
     fn test_auto_consolidate_guardian_rejection() {
-        let config = IntuitionConfig::default();
-        let stream = Arc::new(ExperienceStream::new(1000, 100));
-        let dna_reader = Arc::new(InMemoryADNAReader::with_defaults());
-        let (tx, _rx) = mpsc::channel(100);
-
-        let mut engine = IntuitionEngine::new(config, stream, dna_reader, tx);
+        let mut engine = IntuitionEngine::with_defaults();
         let guardian = crate::Guardian::new();
 
         // Connection that passes basic checks but fails Guardian validation

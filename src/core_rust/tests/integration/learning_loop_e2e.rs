@@ -67,7 +67,7 @@ mod learning_loop_e2e_test {
         // 3. Create proposal channel
         let (proposal_tx, mut proposal_rx) = mpsc::channel::<Proposal>(100);
 
-        // 4. Create IntuitionEngine
+        // 4. Create IntuitionEngine with builder (v0.39.2)
         let intuition_config = IntuitionConfig {
             analysis_interval_secs: 1,
             batch_size: 100,
@@ -77,14 +77,16 @@ mod learning_loop_e2e_test {
             state_bins_per_dim: 4,
             min_samples: 5,
             min_reward_delta: 0.3,
+            ..Default::default()
         };
 
-        let _intuition_engine = IntuitionEngine::new(
-            intuition_config.clone(),
-            stream.clone(),
-            adna_reader.clone() as Arc<dyn ADNAReader>,
-            proposal_tx.clone(),
-        );
+        let _intuition_engine = IntuitionEngine::builder()
+            .with_config(intuition_config.clone())
+            .with_experience(stream.clone())
+            .with_adna_reader(adna_reader.clone() as Arc<dyn ADNAReader>)
+            .with_proposal_sender(proposal_tx.clone())
+            .build()
+            .expect("Failed to build IntuitionEngine");
 
         // 5. Create EvolutionManager
         let evolution_config = EvolutionConfig {

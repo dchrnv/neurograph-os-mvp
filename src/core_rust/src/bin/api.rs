@@ -61,23 +61,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bootstrap = Arc::new(RwLock::new(BootstrapLibrary::new(bootstrap_config)));
 
     // Initialize ExperienceStream
-    let experience_stream_raw = Arc::new(ExperienceStream::new(100_000, 1000));
     let experience_stream = Arc::new(RwLock::new(ExperienceStream::new(100_000, 1000)));
 
-    // Initialize ADNA
-    let adna_config = AppraiserConfig::default();
-    let adna = Arc::new(InMemoryADNAReader::new(adna_config));
-
-    // Create proposal channel for IntuitionEngine
-    let (proposal_tx, _proposal_rx) = mpsc::channel(100);
-
-    // Initialize IntuitionEngine
-    let intuition_engine = Arc::new(RwLock::new(IntuitionEngine::new(
-        Default::default(),
-        experience_stream_raw,
-        adna,
-        proposal_tx,
-    )));
+    // Initialize IntuitionEngine with builder (v0.39.2)
+    let intuition_engine = Arc::new(RwLock::new(
+        IntuitionEngine::builder()
+            .with_capacity(100_000)
+            .with_channel_size(1000)
+            .build()
+            .expect("Failed to build IntuitionEngine")
+    ));
 
     // Create signal queue
     let (signal_tx, mut signal_rx) = mpsc::channel::<ProcessedSignal>(1000);
