@@ -165,3 +165,7 @@ harness = false
 [[bench]]
 name = "system_integration_bench"
 harness = false
+
+[[bench]]
+name = "token_1m_bench"
+harness = false
