@@ -56,6 +56,9 @@ fasthash = "0.4"
 # Parallel processing
 rayon = "1.10"
 
+# WAL (Write-Ahead Log) v0.41.0
+crc32fast = "1.4"
+
 # REST API (v0.39.0)
 axum = { version = "0.7", features = ["ws"] }
 tower = "0.4"
@@ -68,6 +71,7 @@ futures = "0.3"
 # Testing dependencies
 rand = "0.8"
 tokio = { version = "1.42", features = ["rt", "macros", "time"] }
+tempfile = "3.8"
 
 # Benchmarking with Criterion.rs
 criterion = { version = "0.5", features = ["html_reports"] }

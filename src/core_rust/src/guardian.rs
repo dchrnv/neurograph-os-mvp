@@ -176,6 +176,16 @@ pub struct GuardianConfig {
     pub max_event_queue: usize,
     /// Maximum CDNA history size
     pub max_history_size: usize,
+
+    // Resource Quotas (v0.41.0)
+    /// Maximum number of tokens allowed (None = unlimited)
+    pub max_tokens: Option<usize>,
+    /// Maximum memory usage in bytes (None = unlimited)
+    pub max_memory_bytes: Option<usize>,
+    /// Enable aggressive memory cleanup when threshold exceeded
+    pub enable_aggressive_cleanup: bool,
+    /// Memory threshold percentage (0.0-1.0) for triggering cleanup
+    pub memory_threshold: f32,
 }
 
 impl Default for GuardianConfig {
@@ -185,6 +195,12 @@ impl Default for GuardianConfig {
             enable_events: true,
             max_event_queue: 10000,
             max_history_size: 100,
+
+            // Resource Quotas (v0.41.0) - Safe defaults for production
+            max_tokens: Some(10_000_000),  // 10M tokens max (~640MB)
+            max_memory_bytes: Some(1_024_000_000),  // 1GB max
+            enable_aggressive_cleanup: true,
+            memory_threshold: 0.8,  // Cleanup at 80% memory usage
         }
     }
 }
@@ -226,6 +242,8 @@ pub struct Guardian {
     event_queue: VecDeque<Event>,
     /// Validation statistics
     validation_stats: ValidationStats,
+    /// Resource tracking (v0.41.0)
+    resource_stats: ResourceStats,
 }
 
 /// Validation statistics
@@ -235,6 +253,19 @@ struct ValidationStats {
     tokens_rejected: u64,
     connections_validated: u64,
     connections_rejected: u64,
+}
+
+/// Resource usage statistics (v0.41.0)
+#[derive(Debug, Clone, Default)]
+struct ResourceStats {
+    /// Total tokens created
+    tokens_created: usize,
+    /// Total connections created
+    connections_created: usize,
+    /// Number of times resource quotas were exceeded
+    quota_exceeded_count: u64,
+    /// Number of aggressive cleanups triggered
+    aggressive_cleanups: u64,
 }
 
 impl Guardian {
@@ -255,6 +286,7 @@ impl Guardian {
             subscribers: HashMap::new(),
             event_queue: VecDeque::new(),
             validation_stats: ValidationStats::default(),
+            resource_stats: ResourceStats::default(),
         }
     }
 
@@ -624,6 +656,164 @@ impl Guardian {
         self.event_queue.clear();
     }
 
+    // ==================== RESOURCE QUOTAS (v0.41.0) ====================
+
+    /// Check if token creation is allowed based on resource quotas
+    ///
+    /// Returns `Ok(())` if within limits, `Err(message)` if quota exceeded.
+    ///
+    /// # Production Safety
+    ///
+    /// This prevents OOM situations by enforcing:
+    /// - Maximum token count (default: 10M tokens ≈ 640MB)
+    /// - Maximum memory usage (default: 1GB)
+    /// - Memory threshold for aggressive cleanup (default: 80%)
+    pub fn can_create_token(&self) -> Result<(), String> {
+        // Check token count quota
+        if let Some(max_tokens) = self.config.max_tokens {
+            if self.resource_stats.tokens_created >= max_tokens {
+                return Err(format!(
+                    "Token quota exceeded: {} >= {} (max_tokens)",
+                    self.resource_stats.tokens_created,
+                    max_tokens
+                ));
+            }
+        }
+
+        // Check memory quota
+        if let Some(max_memory) = self.config.max_memory_bytes {
+            if let Some(current_memory) = self.get_current_memory_usage() {
+                if current_memory >= max_memory {
+                    return Err(format!(
+                        "Memory quota exceeded: {} >= {} bytes",
+                        current_memory,
+                        max_memory
+                    ));
+                }
+
+                // Check if we're near threshold and should trigger cleanup
+                let memory_ratio = current_memory as f32 / max_memory as f32;
+                if memory_ratio >= self.config.memory_threshold {
+                    return Err(format!(
+                        "Memory threshold exceeded: {:.1}% >= {:.1}% (aggressive cleanup recommended)",
+                        memory_ratio * 100.0,
+                        self.config.memory_threshold * 100.0
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check if connection creation is allowed based on resource quotas
+    ///
+    /// Returns `Ok(())` if within limits, `Err(message)` if quota exceeded.
+    pub fn can_create_connection(&self) -> Result<(), String> {
+        // Connections are less memory-intensive, but still check memory quota
+        if let Some(max_memory) = self.config.max_memory_bytes {
+            if let Some(current_memory) = self.get_current_memory_usage() {
+                if current_memory >= max_memory {
+                    return Err(format!(
+                        "Memory quota exceeded: {} >= {} bytes",
+                        current_memory,
+                        max_memory
+                    ));
+                }
+
+                // Check threshold
+                let memory_ratio = current_memory as f32 / max_memory as f32;
+                if memory_ratio >= self.config.memory_threshold {
+                    return Err(format!(
+                        "Memory threshold exceeded: {:.1}% >= {:.1}%",
+                        memory_ratio * 100.0,
+                        self.config.memory_threshold * 100.0
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Record token creation (call after successful creation)
+    pub fn record_token_created(&mut self) {
+        self.resource_stats.tokens_created += 1;
+    }
+
+    /// Record connection creation (call after successful creation)
+    pub fn record_connection_created(&mut self) {
+        self.resource_stats.connections_created += 1;
+    }
+
+    /// Record that quota was exceeded
+    pub fn record_quota_exceeded(&mut self) {
+        self.resource_stats.quota_exceeded_count += 1;
+    }
+
+    /// Record aggressive cleanup triggered
+    pub fn record_aggressive_cleanup(&mut self) {
+        self.resource_stats.aggressive_cleanups += 1;
+    }
+
+    /// Check if aggressive cleanup should be triggered
+    ///
+    /// Returns `true` if memory usage exceeds threshold and aggressive cleanup is enabled.
+    pub fn should_trigger_aggressive_cleanup(&self) -> bool {
+        if !self.config.enable_aggressive_cleanup {
+            return false;
+        }
+
+        if let Some(max_memory) = self.config.max_memory_bytes {
+            if let Some(current_memory) = self.get_current_memory_usage() {
+                let memory_ratio = current_memory as f32 / max_memory as f32;
+                return memory_ratio >= self.config.memory_threshold;
+            }
+        }
+
+        false
+    }
+
+    /// Get current process memory usage in bytes (if available)
+    ///
+    /// Uses platform-specific methods to query actual memory usage.
+    /// Returns `None` if memory information is unavailable.
+    fn get_current_memory_usage(&self) -> Option<usize> {
+        // Try to get memory usage from /proc/self/status (Linux)
+        #[cfg(target_os = "linux")]
+        {
+            use std::fs;
+            if let Ok(status) = fs::read_to_string("/proc/self/status") {
+                for line in status.lines() {
+                    if line.starts_with("VmRSS:") {
+                        // VmRSS is resident set size in KB
+                        if let Some(kb_str) = line.split_whitespace().nth(1) {
+                            if let Ok(kb) = kb_str.parse::<usize>() {
+                                return Some(kb * 1024); // Convert to bytes
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: estimate based on token count
+        // Token = 64 bytes, Connection = 64 bytes
+        let estimated_tokens_memory = self.resource_stats.tokens_created * 64;
+        let estimated_connections_memory = self.resource_stats.connections_created * 64;
+        Some(estimated_tokens_memory + estimated_connections_memory)
+    }
+
+    /// Get resource usage statistics
+    pub fn resource_stats(&self) -> (usize, usize, u64, u64) {
+        (
+            self.resource_stats.tokens_created,
+            self.resource_stats.connections_created,
+            self.resource_stats.quota_exceeded_count,
+            self.resource_stats.aggressive_cleanups,
+        )
+    }
+
     // ==================== STATISTICS ====================
 
     /// Get validation statistics
@@ -920,5 +1110,176 @@ mod tests {
         connection.rigidity = 255;    // 100% rigidity
 
         assert!(guardian.validate_reflex(&connection).is_ok());
+    }
+
+    // ==================== RESOURCE QUOTA TESTS (v0.41.0) ====================
+
+    #[test]
+    fn test_token_quota_unlimited() {
+        // With no quota, should always allow token creation
+        let mut config = GuardianConfig::default();
+        config.max_tokens = None;
+        let guardian = Guardian::with_config(CDNA::new(), config);
+
+        assert!(guardian.can_create_token().is_ok());
+    }
+
+    #[test]
+    fn test_token_quota_enforcement() {
+        // Set quota to 100 tokens
+        let mut config = GuardianConfig::default();
+        config.max_tokens = Some(100);
+        config.max_memory_bytes = None; // Disable memory check for this test
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+
+        // Should allow first 100 tokens
+        for _ in 0..100 {
+            assert!(guardian.can_create_token().is_ok());
+            guardian.record_token_created();
+        }
+
+        // 101st token should fail
+        let result = guardian.can_create_token();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Token quota exceeded"));
+
+        // Record quota exceeded
+        guardian.record_quota_exceeded();
+        let (_, _, quota_exceeded, _) = guardian.resource_stats();
+        assert_eq!(quota_exceeded, 1);
+    }
+
+    #[test]
+    fn test_memory_quota_enforcement() {
+        // Set very low memory quota (1KB)
+        let mut config = GuardianConfig::default();
+        config.max_tokens = None; // Disable token count check
+        config.max_memory_bytes = Some(1024); // 1KB - very low!
+        config.memory_threshold = 0.8;
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+
+        // Create enough tokens to exceed memory
+        // Each token = 64 bytes, so 20 tokens = 1280 bytes > 1024 bytes
+        for _ in 0..15 {
+            guardian.record_token_created();
+        }
+
+        // Should still be OK (15 * 64 = 960 bytes < 1024)
+        assert!(guardian.can_create_token().is_ok());
+
+        // Add 5 more tokens (20 * 64 = 1280 bytes > 1024)
+        for _ in 0..5 {
+            guardian.record_token_created();
+        }
+
+        // Now should fail
+        let result = guardian.can_create_token();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Memory"));
+    }
+
+    #[test]
+    fn test_memory_threshold_cleanup_trigger() {
+        // Set threshold at 80%
+        let mut config = GuardianConfig::default();
+        config.max_tokens = None;
+        config.max_memory_bytes = Some(1000);
+        config.memory_threshold = 0.8; // 80%
+        config.enable_aggressive_cleanup = true;
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+
+        // Below threshold (10 tokens * 64 = 640 bytes = 64% < 80%)
+        for _ in 0..10 {
+            guardian.record_token_created();
+        }
+        assert!(!guardian.should_trigger_aggressive_cleanup());
+
+        // Above threshold (15 tokens * 64 = 960 bytes = 96% > 80%)
+        for _ in 0..5 {
+            guardian.record_token_created();
+        }
+        assert!(guardian.should_trigger_aggressive_cleanup());
+
+        // Record cleanup
+        guardian.record_aggressive_cleanup();
+        let (_, _, _, cleanups) = guardian.resource_stats();
+        assert_eq!(cleanups, 1);
+    }
+
+    #[test]
+    fn test_connection_quota_enforcement() {
+        // Connections use same memory quota
+        let mut config = GuardianConfig::default();
+        config.max_memory_bytes = Some(1024); // 1KB
+        config.memory_threshold = 0.8;
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+
+        // Create connections
+        for _ in 0..10 {
+            guardian.record_connection_created();
+        }
+
+        // Should be OK (10 * 64 = 640 bytes < 1024)
+        assert!(guardian.can_create_connection().is_ok());
+
+        // Add more to exceed
+        for _ in 0..10 {
+            guardian.record_connection_created();
+        }
+
+        // Should fail (20 * 64 = 1280 bytes > 1024)
+        let result = guardian.can_create_connection();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_resource_stats() {
+        let mut guardian = Guardian::new();
+
+        // Initial stats should be zero
+        let (tokens, connections, quota_exceeded, cleanups) = guardian.resource_stats();
+        assert_eq!(tokens, 0);
+        assert_eq!(connections, 0);
+        assert_eq!(quota_exceeded, 0);
+        assert_eq!(cleanups, 0);
+
+        // Record some activity
+        guardian.record_token_created();
+        guardian.record_token_created();
+        guardian.record_connection_created();
+        guardian.record_quota_exceeded();
+        guardian.record_aggressive_cleanup();
+
+        let (tokens, connections, quota_exceeded, cleanups) = guardian.resource_stats();
+        assert_eq!(tokens, 2);
+        assert_eq!(connections, 1);
+        assert_eq!(quota_exceeded, 1);
+        assert_eq!(cleanups, 1);
+    }
+
+    #[test]
+    fn test_aggressive_cleanup_disabled() {
+        let mut config = GuardianConfig::default();
+        config.max_memory_bytes = Some(100); // Very low
+        config.enable_aggressive_cleanup = false; // Disabled
+        let mut guardian = Guardian::with_config(CDNA::new(), config);
+
+        // Even with high memory usage, cleanup should not trigger
+        for _ in 0..100 {
+            guardian.record_token_created();
+        }
+
+        assert!(!guardian.should_trigger_aggressive_cleanup());
+    }
+
+    #[test]
+    fn test_quota_default_values() {
+        let config = GuardianConfig::default();
+
+        // Check production-safe defaults
+        assert_eq!(config.max_tokens, Some(10_000_000)); // 10M tokens
+        assert_eq!(config.max_memory_bytes, Some(1_024_000_000)); // 1GB
+        assert!(config.enable_aggressive_cleanup);
+        assert_eq!(config.memory_threshold, 0.8); // 80%
     }
 }

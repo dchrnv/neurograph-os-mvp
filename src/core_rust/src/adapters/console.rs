@@ -147,8 +147,7 @@ mod tests {
     use super::*;
     use crate::bootstrap::BootstrapConfig;
     use crate::bootstrap::BootstrapLibrary;
-    use crate::gateway::GatewayConfig;
-    use crate::graph::ActivationResult;
+    use crate::GatewayConfig; // Import directly from lib.rs
     use parking_lot::RwLock;
     use tokio::sync::mpsc;
 
@@ -166,7 +165,7 @@ mod tests {
         let context = OutputContext::new(
             1,
             Some("test query".to_string()),
-            crate::gateway::SignalType::SemanticQuery,
+            crate::SignalType::SemanticQuery, // Import directly from lib.rs
             SignalSource::Console,
         );
 
