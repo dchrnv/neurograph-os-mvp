@@ -70,6 +70,7 @@ pub mod adapters;         // NEW: v1.0 Output/Input Adapters (v0.36.0)
 pub mod feedback;         // NEW: v1.0 Feedback System (v0.37.0)
 pub mod curiosity;        // NEW: v1.0 Curiosity Drive (v0.38.0)
 pub mod api;              // NEW: v1.0 REST API (v0.39.0)
+pub mod panic_handler;    // NEW: v1.0 Panic Recovery (v0.41.0)
 
 // Python bindings v1.0 (v0.40.0) - PyO3 FFI
 #[cfg(feature = "python")]
@@ -361,4 +362,13 @@ pub use curiosity::{
     ExplorationTarget,
     ExplorationReason,
     ExplorationPriority,
+};
+
+// Panic Recovery v1.0
+pub use panic_handler::{
+    catch_panic,
+    catch_panic_async,
+    install_panic_hook,
+    PanicError,
+    PanicResult,
 };

@@ -12,6 +12,7 @@ use neurograph_core::{
     GatewayConfig,
     intuition_engine::IntuitionEngine,
     adna::{AppraiserConfig, InMemoryADNAReader},
+    install_panic_hook,
     ProcessedSignal,
 };
 use std::sync::{Arc, RwLock};
@@ -43,6 +44,9 @@ fn print_banner(config: &ApiConfig) {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Install panic hook for production (v0.41.0)
+    install_panic_hook();
+
     // Initialize tracing
     tracing_subscriber::fmt()
         .with_env_filter(

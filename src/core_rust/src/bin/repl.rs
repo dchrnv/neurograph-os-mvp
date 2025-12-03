@@ -8,6 +8,7 @@ use neurograph_core::{
     gateway::Gateway,
     intuition_engine::IntuitionEngine,
     curiosity::{CuriosityDrive, CuriosityConfig},
+    install_panic_hook,
     GatewayConfig,
     ProcessedSignal,
 };
@@ -368,6 +369,9 @@ async fn run_repl(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Install panic hook for production (v0.41.0)
+    install_panic_hook();
+
     // Initialize Bootstrap Library
     let bootstrap_config = BootstrapConfig::default();
     let bootstrap = Arc::new(RwLock::new(BootstrapLibrary::new(bootstrap_config)));

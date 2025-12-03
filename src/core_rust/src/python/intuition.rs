@@ -155,8 +155,11 @@ impl PyIntuitionEngine {
     /// intuition = IntuitionEngine.with_defaults()
     /// ```
     #[staticmethod]
-    pub fn with_defaults() -> PyResult<Self> {
-        let engine = IntuitionEngine::with_defaults();
+    pub fn with_defaults(py: Python) -> PyResult<Self> {
+        // Release GIL during engine initialization (v0.41.0)
+        let engine = py.allow_threads(|| {
+            IntuitionEngine::with_defaults()
+        });
 
         Ok(PyIntuitionEngine {
             inner: Arc::new(Mutex::new(engine)),
@@ -185,25 +188,31 @@ impl PyIntuitionEngine {
     #[staticmethod]
     #[pyo3(signature = (config=None, capacity=None, channel_size=None))]
     pub fn create(
+        py: Python,
         config: Option<PyIntuitionConfig>,
         capacity: Option<usize>,
         channel_size: Option<usize>,
     ) -> PyResult<Self> {
-        let mut builder = IntuitionEngine::builder();
+        // Release GIL during engine building (v0.41.0)
+        let result = py.allow_threads(|| -> Result<IntuitionEngine, String> {
+            let mut builder = IntuitionEngine::builder();
 
-        if let Some(cfg) = config {
-            builder = builder.with_config(cfg.inner);
-        }
+            if let Some(cfg) = config {
+                builder = builder.with_config(cfg.inner);
+            }
 
-        if let Some(cap) = capacity {
-            builder = builder.with_capacity(cap);
-        }
+            if let Some(cap) = capacity {
+                builder = builder.with_capacity(cap);
+            }
 
-        if let Some(size) = channel_size {
-            builder = builder.with_channel_size(size);
-        }
+            if let Some(size) = channel_size {
+                builder = builder.with_channel_size(size);
+            }
 
-        let engine = builder.build().map_err(|e| {
+            builder.build()
+        });
+
+        let engine = result.map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e)
         })?;
 
@@ -228,22 +237,25 @@ impl PyIntuitionEngine {
     /// print(f"Reflexes: {stats['total_reflexes']}")
     /// print(f"Fast path: {stats['avg_fast_path_time_ns']}ns")
     /// ```
-    pub fn stats(&self) -> PyResult<std::collections::HashMap<String, u64>> {
-        let engine = self.inner.lock().map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                format!("Failed to lock engine: {}", e)
-            )
-        })?;
+    pub fn stats(&self, py: Python) -> PyResult<std::collections::HashMap<String, u64>> {
+        // Release GIL during lock acquisition and stats retrieval (v0.41.0)
+        py.allow_threads(|| {
+            let engine = self.inner.lock().map_err(|e| {
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                    format!("Failed to lock engine: {}", e)
+                )
+            })?;
 
-        let stats = engine.get_stats();
+            let stats = engine.get_stats();
 
-        let mut result = std::collections::HashMap::new();
-        result.insert("reflexes_created".to_string(), stats.reflexes_created);
-        result.insert("total_reflexes".to_string(), stats.total_reflexes as u64);
-        result.insert("fast_path_hits".to_string(), stats.fast_path_hits);
-        result.insert("avg_fast_path_time_ns".to_string(), stats.avg_fast_path_time_ns);
+            let mut result = std::collections::HashMap::new();
+            result.insert("reflexes_created".to_string(), stats.reflexes_created);
+            result.insert("total_reflexes".to_string(), stats.total_reflexes as u64);
+            result.insert("fast_path_hits".to_string(), stats.fast_path_hits);
+            result.insert("avg_fast_path_time_ns".to_string(), stats.avg_fast_path_time_ns);
 
-        Ok(result)
+            Ok(result)
+        })
     }
 
     /// String representation

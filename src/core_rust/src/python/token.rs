@@ -74,15 +74,19 @@ impl PyToken {
     /// # Performance
     /// - 1M tokens: ~175ms (vs 708ms without batch)
     /// - Memory: 61MB for 1M tokens
+    /// - GIL released during creation (Python threads not blocked)
     #[staticmethod]
-    pub fn create_batch(count: usize) -> Vec<PyToken> {
-        let mut tokens = Vec::with_capacity(count);
-        for i in 0..count {
-            tokens.push(PyToken {
-                inner: Token::new(i as u32),
-            });
-        }
-        tokens
+    pub fn create_batch(py: Python, count: usize) -> Vec<PyToken> {
+        // Release GIL for long operation (v0.41.0)
+        py.allow_threads(|| {
+            let mut tokens = Vec::with_capacity(count);
+            for i in 0..count {
+                tokens.push(PyToken {
+                    inner: Token::new(i as u32),
+                });
+            }
+            tokens
+        })
     }
 
     /// Get token ID

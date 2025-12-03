@@ -30,6 +30,7 @@ use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
+use tracing::error;
 
 /// Configuration for ActionController
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -418,6 +419,54 @@ impl ActionController {
                  intent.intent_type, executor_id, total_duration);
 
         Ok(result)
+    }
+
+    /// Safe version of execute_intent with panic recovery (v0.41.0)
+    ///
+    /// Wraps execute_intent() in panic handler to prevent crashes.
+    /// If panic occurs, returns ActionError with panic details.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let result = controller.execute_intent_safe(intent).await;
+    /// match result {
+    ///     Ok(action_result) => { /* success */ }
+    ///     Err(ActionError::PanicRecovered(msg)) => { /* recovered from panic */ }
+    ///     Err(e) => { /* other error */ }
+    /// }
+    /// ```
+    pub async fn execute_intent_safe(&self, intent: Intent) -> Result<ActionResult, ActionError> {
+        // Simple approach: wrap the call without needing Clone
+        // We use a reference wrapper to avoid Clone requirements
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // Create a tokio runtime handle for async execution
+            tokio::runtime::Handle::current().block_on(async {
+                self.execute_intent(intent.clone()).await
+            })
+        }));
+
+        match result {
+            Ok(exec_result) => exec_result,
+            Err(panic_payload) => {
+                let panic_message = if let Some(s) = panic_payload.downcast_ref::<&str>() {
+                    s.to_string()
+                } else if let Some(s) = panic_payload.downcast_ref::<String>() {
+                    s.clone()
+                } else {
+                    "Unknown panic".to_string()
+                };
+
+                error!(
+                    intent_type = %intent.intent_type,
+                    panic_message = %panic_message,
+                    "Panic recovered in execute_intent"
+                );
+
+                Err(ActionError::PanicRecovered(panic_message))
+            }
+        }
     }
 
     /// Process a signal from Gateway and complete the request (v0.39.1)

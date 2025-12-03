@@ -1,10 +1,11 @@
 
-# NeuroGraph
+# NeuroGraph OS
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.37.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.41.0--rc1-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
+[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
 ---
@@ -22,9 +23,58 @@
 
 ---
 
+## 🚀 v0.41.0-rc1 - Reliability Improvements
+
+**Статус:** Release Candidate 1 - движение к production
+
+**Новое в v0.41.0-rc1:**
+- ✅ **Panic Recovery** - системный crash больше не убивает процесс
+- ✅ **GIL Release** - Python не блокируется во время Rust операций
+- ✅ **Production Panic Hook** - structured logging всех паник
+
+**Готово для:**
+- ✅ Локальная разработка и тестирование
+- ✅ Proof-of-concept и бенчмарки
+- ✅ Python bindings (PyO3) с batch API
+- ✅ Production-like устойчивость к ошибкам
+
+**НЕ готово для production:**
+- ❌ Нет WAL (возможна потеря данных при крахе)
+- ❌ Нет Docker deployment
+- ❌ Нет resource quotas в Guardian
+
+---
+
 ## Быстрый старт
 
-### REPL Interface (v0.37.0)
+### Python Bindings (v0.40.0 - NEW!)
+
+```bash
+# Build Python bindings
+pip install maturin
+cd src/core_rust
+maturin develop --release --features python
+
+# Use in Python
+python
+>>> import neurograph
+>>>
+>>> # Batch API (4x faster!)
+>>> tokens = neurograph.Token.create_batch(100_000)
+>>>
+>>> # IntuitionEngine
+>>> engine = neurograph.IntuitionEngine.with_defaults()
+>>> stats = engine.stats()
+>>> print(stats)
+```
+
+**Документация:** [python/README.md](python/README.md)
+
+**Примеры:**
+- [examples/python/token_batch_performance.py](examples/python/token_batch_performance.py)
+- [examples/python/intuition_simple.py](examples/python/intuition_simple.py)
+
+### REPL Interface
 
 ```bash
 cd src/core_rust
@@ -49,10 +99,12 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
-- **v0.37.0** — Feedback Loop (обучение от пользователя)
-- **v0.36.0** — REPL Interface (интерактивный интерфейс)
-- **v0.35.0** — Gateway v1.0 (единая точка входа)
-- **v0.34.0** — Bootstrap Library v1.3 (семантические концепты)
+- **v0.41.0-rc1** — Panic Recovery + GIL Release (production reliability) 🛡️
+- **v0.40.0** — Python Bindings (PyO3) с batch API (4x speedup) ⚡
+- **v0.39.2** — 1M tokens stress tests, builder pattern API
+- **v0.39.1** — RwLock unification, ActionController-Gateway integration
+- **v0.39.0** — REST API + WebSockets
+- **v0.38.0** — Curiosity Drive (автономное исследование)
 
 ---
 

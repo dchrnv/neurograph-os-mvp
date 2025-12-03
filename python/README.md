@@ -2,6 +2,26 @@
 
 High-performance Python bindings for NeuroGraph OS core library built with [PyO3](https://pyo3.rs/).
 
+## ⚠️ Alpha Release
+
+**Status:** Alpha - for development and prototyping only
+
+**Ready for:**
+- ✅ Local development and testing
+- ✅ Proof-of-concept and benchmarks
+- ✅ Performance evaluation
+
+**NOT ready for production:**
+- ❌ No WAL (data loss possible on crash)
+- ❌ No Docker deployment
+
+**v0.41.0-rc1 improvements:**
+- ✅ Panic recovery with `catch_unwind` (Rust core)
+- ✅ GIL release in batch operations and long-running methods
+- ✅ Production panic hook with structured logging
+
+**Production readiness:** See [Production Roadmap](#production-roadmap) below.
+
 ## Installation
 
 ```bash
@@ -245,6 +265,31 @@ Python only receives final results.
 - Tokens are cloned to Python (64 bytes each - acceptable)
 - Large datasets stay in Rust (use iterators/batches)
 - Avoid Python↔Rust roundtrips in hot loops
+
+## Production Roadmap
+
+### v0.41.0 - Reliability (Critical) [IN PROGRESS]
+- [ ] WAL (Write-Ahead Log) for data persistence
+- [x] Panic recovery with `catch_unwind` (v0.41.0-rc1)
+- [x] GIL release for long operations (`py.allow_threads()`) (v0.41.0-rc1)
+- [ ] Resource quotas in Guardian
+
+### v0.42.0 - Observability
+- [ ] Prometheus metrics export
+- [ ] Black Box Recorder (last 1000 steps on crash)
+- [ ] Structured logging improvements
+
+### v0.43.0 - Deployment
+- [ ] Dockerfile (multi-stage, <50MB)
+- [ ] Docker Compose for full stack
+- [ ] Health check endpoints
+
+### v0.44.0+ - Performance
+- [ ] Zero-copy NumPy views
+- [ ] Async Python bindings for Tokio
+- [ ] More batch operations (connections, similarity)
+
+---
 
 ## License
 

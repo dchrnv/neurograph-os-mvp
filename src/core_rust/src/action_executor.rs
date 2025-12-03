@@ -75,6 +75,10 @@ pub enum ActionError {
 
     #[error("ADNA reader error: {0}")]
     ADNAError(String),
+
+    /// Panic was caught and recovered (v0.41.0)
+    #[error("Panic recovered: {0}")]
+    PanicRecovered(String),
 }
 
 /// Common trait for all action executors
