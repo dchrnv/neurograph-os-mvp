@@ -3,7 +3,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.41.0--rc1-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.41.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -23,25 +23,28 @@
 
 ---
 
-## 🚀 v0.41.0-rc1 - Reliability Improvements
+## 🚀 v0.41.0 Final - Production Reliability
 
-**Статус:** Release Candidate 1 - движение к production
+**Статус:** Production-Ready (Core Features) ✅
 
-**Новое в v0.41.0-rc1:**
+**Новое в v0.41.0:**
 - ✅ **Panic Recovery** - системный crash больше не убивает процесс
 - ✅ **GIL Release** - Python не блокируется во время Rust операций
+- ✅ **WAL (Write-Ahead Log)** - данные не теряются при крахе (CRC32 checksums, binary format)
+- ✅ **Resource Quotas** - защита от OOM с настраиваемыми лимитами (10M токенов, 1GB памяти)
 - ✅ **Production Panic Hook** - structured logging всех паник
 
 **Готово для:**
-- ✅ Локальная разработка и тестирование
+- ✅ Локальная разработка и production deployment
 - ✅ Proof-of-concept и бенчмарки
 - ✅ Python bindings (PyO3) с batch API
-- ✅ Production-like устойчивость к ошибкам
+- ✅ Crash-safe persistence (WAL replay)
+- ✅ OOM prevention (Guardian quotas)
 
-**НЕ готово для production:**
-- ❌ Нет WAL (возможна потеря данных при крахе)
-- ❌ Нет Docker deployment
-- ❌ Нет resource quotas в Guardian
+**Требует дополнительно для масштабирования:**
+- ⏳ Docker deployment (v0.43.0)
+- ⏳ Prometheus metrics (v0.42.0)
+- ⏳ Black Box Recorder (v0.42.0)
 
 ---
 
@@ -92,13 +95,15 @@ cargo run --bin neurograph-repl
 
 Полная документация проекта находится в `docs/`:
 
-- **[docs/reference-map.md](docs/reference-map.md)** — навигация по документации
-- **[ROADMAP.md](ROADMAP.md)** — план развития
 - **[docs/specs/](docs/specs/)** — технические спецификации
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — как помочь проекту
 
 ### Последние обновления
 
+- **v0.41.0 Final** — WAL + Resource Quotas (production-ready core) 🚀
+  - Write-Ahead Log для crash-safe persistence
+  - Guardian Resource Quotas для OOM prevention
+  - Panic Recovery + GIL Release
 - **v0.41.0-rc1** — Panic Recovery + GIL Release (production reliability) 🛡️
 - **v0.40.0** — Python Bindings (PyO3) с batch API (4x speedup) ⚡
 - **v0.39.2** — 1M tokens stress tests, builder pattern API

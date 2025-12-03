@@ -1,24 +1,29 @@
-# NeuroGraph OS - Python Bindings v0.40.0
+# NeuroGraph OS - Python Bindings v0.41.0
 
 High-performance Python bindings for NeuroGraph OS core library built with [PyO3](https://pyo3.rs/).
 
-## ⚠️ Alpha Release
+## ✅ Production-Ready (Core Features)
 
-**Status:** Alpha - for development and prototyping only
+**Status:** Production-Ready for core AGI operations
 
 **Ready for:**
-- ✅ Local development and testing
+- ✅ Local development and production deployment
 - ✅ Proof-of-concept and benchmarks
 - ✅ Performance evaluation
+- ✅ Crash-safe persistence (WAL)
+- ✅ OOM prevention (Guardian quotas)
 
-**NOT ready for production:**
-- ❌ No WAL (data loss possible on crash)
-- ❌ No Docker deployment
+**v0.41.0 Final improvements:**
+- ✅ **WAL (Write-Ahead Log)** - CRC32 checksums, binary format, replay mechanism
+- ✅ **Resource Quotas** - 10M tokens / 1GB memory limits with aggressive cleanup
+- ✅ **Panic recovery** with `catch_unwind` (Rust core)
+- ✅ **GIL release** in batch operations and long-running methods
+- ✅ **Production panic hook** with structured logging
 
-**v0.41.0-rc1 improvements:**
-- ✅ Panic recovery with `catch_unwind` (Rust core)
-- ✅ GIL release in batch operations and long-running methods
-- ✅ Production panic hook with structured logging
+**For scaling (coming soon):**
+- ⏳ Docker deployment (v0.43.0)
+- ⏳ Prometheus metrics export (v0.42.0)
+- ⏳ Black Box Recorder (v0.42.0)
 
 **Production readiness:** See [Production Roadmap](#production-roadmap) below.
 
@@ -268,11 +273,11 @@ Python only receives final results.
 
 ## Production Roadmap
 
-### v0.41.0 - Reliability (Critical) [IN PROGRESS]
-- [ ] WAL (Write-Ahead Log) for data persistence
-- [x] Panic recovery with `catch_unwind` (v0.41.0-rc1)
-- [x] GIL release for long operations (`py.allow_threads()`) (v0.41.0-rc1)
-- [ ] Resource quotas in Guardian
+### v0.41.0 - Reliability (Critical) [✅ COMPLETED]
+- [x] WAL (Write-Ahead Log) for data persistence ✅
+- [x] Panic recovery with `catch_unwind` ✅
+- [x] GIL release for long operations (`py.allow_threads()`) ✅
+- [x] Resource quotas in Guardian ✅
 
 ### v0.42.0 - Observability
 - [ ] Prometheus metrics export
