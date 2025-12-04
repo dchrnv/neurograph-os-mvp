@@ -1,10 +1,10 @@
-# NeuroGraph OS - Python Bindings v0.41.0
+# NeuroGraph OS - Python Bindings v0.42.0
 
 High-performance Python bindings for NeuroGraph OS core library built with [PyO3](https://pyo3.rs/).
 
-## ✅ Production-Ready (Core Features)
+## ✅ Production-Ready (Full Stack)
 
-**Status:** Production-Ready for core AGI operations
+**Status:** Production-Ready with full observability stack
 
 **Ready for:**
 - ✅ Local development and production deployment
@@ -12,6 +12,13 @@ High-performance Python bindings for NeuroGraph OS core library built with [PyO3
 - ✅ Performance evaluation
 - ✅ Crash-safe persistence (WAL)
 - ✅ OOM prevention (Guardian quotas)
+- ✅ Production monitoring (Prometheus metrics)
+- ✅ Post-mortem debugging (Black Box dumps)
+
+**v0.42.0 Final improvements:**
+- ✅ **Prometheus Metrics** - /metrics endpoint with 15+ metrics
+- ✅ **Black Box Recorder** - Flight recorder for crash analysis (last 1000 events)
+- ✅ **Logging Utilities** - Structured logging with context
 
 **v0.41.0 Final improvements:**
 - ✅ **WAL (Write-Ahead Log)** - CRC32 checksums, binary format, replay mechanism
@@ -22,8 +29,7 @@ High-performance Python bindings for NeuroGraph OS core library built with [PyO3
 
 **For scaling (coming soon):**
 - ⏳ Docker deployment (v0.43.0)
-- ⏳ Prometheus metrics export (v0.42.0)
-- ⏳ Black Box Recorder (v0.42.0)
+- ⏳ Distributed tracing (v0.44.0)
 
 **Production readiness:** See [Production Roadmap](#production-roadmap) below.
 
@@ -279,10 +285,10 @@ Python only receives final results.
 - [x] GIL release for long operations (`py.allow_threads()`) ✅
 - [x] Resource quotas in Guardian ✅
 
-### v0.42.0 - Observability
-- [ ] Prometheus metrics export
-- [ ] Black Box Recorder (last 1000 steps on crash)
-- [ ] Structured logging improvements
+### v0.42.0 - Observability [✅ COMPLETED]
+- [x] Prometheus metrics export ✅
+- [x] Black Box Recorder (last 1000 events on crash) ✅
+- [x] Structured logging improvements ✅
 
 ### v0.43.0 - Deployment
 - [ ] Dockerfile (multi-stage, <50MB)

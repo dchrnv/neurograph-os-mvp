@@ -1,9 +1,8 @@
-
-# NeuroGraph OS
+# NeuroGraph
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.41.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.42.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -23,28 +22,36 @@
 
 ---
 
-## 🚀 v0.41.0 Final - Production Reliability
+## 🚀 v0.42.0 Final - Observability & Production Monitoring
 
-**Статус:** Production-Ready (Core Features) ✅
+**Статус:** Production-Ready (Full Stack) ✅
+
+**Новое в v0.42.0:**
+
+- ✅ **Prometheus Metrics** - /metrics endpoint с 15+ метриками для мониторинга
+- ✅ **Black Box Recorder** - flight recorder для post-mortem анализа (последние 1000 событий)
+- ✅ **Logging Utilities** - structured logging с контекстом и timing'ом
 
 **Новое в v0.41.0:**
+
 - ✅ **Panic Recovery** - системный crash больше не убивает процесс
 - ✅ **GIL Release** - Python не блокируется во время Rust операций
 - ✅ **WAL (Write-Ahead Log)** - данные не теряются при крахе (CRC32 checksums, binary format)
 - ✅ **Resource Quotas** - защита от OOM с настраиваемыми лимитами (10M токенов, 1GB памяти)
-- ✅ **Production Panic Hook** - structured logging всех паник
 
 **Готово для:**
+
 - ✅ Локальная разработка и production deployment
 - ✅ Proof-of-concept и бенчмарки
 - ✅ Python bindings (PyO3) с batch API
 - ✅ Crash-safe persistence (WAL replay)
 - ✅ OOM prevention (Guardian quotas)
+- ✅ Production monitoring (Prometheus, Black Box dumps)
 
 **Требует дополнительно для масштабирования:**
+
 - ⏳ Docker deployment (v0.43.0)
-- ⏳ Prometheus metrics (v0.42.0)
-- ⏳ Black Box Recorder (v0.42.0)
+- ⏳ Distributed tracing (v0.44.0)
 
 ---
 
@@ -74,6 +81,7 @@ python
 **Документация:** [python/README.md](python/README.md)
 
 **Примеры:**
+
 - [examples/python/token_batch_performance.py](examples/python/token_batch_performance.py)
 - [examples/python/intuition_simple.py](examples/python/intuition_simple.py)
 
@@ -85,6 +93,7 @@ cargo run --bin neurograph-repl
 ```
 
 Интерактивный консольный интерфейс с поддержкой обратной связи:
+
 - Текстовые запросы к системе
 - Команды: `/help`, `/status`, `/stats`, `/quit`
 - Обратная связь после каждого ответа (y/n/c)
@@ -100,11 +109,14 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.42.0 Final** — Observability & Monitoring (production full-stack) 📊
+  - Prometheus Metrics - /metrics endpoint с 15+ метриками
+  - Black Box Recorder - flight recorder для crash анализа
+  - Logging Utilities - structured logging с контекстом
 - **v0.41.0 Final** — WAL + Resource Quotas (production-ready core) 🚀
   - Write-Ahead Log для crash-safe persistence
   - Guardian Resource Quotas для OOM prevention
   - Panic Recovery + GIL Release
-- **v0.41.0-rc1** — Panic Recovery + GIL Release (production reliability) 🛡️
 - **v0.40.0** — Python Bindings (PyO3) с batch API (4x speedup) ⚡
 - **v0.39.2** — 1M tokens stress tests, builder pattern API
 - **v0.39.1** — RwLock unification, ActionController-Gateway integration
@@ -124,4 +136,3 @@ cargo run --bin neurograph-repl
 
 **Chernov Denys** — архитектура и разработка
 С поддержкой Claude Code (Anthropic)
-
