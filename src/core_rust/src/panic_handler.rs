@@ -64,6 +64,13 @@ where
             // Update Prometheus metrics (v0.42.0)
             crate::metrics::PANICS_RECOVERED.inc();
 
+            // Record in Black Box (v0.42.0)
+            crate::black_box::record_event(
+                crate::black_box::Event::new(crate::black_box::EventType::PanicRecovered)
+                    .with_data("operation", operation_name)
+                    .with_data("message", panic_message.clone())
+            );
+
             Err(PanicError {
                 message: format!("{}: {}", operation_name, panic_message),
                 location: None,
@@ -110,6 +117,14 @@ where
 
             // Update Prometheus metrics (v0.42.0)
             crate::metrics::PANICS_RECOVERED.inc();
+
+            // Record in Black Box (v0.42.0)
+            crate::black_box::record_event(
+                crate::black_box::Event::new(crate::black_box::EventType::PanicRecovered)
+                    .with_data("operation", operation_name)
+                    .with_data("message", panic_message.clone())
+                    .with_data("async", "true")
+            );
 
             Err(PanicError {
                 message: format!("{}: {}", operation_name, panic_message),
@@ -166,6 +181,36 @@ pub fn install_panic_hook() {
             backtrace = ?std::backtrace::Backtrace::capture(),
             "PANIC OCCURRED"
         );
+
+        // Record panic in Black Box (v0.42.0)
+        crate::black_box::record_event(
+            crate::black_box::Event::new(crate::black_box::EventType::PanicRecovered)
+                .with_data("location", location.clone())
+                .with_data("message", message.clone())
+        );
+
+        // Dump Black Box to file (v0.42.0)
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let dump_path = format!("neurograph_crash_dump_{}.json", timestamp);
+
+        match crate::black_box::dump_to_file(&dump_path) {
+            Ok(count) => {
+                error!(
+                    dump_path = %dump_path,
+                    events_count = count,
+                    "Black Box dump written after panic"
+                );
+            }
+            Err(e) => {
+                error!(
+                    error = %e,
+                    "Failed to write Black Box dump after panic"
+                );
+            }
+        }
 
         eprintln!("==========================================================");
         eprintln!("PANIC at {}", location);

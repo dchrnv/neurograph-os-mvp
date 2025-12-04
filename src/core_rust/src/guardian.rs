@@ -765,6 +765,11 @@ impl Guardian {
         self.resource_stats.quota_exceeded_count += 1;
         // Update Prometheus metrics (v0.42.0)
         crate::metrics::QUOTA_EXCEEDED.inc();
+        // Record in Black Box (v0.42.0)
+        crate::black_box::record_event(
+            crate::black_box::Event::new(crate::black_box::EventType::QuotaExceeded)
+                .with_data("count", self.resource_stats.quota_exceeded_count.to_string())
+        );
     }
 
     /// Record aggressive cleanup triggered
@@ -772,6 +777,11 @@ impl Guardian {
         self.resource_stats.aggressive_cleanups += 1;
         // Update Prometheus metrics (v0.42.0)
         crate::metrics::AGGRESSIVE_CLEANUPS.inc();
+        // Record in Black Box (v0.42.0)
+        crate::black_box::record_event(
+            crate::black_box::Event::new(crate::black_box::EventType::AggressiveCleanup)
+                .with_data("count", self.resource_stats.aggressive_cleanups.to_string())
+        );
     }
 
     /// Check if aggressive cleanup should be triggered
