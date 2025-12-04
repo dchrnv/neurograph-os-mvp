@@ -378,3 +378,37 @@ pub async fn handle_health(
 
     Ok(Json(response))
 }
+
+// ============================================================================
+// Metrics Handler (v0.42.0)
+// ============================================================================
+
+/// Prometheus metrics endpoint
+///
+/// Returns metrics in Prometheus exposition format for scraping.
+/// No authentication required for metrics endpoint (standard practice).
+///
+/// # Example
+///
+/// ```bash
+/// curl http://localhost:8080/metrics
+/// ```
+pub async fn handle_metrics() -> Result<impl IntoResponse, ApiError> {
+    match crate::metrics::export_metrics() {
+        Ok(metrics_text) => {
+            // Return with proper content type for Prometheus
+            Ok((
+                StatusCode::OK,
+                [(
+                    axum::http::header::CONTENT_TYPE,
+                    "text/plain; version=0.0.4; charset=utf-8",
+                )],
+                metrics_text,
+            ))
+        }
+        Err(e) => Err(ApiError::InternalError(format!(
+            "Failed to export metrics: {}",
+            e
+        ))),
+    }
+}

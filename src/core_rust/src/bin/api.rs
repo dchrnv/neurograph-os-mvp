@@ -22,7 +22,7 @@ use tracing_subscriber;
 /// Print welcome banner
 fn print_banner(config: &ApiConfig) {
     println!("\n╔═══════════════════════════════════════════════════════════╗");
-    println!("║         NeuroGraph OS v0.39.0 - REST API Server          ║");
+    println!("║         NeuroGraph OS v0.42.0 - REST API Server          ║");
     println!("║       Cognitive Architecture over HTTP + WebSocket        ║");
     println!("╚═══════════════════════════════════════════════════════════╝\n");
     println!("🚀 Server starting on http://{}", config.bind_address());
@@ -30,6 +30,7 @@ fn print_banner(config: &ApiConfig) {
     println!("💚 Health Check: http://{}/health", config.bind_address());
     println!("📊 Status: http://{}/api/v1/status", config.bind_address());
     println!("📈 Stats: http://{}/api/v1/stats", config.bind_address());
+    println!("📉 Metrics: http://{}/metrics (Prometheus)", config.bind_address());
 
     if config.api_key.is_some() {
         println!("\n🔐 API Key authentication enabled");

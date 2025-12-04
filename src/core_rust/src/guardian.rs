@@ -429,8 +429,12 @@ impl Guardian {
         // Update stats
         if errors.is_empty() {
             self.validation_stats.tokens_validated += 1;
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::TOKENS_VALIDATED.inc();
         } else {
             self.validation_stats.tokens_rejected += 1;
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::TOKENS_REJECTED.inc();
 
             // Emit validation failed event
             if self.config.enable_events {
@@ -504,8 +508,12 @@ impl Guardian {
         // Update stats
         if errors.is_empty() {
             self.validation_stats.connections_validated += 1;
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::CONNECTIONS_VALIDATED.inc();
         } else {
             self.validation_stats.connections_rejected += 1;
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::CONNECTIONS_REJECTED.inc();
 
             // Emit validation failed event
             if self.config.enable_events {
@@ -739,21 +747,31 @@ impl Guardian {
     /// Record token creation (call after successful creation)
     pub fn record_token_created(&mut self) {
         self.resource_stats.tokens_created += 1;
+        // Update Prometheus metrics (v0.42.0)
+        crate::metrics::TOKENS_CREATED.inc();
+        crate::metrics::TOKENS_ACTIVE.set(self.resource_stats.tokens_created as i64);
     }
 
     /// Record connection creation (call after successful creation)
     pub fn record_connection_created(&mut self) {
         self.resource_stats.connections_created += 1;
+        // Update Prometheus metrics (v0.42.0)
+        crate::metrics::CONNECTIONS_CREATED.inc();
+        crate::metrics::CONNECTIONS_ACTIVE.set(self.resource_stats.connections_created as i64);
     }
 
     /// Record that quota was exceeded
     pub fn record_quota_exceeded(&mut self) {
         self.resource_stats.quota_exceeded_count += 1;
+        // Update Prometheus metrics (v0.42.0)
+        crate::metrics::QUOTA_EXCEEDED.inc();
     }
 
     /// Record aggressive cleanup triggered
     pub fn record_aggressive_cleanup(&mut self) {
         self.resource_stats.aggressive_cleanups += 1;
+        // Update Prometheus metrics (v0.42.0)
+        crate::metrics::AGGRESSIVE_CLEANUPS.inc();
     }
 
     /// Check if aggressive cleanup should be triggered
@@ -806,6 +824,20 @@ impl Guardian {
 
     /// Get resource usage statistics
     pub fn resource_stats(&self) -> (usize, usize, u64, u64) {
+        // Update Prometheus metrics with current values (v0.42.0)
+        if let Some(memory_bytes) = self.get_current_memory_usage() {
+            crate::metrics::MEMORY_USED_BYTES.set(memory_bytes as i64);
+
+            // Calculate memory usage percentage
+            if let Some(max_memory) = self.config.max_memory_bytes {
+                let percent = (memory_bytes as f64 / max_memory as f64) * 100.0;
+                crate::metrics::MEMORY_USAGE_PERCENT.set(percent);
+            }
+        }
+
+        // Update queue size
+        crate::metrics::GUARDIAN_EVENT_QUEUE_SIZE.set(self.event_queue.len() as i64);
+
         (
             self.resource_stats.tokens_created,
             self.resource_stats.connections_created,

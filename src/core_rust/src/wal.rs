@@ -197,6 +197,7 @@ impl WalWriter {
 
     /// Append entry to WAL
     pub fn append(&mut self, entry: &WalEntry) -> Result<(), WalError> {
+        let start = std::time::Instant::now();
         let bytes = entry.to_bytes();
 
         self.file.write_all(&bytes).map_err(WalError::IoError)?;
@@ -208,6 +209,10 @@ impl WalWriter {
 
         self.entries_written += 1;
         self.bytes_written += bytes.len() as u64;
+
+        // Update Prometheus metrics (v0.42.0)
+        crate::metrics::WAL_ENTRIES_WRITTEN.inc();
+        crate::metrics::WAL_WRITE_DURATION.observe(start.elapsed().as_secs_f64());
 
         debug!(
             entry_type = ?entry.header.entry_type,
@@ -309,6 +314,8 @@ impl WalReader {
         while let Some(entry) = self.read_entry()? {
             callback(&entry)?;
             count += 1;
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::WAL_ENTRIES_REPLAYED.inc();
         }
 
         info!("WAL replay complete: {} entries", count);

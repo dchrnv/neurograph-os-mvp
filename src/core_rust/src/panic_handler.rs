@@ -61,6 +61,9 @@ where
                 "Panic recovered"
             );
 
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::PANICS_RECOVERED.inc();
+
             Err(PanicError {
                 message: format!("{}: {}", operation_name, panic_message),
                 location: None,
@@ -104,6 +107,9 @@ where
                 panic_message = %panic_message,
                 "Async panic recovered"
             );
+
+            // Update Prometheus metrics (v0.42.0)
+            crate::metrics::PANICS_RECOVERED.inc();
 
             Err(PanicError {
                 message: format!("{}: {}", operation_name, panic_message),

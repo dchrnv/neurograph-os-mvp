@@ -31,6 +31,7 @@ pub fn create_router(state: ApiState) -> Router {
     let app = Router::new()
         .nest("/api/v1", api_v1)
         .route("/health", get(handlers::handle_health)) // Also at root
+        .route("/metrics", get(handlers::handle_metrics)) // Prometheus metrics (v0.42.0)
         .with_state(state.clone());
 
     // Add CORS if enabled
