@@ -14,10 +14,12 @@ use neurograph_core::{
     adna::{AppraiserConfig, InMemoryADNAReader},
     install_panic_hook,
     ProcessedSignal,
+    logging_utils,
+    black_box,
 };
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc;
-use tracing_subscriber;
+use tracing::{info, error};
 
 /// Print welcome banner
 fn print_banner(config: &ApiConfig) {
@@ -48,13 +50,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Install panic hook for production (v0.41.0)
     install_panic_hook();
 
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
-        .init();
+    // Initialize structured logging (v0.42.0)
+    logging_utils::init_logging("info");
+
+    // Record system start in Black Box (v0.42.0)
+    black_box::record_event(
+        black_box::Event::new(black_box::EventType::SystemStarted)
+            .with_data("component", "api_server")
+            .with_data("version", "v0.42.0")
+    );
+
+    info!("NeuroGraph OS v0.42.0 API Server starting...");
 
     // Load configuration
     let api_config = ApiConfig::from_env();

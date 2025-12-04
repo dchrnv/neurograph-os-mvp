@@ -74,6 +74,7 @@ pub mod panic_handler;    // NEW: v1.0 Panic Recovery (v0.41.0)
 pub mod wal;              // NEW: v1.0 Write-Ahead Log (v0.41.0)
 pub mod metrics;          // NEW: v1.0 Prometheus Metrics (v0.42.0)
 pub mod black_box;        // NEW: v1.0 Black Box Recorder (v0.42.0)
+pub mod logging_utils;    // NEW: v1.0 Logging Utilities (v0.42.0)
 
 // Python bindings v1.0 (v0.40.0) - PyO3 FFI
 #[cfg(feature = "python")]
