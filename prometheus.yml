@@ -1,0 +1,23 @@
+# Prometheus Configuration for NeuroGraph OS
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'neurograph-local'
+    environment: 'production'
+
+# Scrape configurations
+scrape_configs:
+  # NeuroGraph API Server metrics
+  - job_name: 'neurograph-api'
+    static_configs:
+      - targets: ['neurograph-api:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

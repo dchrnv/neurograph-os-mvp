@@ -1,0 +1,142 @@
+# NeuroGraph OS - Docker Compose Configuration
+# Full stack deployment with API server and optional services
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # NeuroGraph API Server
+  # =============================================================================
+  neurograph-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: neurograph-os:v0.43.0
+    container_name: neurograph-api
+    restart: unless-stopped
+
+    # Environment configuration
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - NEUROGRAPH_HOST=0.0.0.0
+      - NEUROGRAPH_PORT=8080
+      - NEUROGRAPH_MAX_TOKENS=${NEUROGRAPH_MAX_TOKENS:-10000000}
+      - NEUROGRAPH_MAX_MEMORY_BYTES=${NEUROGRAPH_MAX_MEMORY_BYTES:-1073741824}
+
+    # Port mapping
+    ports:
+      - "${NEUROGRAPH_PORT:-8080}:8080"
+
+    # Volume mounts for persistence
+    volumes:
+      - neurograph-data:/app/data
+      - neurograph-logs:/app/logs
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Networks
+    networks:
+      - neurograph-network
+
+  # =============================================================================
+  # Prometheus (Optional) - Metrics collection
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: neurograph-prometheus
+    restart: unless-stopped
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+    networks:
+      - neurograph-network
+
+    profiles:
+      - monitoring
+
+    depends_on:
+      - neurograph-api
+
+  # =============================================================================
+  # Grafana (Optional) - Metrics visualization
+  # =============================================================================
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: neurograph-grafana
+    restart: unless-stopped
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+    networks:
+      - neurograph-network
+
+    profiles:
+      - monitoring
+
+    depends_on:
+      - prometheus
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  neurograph-data:
+    driver: local
+  neurograph-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  neurograph-network:
+    driver: bridge

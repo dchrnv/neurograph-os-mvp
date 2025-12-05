@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.42.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.43.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,9 +22,16 @@
 
 ---
 
-## 🚀 v0.42.0 Final - Observability & Production Monitoring
+## 🚀 v0.43.0 Final - Docker Deployment
 
-**Статус:** Production-Ready (Full Stack) ✅
+**Статус:** Production-Ready (Container Native) ✅
+
+**Новое в v0.43.0:**
+
+- ✅ **Multi-stage Dockerfile** - оптимизированный образ <50MB (Alpine-based)
+- ✅ **Docker Compose** - full stack deployment с optional мониторингом
+- ✅ **Production-ready** - health checks, resource limits, non-root user
+- ✅ **Monitoring stack** - Prometheus + Grafana (опционально)
 
 **Новое в v0.42.0:**
 
@@ -42,22 +49,52 @@
 **Готово для:**
 
 - ✅ Локальная разработка и production deployment
+- ✅ Docker/Kubernetes deployment
 - ✅ Proof-of-concept и бенчмарки
 - ✅ Python bindings (PyO3) с batch API
 - ✅ Crash-safe persistence (WAL replay)
 - ✅ OOM prevention (Guardian quotas)
-- ✅ Production monitoring (Prometheus, Black Box dumps)
+- ✅ Production monitoring (Prometheus, Grafana, Black Box dumps)
 
-**Требует дополнительно для масштабирования:**
+**Требует дополнительно для распределённых систем:**
 
-- ⏳ Docker deployment (v0.43.0)
 - ⏳ Distributed tracing (v0.44.0)
+- ⏳ Cluster coordination (v0.45.0)
 
 ---
 
 ## Быстрый старт
 
-### Python Bindings (v0.40.0 - NEW!)
+### Docker Deployment (v0.43.0 - NEW!)
+
+```bash
+# Quick start (single command)
+docker-compose up -d
+
+# API доступен на http://localhost:8080
+curl http://localhost:8080/health
+
+# Метрики
+curl http://localhost:8080/metrics
+
+# С мониторингом (Prometheus + Grafana)
+docker-compose --profile monitoring up -d
+
+# Grafana: http://localhost:3000 (admin/admin)
+# Prometheus: http://localhost:9090
+```
+
+**Документация:** [DOCKER.md](DOCKER.md)
+
+**Особенности:**
+
+- Multi-stage build (<50MB образ)
+- Health checks и resource limits
+- Non-root user для безопасности
+- Persistent volumes для данных
+- Optional monitoring stack
+
+### Python Bindings (v0.40.0)
 
 ```bash
 # Build Python bindings
@@ -109,6 +146,10 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.43.0 Final** — Docker Deployment (container-native) 🐳
+  - Multi-stage Dockerfile (<50MB Alpine-based image)
+  - Docker Compose с monitoring stack (Prometheus + Grafana)
+  - Production-ready: health checks, resource limits, non-root user
 - **v0.42.0 Final** — Observability & Monitoring (production full-stack) 📊
   - Prometheus Metrics - /metrics endpoint с 15+ метриками
   - Black Box Recorder - flight recorder для crash анализа

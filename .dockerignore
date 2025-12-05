@@ -1,0 +1,77 @@
+# NeuroGraph OS - Docker ignore file
+
+# Rust build artifacts
+**/target/
+**/*.rs.bk
+**/*.pdb
+
+# Cargo lock for libraries (keep for binaries)
+# Cargo.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.so
+**/.Python
+**/venv/
+**/ENV/
+**/.venv/
+**/pip-log.txt
+**/pip-delete-this-directory.txt
+**/.pytest_cache/
+**/*.egg-info/
+**/dist/
+**/build/
+
+# Documentation and examples (not needed in runtime)
+docs/
+examples/
+*.md
+!src/core_rust/examples/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+
+# Logs and temp files
+*.log
+logs/
+*.tmp
+*.temp
+
+# Data files (should be mounted as volumes)
+data/
+*.wal
+*.json
+neurograph_crash_dump_*.json
+
+# Tests
+**/tests/
+**/*_test.rs
+**/*_bench.rs
+
+# Desktop app (not needed for API)
+src/desktop/
+
+# Node modules (if any)
+**/node_modules/
+
+# OS files
+Thumbs.db
