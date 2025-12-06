@@ -1,10 +1,10 @@
-# NeuroGraph OS - Python Bindings v0.43.0
+# NeuroGraph OS - Python Bindings v0.44.0
 
 High-performance Python bindings for NeuroGraph OS core library built with [PyO3](https://pyo3.rs/).
 
-## ✅ Production-Ready (Container Native)
+## ✅ Production-Ready (Observability Complete)
 
-**Status:** Production-Ready with Docker deployment and full observability
+**Status:** Production-Ready with full observability stack (metrics + logs + traces)
 
 **Ready for:**
 - ✅ Local development and production deployment
@@ -15,6 +15,12 @@ High-performance Python bindings for NeuroGraph OS core library built with [PyO3
 - ✅ OOM prevention (Guardian quotas)
 - ✅ Production monitoring (Prometheus + Grafana)
 - ✅ Post-mortem debugging (Black Box dumps)
+- ✅ Distributed tracing (Jaeger + OpenTelemetry)
+
+**v0.44.0 Final improvements:**
+- ✅ **Distributed Tracing** - OpenTelemetry integration with Jaeger backend
+- ✅ **Context Propagation** - W3C TraceContext for request correlation
+- ✅ **Trace Visualization** - Jaeger UI for end-to-end debugging
 
 **v0.43.0 Final improvements:**
 - ✅ **Docker Deployment** - Multi-stage Dockerfile (<50MB Alpine-based)
@@ -34,8 +40,8 @@ High-performance Python bindings for NeuroGraph OS core library built with [PyO3
 - ✅ **Production panic hook** with structured logging
 
 **For distributed systems (coming soon):**
-- ⏳ Distributed tracing (v0.44.0)
 - ⏳ Cluster coordination (v0.45.0)
+- ⏳ Service mesh integration (v0.46.0)
 
 **Production readiness:** See [Production Roadmap](#production-roadmap) below.
 
@@ -302,12 +308,18 @@ Python only receives final results.
 - [x] Health check endpoints ✅
 - [x] Optional monitoring stack (Prometheus + Grafana) ✅
 
-### v0.44.0 - Distributed Tracing
-- [ ] OpenTelemetry integration
-- [ ] Jaeger/Zipkin support
-- [ ] Distributed context propagation
+### v0.44.0 - Distributed Tracing [✅ COMPLETED]
+- [x] OpenTelemetry integration ✅
+- [x] Jaeger backend support ✅
+- [x] W3C TraceContext propagation ✅
+- [x] Automatic span creation for HTTP requests ✅
 
-### v0.45.0+ - Performance & Scaling
+### v0.45.0 - Cluster Coordination
+- [ ] etcd integration
+- [ ] Raft consensus
+- [ ] Distributed state management
+
+### v0.46.0+ - Performance & Scaling
 - [ ] Zero-copy NumPy views
 - [ ] Async Python bindings for Tokio
 - [ ] More batch operations (connections, similarity)

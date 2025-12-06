@@ -11,7 +11,6 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::Level;
 
 /// Create API router
 pub fn create_router(state: ApiState) -> Router {

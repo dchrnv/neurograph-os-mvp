@@ -1,7 +1,7 @@
 # NeuroGraph OS - Docker Deployment Guide
 
-**Version:** v0.43.0
-**Status:** Production-Ready
+**Version:** v0.44.0
+**Status:** Production-Ready (Observability Complete)
 
 ---
 
@@ -90,12 +90,41 @@ docker-compose --profile monitoring up -d
 - **Prometheus:** http://localhost:9090
 - **Grafana:** http://localhost:3000 (admin/admin)
 
+### With Distributed Tracing (v0.44.0)
+
+Start with Jaeger tracing:
+
+```bash
+# Enable tracing in .env
+ENABLE_TRACING=true
+
+# Start with tracing profile
+docker-compose --profile tracing up -d
+```
+
+**Services:**
+- **API:** http://localhost:8080 (with tracing enabled)
+- **Jaeger UI:** http://localhost:16686
+
+**Full observability stack (metrics + logs + traces):**
+
+```bash
+# Start all profiles
+docker-compose --profile monitoring --profile tracing up -d
+```
+
+**All services:**
+- **API:** http://localhost:8080
+- **Prometheus:** http://localhost:9090
+- **Grafana:** http://localhost:3000
+- **Jaeger UI:** http://localhost:16686
+
 ### Manual Build
 
 Build the Docker image manually:
 
 ```bash
-docker build -t neurograph-os:v0.43.0 .
+docker build -t neurograph-os:v0.44.0 .
 ```
 
 Run with custom options:
