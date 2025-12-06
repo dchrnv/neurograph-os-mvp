@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-/// NeuroGraph OS Core - Rust Implementation
+/// NeuroGraph - Rust Core Implementation
 ///
-/// This is the core Rust implementation of NeuroGraph OS
+/// Cognitive architecture with emergent knowledge structures
 ///
 /// # Architecture
 ///
@@ -235,7 +235,7 @@ pub use reflex_layer::{
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 26;
+pub const VERSION_MINOR: u8 = 44;
 pub const VERSION_PATCH: u8 = 0;
 
 #[cfg(test)]
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.26.0");
+        assert_eq!(VERSION, "0.44.0");
     }
 }
 

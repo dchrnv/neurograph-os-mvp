@@ -1,6 +1,6 @@
 # NeuroGraph Core (Rust)
 
-Rust implementation of **NeuroGraph OS Token V2.0** - the fundamental data structure for token-based computing in 8-dimensional semantic space.
+Rust implementation of **NeuroGraph Token V2.0** - the fundamental data structure for token-based computing in 8-dimensional semantic space.
 
 ## Features
 
