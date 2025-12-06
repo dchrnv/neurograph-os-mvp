@@ -1,6 +1,6 @@
-// NeuroGraph OS - REST API Router v0.39.0
+// NeuroGraph OS - REST API Router v0.44.0
 //
-// HTTP routes and middleware configuration
+// HTTP routes and middleware configuration with distributed tracing
 
 use super::{handlers, state::ApiState};
 use axum::{
@@ -11,6 +11,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
+use tracing::Level;
 
 /// Create API router
 pub fn create_router(state: ApiState) -> Router {
@@ -46,8 +47,26 @@ pub fn create_router(state: ApiState) -> Router {
         app
     };
 
-    // Add tracing
-    app.layer(TraceLayer::new_for_http())
+    // Add tracing middleware (v0.44.0)
+    // This integrates with OpenTelemetry when enabled
+    app.layer(
+        TraceLayer::new_for_http()
+            .make_span_with(|request: &axum::http::Request<_>| {
+                tracing::info_span!(
+                    "http_request",
+                    method = %request.method(),
+                    uri = %request.uri(),
+                    version = ?request.version(),
+                )
+            })
+            .on_response(|response: &axum::http::Response<_>, latency: std::time::Duration, _span: &tracing::Span| {
+                tracing::info!(
+                    status = %response.status(),
+                    latency_ms = %latency.as_millis(),
+                    "request completed"
+                );
+            })
+    )
 }
 
 #[cfg(test)]

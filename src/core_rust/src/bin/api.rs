@@ -1,6 +1,6 @@
-// NeuroGraph OS - REST API Server v0.39.0
+// NeuroGraph OS - REST API Server v0.44.0
 //
-// HTTP API server for external access
+// HTTP API server with distributed tracing support
 
 use neurograph_core::{
     api::{create_router, ApiConfig, ApiState},
@@ -16,15 +16,16 @@ use neurograph_core::{
     ProcessedSignal,
     logging_utils,
     black_box,
+    tracing_otel,  // NEW: v0.44.0 - OpenTelemetry tracing
 };
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc;
 use tracing::{info, error};
 
 /// Print welcome banner
-fn print_banner(config: &ApiConfig) {
+fn print_banner(config: &ApiConfig, jaeger_enabled: bool) {
     println!("\n╔═══════════════════════════════════════════════════════════╗");
-    println!("║         NeuroGraph OS v0.42.0 - REST API Server          ║");
+    println!("║         NeuroGraph OS v0.44.0 - REST API Server          ║");
     println!("║       Cognitive Architecture over HTTP + WebSocket        ║");
     println!("╚═══════════════════════════════════════════════════════════╝\n");
     println!("🚀 Server starting on http://{}", config.bind_address());
@@ -33,6 +34,10 @@ fn print_banner(config: &ApiConfig) {
     println!("📊 Status: http://{}/api/v1/status", config.bind_address());
     println!("📈 Stats: http://{}/api/v1/stats", config.bind_address());
     println!("📉 Metrics: http://{}/metrics (Prometheus)", config.bind_address());
+
+    if jaeger_enabled {
+        println!("🔍 Tracing: Jaeger enabled (distributed tracing)", );
+    }
 
     if config.api_key.is_some() {
         println!("\n🔐 API Key authentication enabled");
@@ -50,22 +55,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Install panic hook for production (v0.41.0)
     install_panic_hook();
 
-    // Initialize structured logging (v0.42.0)
-    logging_utils::init_logging("info");
+    // Check if Jaeger tracing is enabled (v0.44.0)
+    let jaeger_endpoint = std::env::var("JAEGER_ENDPOINT")
+        .unwrap_or_else(|_| "http://jaeger:14268/api/traces".to_string());
+    let enable_tracing = std::env::var("ENABLE_TRACING")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false);
+
+    // Initialize tracing with or without Jaeger (v0.44.0)
+    if enable_tracing {
+        // With distributed tracing
+        match tracing_otel::init_tracing_with_jaeger(
+            "neurograph-api",
+            &jaeger_endpoint,
+            "info"
+        ) {
+            Ok(_) => info!("OpenTelemetry tracing initialized with Jaeger"),
+            Err(e) => {
+                error!("Failed to initialize Jaeger tracing: {}. Falling back to standard logging.", e);
+                logging_utils::init_logging("info");
+            }
+        }
+    } else {
+        // Standard logging only (v0.42.0)
+        logging_utils::init_logging("info");
+    }
 
     // Record system start in Black Box (v0.42.0)
     black_box::record_event(
         black_box::Event::new(black_box::EventType::SystemStarted)
             .with_data("component", "api_server")
-            .with_data("version", "v0.42.0")
+            .with_data("version", "v0.44.0")
     );
 
-    info!("NeuroGraph OS v0.42.0 API Server starting...");
+    info!("NeuroGraph OS v0.44.0 API Server starting...");
 
     // Load configuration
     let api_config = ApiConfig::from_env();
 
-    print_banner(&api_config);
+    print_banner(&api_config, enable_tracing);
 
     // Initialize Bootstrap Library
     let bootstrap_config = BootstrapConfig::default();

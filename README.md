@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.43.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.44.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,9 +22,16 @@
 
 ---
 
-## 🚀 v0.43.0 Final - Docker Deployment
+## 🚀 v0.44.0 Final - Distributed Tracing
 
-**Статус:** Production-Ready (Container Native) ✅
+**Статус:** Production-Ready (Observability Complete) ✅
+
+**Новое в v0.44.0:**
+
+- ✅ **OpenTelemetry Integration** - distributed tracing с W3C TraceContext
+- ✅ **Jaeger Backend** - trace visualization и analysis
+- ✅ **Context Propagation** - automatic trace correlation через HTTP headers
+- ✅ **Span Attributes** - structured metadata для debugging
 
 **Новое в v0.43.0:**
 
@@ -55,11 +62,13 @@
 - ✅ Crash-safe persistence (WAL replay)
 - ✅ OOM prevention (Guardian quotas)
 - ✅ Production monitoring (Prometheus, Grafana, Black Box dumps)
+- ✅ Distributed tracing (Jaeger, OpenTelemetry)
+- ✅ End-to-end observability (metrics + logs + traces)
 
 **Требует дополнительно для распределённых систем:**
 
-- ⏳ Distributed tracing (v0.44.0)
 - ⏳ Cluster coordination (v0.45.0)
+- ⏳ Service mesh integration (v0.46.0)
 
 ---
 
@@ -146,6 +155,11 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.44.0 Final** — Distributed Tracing (observability complete) 🔍
+  - OpenTelemetry integration с Jaeger backend
+  - W3C TraceContext propagation через HTTP headers
+  - Automatic span creation для всех HTTP requests
+  - Trace visualization в Jaeger UI
 - **v0.43.0 Final** — Docker Deployment (container-native) 🐳
   - Multi-stage Dockerfile (<50MB Alpine-based image)
   - Docker Compose с monitoring stack (Prometheus + Grafana)
