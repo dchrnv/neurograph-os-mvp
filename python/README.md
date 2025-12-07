@@ -1,10 +1,10 @@
-# NeuroGraph OS - Python Bindings v0.44.0
+# NeuroGraph OS - Python Bindings v0.44.1
 
 High-performance Python bindings for NeuroGraph OS core library built with [PyO3](https://pyo3.rs/).
 
-## ✅ Production-Ready (Observability Complete)
+## ✅ Production-Ready (with documented bottlenecks)
 
-**Status:** Production-Ready with full observability stack (metrics + logs + traces)
+**Status:** Production-Ready with known performance characteristics
 
 **Ready for:**
 - ✅ Local development and production deployment
@@ -15,7 +15,13 @@ High-performance Python bindings for NeuroGraph OS core library built with [PyO3
 - ✅ OOM prevention (Guardian quotas)
 - ✅ Production monitoring (Prometheus + Grafana)
 - ✅ Post-mortem debugging (Black Box dumps)
-- ✅ Distributed tracing (Jaeger + OpenTelemetry)
+- ⚠️ Distributed tracing (17x overhead - use sampling in v0.44.3)
+
+**v0.44.1 improvements:**
+- ✅ **Comprehensive Stress Testing** - 9.5M tokens full-stack observability test
+- ✅ **Performance Analysis** - documented WAL (971x) and tracing (17x) bottlenecks
+- ✅ **Production Recommendations** - known issues and workarounds until v0.44.3
+- ✅ **v0.44.x Roadmap** - async WAL (v0.44.2) and tracing sampling (v0.44.3)
 
 **v0.44.0 Final improvements:**
 - ✅ **Distributed Tracing** - OpenTelemetry integration with Jaeger backend

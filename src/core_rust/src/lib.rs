@@ -236,7 +236,7 @@ pub use reflex_layer::{
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
 pub const VERSION_MINOR: u8 = 44;
-pub const VERSION_PATCH: u8 = 0;
+pub const VERSION_PATCH: u8 = 1;
 
 #[cfg(test)]
 mod tests {
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.44.0");
+        assert_eq!(VERSION, "0.44.1");
     }
 }
 
