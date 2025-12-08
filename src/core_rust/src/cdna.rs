@@ -298,8 +298,12 @@ pub struct CDNA {
     pub selection_pressure: f32,
     /// Evolution flags
     pub evolution_flags: u32,
+    /// Trace sampling rate for observability (0.0 - 1.0)
+    /// Default: 0.01 (1% sampling)
+    /// v0.44.3: Adaptive tracing sampling
+    pub trace_sample_rate: f32,
     /// Reserved
-    reserved7: [u8; 16],
+    reserved7: [u8; 12],
 }
 
 // Compile-time assertion: CDNA must be exactly 384 bytes
@@ -366,7 +370,8 @@ impl CDNA {
             crossover_rate: 0.1,
             selection_pressure: 0.5,
             evolution_flags: 0,
-            reserved7: [0; 16],
+            trace_sample_rate: 0.01,  // 1% sampling by default (v0.44.3)
+            reserved7: [0; 12],
         };
 
         cdna.checksum = cdna.compute_checksum();

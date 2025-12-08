@@ -212,6 +212,59 @@ lazy_static! {
     .unwrap();
 }
 
+// ==================== TRACING SAMPLING METRICS (v0.44.3) ====================
+
+lazy_static! {
+    /// Total number of sampling decisions made
+    pub static ref TRACING_SAMPLES_TOTAL: IntCounter = register_int_counter!(
+        "neurograph_tracing_samples_total",
+        "Total number of trace sampling decisions made"
+    )
+    .unwrap();
+
+    /// Number of traces actually recorded (after sampling)
+    pub static ref TRACING_SAMPLES_RECORDED: IntCounter = register_int_counter!(
+        "neurograph_tracing_samples_recorded_total",
+        "Total number of traces recorded after sampling"
+    )
+    .unwrap();
+
+    /// Number of traces skipped (not sampled)
+    pub static ref TRACING_SAMPLES_SKIPPED: IntCounter = register_int_counter!(
+        "neurograph_tracing_samples_skipped_total",
+        "Total number of traces skipped due to sampling"
+    )
+    .unwrap();
+
+    /// Number of error operations (always sampled)
+    pub static ref TRACING_ERROR_OPERATIONS: IntCounter = register_int_counter!(
+        "neurograph_tracing_error_operations_total",
+        "Total number of operations with errors (always traced)"
+    )
+    .unwrap();
+
+    /// Number of slow operations (higher sampling rate)
+    pub static ref TRACING_SLOW_OPERATIONS: IntCounter = register_int_counter!(
+        "neurograph_tracing_slow_operations_total",
+        "Total number of slow operations (latency above threshold)"
+    )
+    .unwrap();
+
+    /// Current trace sampling rate (gauge)
+    pub static ref TRACING_SAMPLE_RATE: Gauge = register_gauge!(
+        "neurograph_tracing_sample_rate",
+        "Current trace sampling rate (0.0-1.0)"
+    )
+    .unwrap();
+
+    /// Overhead from tracing (milliseconds)
+    pub static ref TRACING_OVERHEAD_MS: Histogram = register_histogram!(
+        "neurograph_tracing_overhead_seconds",
+        "Overhead from tracing operations in seconds"
+    )
+    .unwrap();
+}
+
 // ==================== EXPORT ====================
 
 /// Export all metrics in Prometheus text format
