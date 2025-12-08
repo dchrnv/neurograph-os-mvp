@@ -345,6 +345,9 @@ pub enum WalError {
 
     #[error("Corrupted WAL file")]
     CorruptedFile,
+
+    #[error("WAL writer closed")]
+    WriterClosed,
 }
 
 #[cfg(test)]

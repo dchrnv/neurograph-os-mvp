@@ -1,6 +1,6 @@
 [package]
 name = "neurograph-core"
-version = "0.44.1"
+version = "0.44.2"
 edition = "2021"
 authors = ["NeuroGraph Team"]
 description = "NeuroGraph: Cognitive architecture with emergent knowledge structures in 8D semantic space"

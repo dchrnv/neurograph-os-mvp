@@ -72,6 +72,7 @@ pub mod curiosity;        // NEW: v1.0 Curiosity Drive (v0.38.0)
 pub mod api;              // NEW: v1.0 REST API (v0.39.0)
 pub mod panic_handler;    // NEW: v1.0 Panic Recovery (v0.41.0)
 pub mod wal;              // NEW: v1.0 Write-Ahead Log (v0.41.0)
+pub mod async_wal;        // NEW: v1.0 Async WAL Writer (v0.44.2)
 pub mod metrics;          // NEW: v1.0 Prometheus Metrics (v0.42.0)
 pub mod black_box;        // NEW: v1.0 Black Box Recorder (v0.42.0)
 pub mod logging_utils;    // NEW: v1.0 Logging Utilities (v0.42.0)
@@ -236,7 +237,7 @@ pub use reflex_layer::{
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const VERSION_MAJOR: u8 = 0;
 pub const VERSION_MINOR: u8 = 44;
-pub const VERSION_PATCH: u8 = 1;
+pub const VERSION_PATCH: u8 = 2;
 
 #[cfg(test)]
 mod tests {
@@ -244,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_version() {
-        assert_eq!(VERSION, "0.44.1");
+        assert_eq!(VERSION, "0.44.2");
     }
 }
 
