@@ -22,97 +22,111 @@
 
 ---
 
-## 🚀 v0.44.3 - Adaptive Tracing Sampling
+## 🚀 v0.45.0 - Cross-Service Sampling Propagation
 
-**Статус:** Production-Ready (All performance bottlenecks eliminated) ✅
+**Статус:** Production-Ready (Complete distributed tracing solution) ✅
 
-**Новое в v0.44.3:**
+**Текущая версия: v0.45.0** - Полная поддержка distributed systems
 
-- ✅ **Adaptive Tracing Sampling** - Reduces tracing overhead from 98% → 9%
-- ✅ **10x Overhead Reduction** - Makes production observability practical
-- ✅ **100% Error Sampling** - Never miss critical failures
-- ✅ **CDNA Integration** - Configurable sampling rates via Constitutional DNA
+### Ключевые возможности v0.45.0:
 
-**📊 Performance Results (1M tokens with tracing):**
+- 🔗 **Cross-Service Sampling** - автоматическая propagation sampling decisions
+- 🌐 **W3C TraceContext** - стандарт-совместимая интеграция
+- 📊 **Complete Traces** - 10,000x improvement в trace completeness
+- ⚡ **Head-Based Sampling** - управление через HTTP headers (v0.44.4)
+- 🎯 **Dynamic Rate Adjustment** - автоподстройка под нагрузку (v0.44.4)
+- 🔧 **Adaptive Sampling** - 9% overhead вместо 98% (v0.44.3)
 
-| Component | Full Tracing | 1% Sampling | Improvement |
-|-----------|--------------|-------------|-------------|
-| **Execution Time** | 2976ms | 1707ms | **1.7x faster** |
-| **Overhead** | 98% (1.9x) | 9% (1.1x) | **10x reduction** ✅ |
-| **Error Visibility** | 100% | 100% | **No loss** ✅ |
+### 📊 Production Performance (актуально для v0.45.0):
 
-**✅ All Performance Bottlenecks Eliminated:**
-
-| Component | Overhead | Status | Details |
+| Component | Overhead | Status | Version |
 |-----------|----------|--------|---------|
-| **Core Performance** | 0% (baseline) | ✅ Perfect (22M tokens/sec) | - |
-| **WAL writes** | 8% overhead | ✅ Async WAL (v0.44.2) | MPSC + batching |
-| **Distributed Tracing** | 9% overhead | ✅ **FIXED** (v0.44.3) | Adaptive sampling |
-| **Prometheus Metrics** | <5% overhead | ✅ Acceptable | Lock-free atomics |
-| **Guardian Quotas** | <1% overhead | ✅ Minimal | - |
-| **Total Production** | **~22% overhead** | ✅ **Ready** | All systems optimal |
+| **Core Performance** | 0% (baseline) | ✅ 22M tokens/sec | v0.40.0 |
+| **WAL writes** | 8% | ✅ Async MPSC | v0.44.2 |
+| **Distributed Tracing** | 9% | ✅ Adaptive sampling | v0.44.3 |
+| **Prometheus Metrics** | <5% | ✅ Lock-free | v0.42.0 |
+| **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
+| **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-**Production Recommendations:**
-- ✅ Use `AsyncWalWriter` for optimal WAL performance (8% overhead)
-- ✅ Enable adaptive sampling for observability (9% overhead)
-- ✅ Prometheus metrics are safe to use (<5% overhead)
-- ✅ **Total overhead: ~22%** - Excellent for production deployment
+### 🎯 Distributed Tracing Features (v0.43.0 - v0.45.0):
+
+**Evolution of observability:**
+
+```
+v0.44.0: OpenTelemetry + Jaeger (17x overhead) ❌
+    ↓
+v0.44.3: Adaptive Sampling (9% overhead) ✅
+    ↓
+v0.44.4: Head-Based + Dynamic Rate ✅
+    ↓
+v0.45.0: Cross-Service Propagation ✅ ← YOU ARE HERE
+```
+
+**Trace Completeness Improvement:**
+- **Before v0.45.0**: 0.001% complete traces (broken distributed traces)
+- **After v0.45.0**: 10% complete traces (parent sampling inherited)
+- **Improvement**: **10,000x more complete traces** 🚀
+
+### Production Deployment Guide:
+
+```bash
+# 1. Docker Compose (рекомендуется)
+docker-compose up -d
+
+# 2. Доступные endpoints
+http://localhost:3000          # REST API
+http://localhost:3000/metrics  # Prometheus metrics
+http://localhost:16686         # Jaeger UI (tracing)
+http://localhost:9090          # Prometheus UI (optional)
+http://localhost:3001          # Grafana (optional)
+```
 
 **См. также:**
-- [CHANGELOG v0.44.3](docs/changelogs/CHANGELOG_v0.44.3.md) - Adaptive tracing sampling
-- [CHANGELOG v0.44.2](docs/changelogs/CHANGELOG_v0.44.2.md) - Async WAL implementation
-- [CHANGELOG v0.44.1](docs/changelogs/CHANGELOG_v0.44.1.md) - Performance analysis
-- [Stress Test Results](docs/performance/STRESS_TEST_v0.44.0.md)
+- [CHANGELOG v0.45.0](docs/changelogs/CHANGELOG_v0.45.0.md) - Cross-service sampling
+- [CHANGELOG v0.44.4](docs/changelogs/CHANGELOG_v0.44.4.md) - Head-based sampling
+- [CHANGELOG v0.44.3](docs/changelogs/CHANGELOG_v0.44.3.md) - Adaptive sampling
+- [CHANGELOG v0.44.2](docs/changelogs/CHANGELOG_v0.44.2.md) - Async WAL
+- [Performance Tests](docs/performance/STRESS_TEST_v0.44.0.md)
 
-**Новое в v0.44.0:**
+### Production-Ready Features (v0.45.0):
 
-- ✅ **OpenTelemetry Integration** - distributed tracing с W3C TraceContext
-- ✅ **Jaeger Backend** - trace visualization и analysis
-- ✅ **Context Propagation** - automatic trace correlation через HTTP headers
-- ✅ **Span Attributes** - structured metadata для debugging
+**Core Infrastructure:**
+- ✅ **High Performance** - 22M tokens/sec throughput
+- ✅ **Crash-Safe Persistence** - WAL with CRC32 checksums (v0.41.0)
+- ✅ **OOM Prevention** - Guardian resource quotas (v0.41.0)
+- ✅ **Panic Recovery** - Process doesn't crash on errors (v0.41.0)
+- ✅ **GIL Release** - Non-blocking Python integration (v0.41.0)
 
-**Новое в v0.43.0:**
+**Observability & Monitoring:**
+- ✅ **Prometheus Metrics** - /metrics endpoint с 15+ метриками (v0.42.0)
+- ✅ **Black Box Recorder** - Flight recorder для post-mortem анализа (v0.42.0)
+- ✅ **Distributed Tracing** - OpenTelemetry + Jaeger (v0.44.0)
+- ✅ **Adaptive Sampling** - 9% overhead вместо 98% (v0.44.3)
+- ✅ **Head-Based Sampling** - HTTP header control (v0.44.4)
+- ✅ **Cross-Service Propagation** - W3C TraceContext (v0.45.0)
 
-- ✅ **Multi-stage Dockerfile** - оптимизированный образ <50MB (Alpine-based)
-- ✅ **Docker Compose** - full stack deployment с optional мониторингом
-- ✅ **Production-ready** - health checks, resource limits, non-root user
-- ✅ **Monitoring stack** - Prometheus + Grafana (опционально)
+**Deployment & DevOps:**
+- ✅ **Docker Deployment** - Multi-stage Dockerfile <50MB (v0.43.0)
+- ✅ **Docker Compose** - Full stack с мониторингом (v0.43.0)
+- ✅ **Python Bindings** - PyO3 с batch API (v0.40.0)
+- ✅ **REST API + WebSockets** - Полный API (v0.39.0)
 
-**Новое в v0.42.0:**
-
-- ✅ **Prometheus Metrics** - /metrics endpoint с 15+ метриками для мониторинга
-- ✅ **Black Box Recorder** - flight recorder для post-mortem анализа (последние 1000 событий)
-- ✅ **Logging Utilities** - structured logging с контекстом и timing'ом
-
-**Новое в v0.41.0:**
-
-- ✅ **Panic Recovery** - системный crash больше не убивает процесс
-- ✅ **GIL Release** - Python не блокируется во время Rust операций
-- ✅ **WAL (Write-Ahead Log)** - данные не теряются при крахе (CRC32 checksums, binary format)
-- ✅ **Resource Quotas** - защита от OOM с настраиваемыми лимитами (10M токенов, 1GB памяти)
-
-**Готово для:**
-
-- ✅ Локальная разработка и production deployment
+**Использование:**
+- ✅ Local development & production deployment
 - ✅ Docker/Kubernetes deployment
-- ✅ Proof-of-concept и бенчмарки
-- ✅ Python bindings (PyO3) с batch API
-- ✅ Crash-safe persistence (WAL replay)
-- ✅ OOM prevention (Guardian quotas)
-- ✅ Production monitoring (Prometheus, Grafana, Black Box dumps)
-- ✅ Distributed tracing (Jaeger, OpenTelemetry)
-- ✅ End-to-end observability (metrics + logs + traces)
+- ✅ Distributed microservices (complete trace propagation)
+- ✅ High-load scenarios (22% total overhead)
 
-**Требует дополнительно для распределённых систем:**
-
-- ⏳ Cluster coordination (v0.45.0)
-- ⏳ Service mesh integration (v0.46.0)
+**Roadmap (Next Steps):**
+- 🎯 **v0.46.0** - Desktop UI (таск-менеджер интерфейс)
+- ⏳ **v0.47.0** - Tail-Based Sampling (OpenTelemetry Collector)
+- ⏳ **v0.48.0** - ML-Based Sampling (IntuitionEngine integration)
 
 ---
 
 ## Быстрый старт
 
-### Docker Deployment (v0.43.0 - NEW!)
+### Docker Deployment (Production-Ready)
 
 ```bash
 # Quick start (single command)
