@@ -125,6 +125,9 @@ pub struct SamplingContext {
     pub priority: SamplingPriority,
     /// Force tracing regardless of sampling (X-Force-Trace header)
     pub force_trace: bool,
+    /// Parent trace sampling decision (v0.45.0 - cross-service propagation)
+    /// If parent decided to sample, we inherit that decision
+    pub parent_sampled: Option<bool>,
 }
 
 impl SamplingContext {
@@ -136,6 +139,7 @@ impl SamplingContext {
             custom_rate: None,
             priority: SamplingPriority::Normal,
             force_trace: false,
+            parent_sampled: None,  // v0.45.0: no parent by default
         }
     }
 
@@ -163,19 +167,42 @@ impl SamplingContext {
         self
     }
 
+    /// Set parent trace sampling decision (v0.45.0: cross-service propagation)
+    pub fn with_parent_sampled(mut self, sampled: bool) -> Self {
+        self.parent_sampled = Some(sampled);
+        self
+    }
+
     /// Calculate elapsed time since operation start
     pub fn elapsed(&self) -> Duration {
         self.start_time.elapsed()
     }
 
-    /// Parse sampling context from HTTP headers (v0.44.4)
+    /// Parse sampling context from HTTP headers (v0.44.4+)
     ///
     /// Supported headers:
     /// - `X-Sampling-Priority`: high|normal|low
     /// - `X-Force-Trace`: true|1
     /// - `X-Sampling-Rate`: 0.0-1.0 (custom rate)
+    /// - `traceparent`: W3C TraceContext (v0.45.0 - extracts sampled flag)
     pub fn from_headers(headers: &axum::http::HeaderMap) -> Self {
         let mut context = Self::new();
+
+        // v0.45.0: Check W3C TraceContext (traceparent header)
+        // Format: 00-{trace-id}-{parent-id}-{trace-flags}
+        // trace-flags: 01 = sampled, 00 = not sampled
+        if let Some(traceparent) = headers.get("traceparent") {
+            if let Ok(value) = traceparent.to_str() {
+                let parts: Vec<&str> = value.split('-').collect();
+                if parts.len() == 4 {
+                    // Extract trace-flags (last part)
+                    if let Ok(flags) = u8::from_str_radix(parts[3], 16) {
+                        // Bit 0: sampled flag (0x01)
+                        context.parent_sampled = Some((flags & 0x01) == 0x01);
+                    }
+                }
+            }
+        }
 
         // Check X-Force-Trace header
         if let Some(force_trace) = headers.get("x-force-trace") {
@@ -262,6 +289,20 @@ impl TraceSampler {
             crate::metrics::TRACING_SAMPLES_TOTAL.inc();
             crate::metrics::TRACING_SAMPLES_RECORDED.inc();
             return SamplingDecision::Record;
+        }
+
+        // v0.45.0: Parent trace sampling inheritance (cross-service propagation)
+        // If parent decided to sample, we must also sample to maintain trace continuity
+        if let Some(parent_sampled) = context.parent_sampled {
+            if parent_sampled {
+                self.stats.decisions_recorded.fetch_add(1, Ordering::Relaxed);
+                self.stats.decisions_total.fetch_add(1, Ordering::Relaxed);
+                crate::metrics::TRACING_SAMPLES_TOTAL.inc();
+                crate::metrics::TRACING_SAMPLES_RECORDED.inc();
+                return SamplingDecision::Record;
+            }
+            // If parent explicitly didn't sample, we skip (unless error/slow below)
+            // Note: We still check errors and slow requests below to override parent decision
         }
 
         // Custom rate override (from X-Sampling-Rate header)

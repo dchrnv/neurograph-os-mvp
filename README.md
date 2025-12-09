@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.44.4-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.45.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -193,6 +193,11 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.45.0** — Cross-Service Sampling Propagation 🔗
+  - W3C TraceContext integration for parent trace sampling inheritance
+  - Automatic sampling decision propagation across distributed services
+  - Maintains trace continuity in microservices architecture
+  - Zero configuration - works automatically with existing traceparent headers
 - **v0.44.4** — Head-Based Sampling & Dynamic Rate Adjustment ⚡
   - Head-based sampling via HTTP headers (X-Force-Trace, X-Sampling-Priority)
   - Dynamic rate adjustment based on system load (auto-tune sampling)

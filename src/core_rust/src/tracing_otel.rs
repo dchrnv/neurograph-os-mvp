@@ -55,7 +55,7 @@ pub fn init_tracer(service_name: &str, jaeger_endpoint: &str) -> Result<(), Stri
                 .with_id_generator(RandomIdGenerator::default())
                 .with_resource(Resource::new(vec![
                     KeyValue::new("service.name", service_name.to_string()),
-                    KeyValue::new("service.version", "v0.44.3"),  // Updated version
+                    KeyValue::new("service.version", "v0.45.0"),  // Updated version
                 ])),
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)
@@ -112,7 +112,7 @@ pub fn init_tracing_with_jaeger(
                 .with_id_generator(RandomIdGenerator::default())
                 .with_resource(Resource::new(vec![
                     KeyValue::new("service.name", service_name.to_string()),
-                    KeyValue::new("service.version", "v0.44.3"),  // Updated version
+                    KeyValue::new("service.version", "v0.45.0"),  // Updated version
                 ])),
         )
         .install_batch(opentelemetry_sdk::runtime::Tokio)
