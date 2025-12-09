@@ -85,7 +85,7 @@ For organizations that:
 - ✅ Priority support and custom development
 - ✅ Flexible deployment (cloud, on-premise, embedded)
 
-**Pricing:** Contact [your-email@example.com] for commercial licensing inquiries.
+**Pricing:** Contact dreeftwood@gmail.com for commercial licensing inquiries.
 
 ---
 
@@ -398,7 +398,7 @@ If you train a model on NeuroGraph and want to:
 
 ### Step 1: Contact Us
 
-**Email:** [your-email@example.com]
+**Email:** dreeftwood@gmail.com
 **Subject:** NeuroGraph Commercial License Inquiry
 
 **Include:**
@@ -522,7 +522,7 @@ NeuroGraph is in good company! Many successful open-source projects use dual lic
 **Questions about licensing?**
 
 **Project Owner:** Chernov Denys
-**Email:** [your-email@example.com]
+**Email:** dreeftwood@gmail.com
 **GitHub:** [@dchrnv](https://github.com/dchrnv)
 **Website:** https://github.com/dchrnv/neurograph-os
 

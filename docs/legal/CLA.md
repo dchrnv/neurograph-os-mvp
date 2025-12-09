@@ -205,9 +205,9 @@ This Agreement is **irrevocable**. Once You submit a Contribution under this Agr
 
 ## Governing Law and Jurisdiction
 
-This Agreement shall be governed by and construed in accordance with the laws of **[Specify Jurisdiction - e.g., Ukraine, USA, etc.]**, without regard to its conflict of law provisions.
+This Agreement shall be governed by and construed in accordance with the laws of **Ukraine**, without regard to its conflict of law provisions.
 
-Any disputes arising under this Agreement shall be resolved in the courts of **[Specify Jurisdiction]**.
+Any disputes arising under this Agreement shall be resolved in the courts of **Ukraine**.
 
 ---
 
@@ -238,7 +238,7 @@ I confirm that I have the rights to submit this Contribution and grant the licen
 
 If You are contributing on behalf of Your employer or a legal entity, Your organization's authorized representative must sign the **Corporate CLA** by emailing:
 
-**Email:** [your-email@example.com]
+**Email:** dreeftwood@gmail.com
 **Subject:** NeuroGraph Corporate CLA Agreement
 **Body:**
 ```
@@ -259,7 +259,7 @@ Authorized Signature: ___________________________
 If You have questions about this Agreement, please contact:
 
 **Project Owner:** Chernov Denys
-**Email:** [your-email@example.com]
+**Email:** dreeftwood@gmail.com
 **GitHub:** [@dchrnv](https://github.com/dchrnv)
 
 ---
