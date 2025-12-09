@@ -281,6 +281,18 @@ pub use executors::{
     MessageSenderExecutor,
 };
 
+// Tracing sampling exports (v0.44.3+)
+pub use tracing_sampling::{
+    TraceSampler,
+    TraceSamplingConfig,
+    SamplingContext,
+    SamplingDecision,
+    SamplingPriority,  // v0.44.4: head-based sampling
+    SamplingStats,
+    DynamicRateConfig,  // v0.44.4: dynamic rate adjustment
+    LoadMonitor,        // v0.44.4: load monitoring
+};
+
 // Persistence exports (only available with 'persistence' feature)
 pub use persistence::{
     PersistenceBackend,
