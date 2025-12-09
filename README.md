@@ -270,10 +270,13 @@ NeuroGraph использует **модель двойного лицензир
 
 Для коммерческого использования без ограничений AGPL/CC доступны проприетарные лицензии.
 
-**Подробнее:**
-- [docs/legal/DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md) - Объяснение модели
-- [docs/legal/CLA.md](docs/legal/CLA.md) - Соглашение для контрибьюторов
-- **Контакт**: <dreeftwood@gmail.com>
+**Документация:**
+- [DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md) - Объяснение бизнес-модели
+- [CLA.md](docs/legal/CLA.md) - Contributor License Agreement
+- [CLA_INSTRUCTIONS.md](.github/CLA_INSTRUCTIONS.md) - Как подписать CLA
+- [CONTRIBUTORS.md](CONTRIBUTORS.md) - Список контрибьюторов
+
+**Контакт для коммерческих лицензий**: <dreeftwood@gmail.com>
 
 ---
 
