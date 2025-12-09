@@ -259,8 +259,21 @@ cargo run --bin neurograph-repl
 
 ## Лицензия
 
-Проект лицензирован на условиях **GNU Affero General Public License v3.0**.
-Полный текст лицензии: [LICENSE](LICENSE)
+NeuroGraph использует **модель двойного лицензирования** (dual licensing):
+
+### Open Source (Бесплатно)
+
+- **Код**: [GNU Affero General Public License v3.0](LICENSE) (AGPLv3)
+- **Данные/Модели**: [Creative Commons BY-NC-SA 4.0](LICENSE-DATA) (CC BY-NC-SA 4.0)
+
+### Commercial (Платно)
+
+Для коммерческого использования без ограничений AGPL/CC доступны проприетарные лицензии.
+
+**Подробнее:**
+- [docs/legal/DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md) - Объяснение модели
+- [docs/legal/CLA.md](docs/legal/CLA.md) - Соглашение для контрибьюторов
+- **Контакт**: <dreeftwood@gmail.com>
 
 ---
 

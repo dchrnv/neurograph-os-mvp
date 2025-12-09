@@ -25,6 +25,54 @@
 
 ---
 
+## ⚠️ Contributor License Agreement (CLA)
+
+**ВАЖНО:** Все вклады в NeuroGraph требуют принятия нашего **Contributor License Agreement (CLA)**.
+
+### Что это значит?
+
+CLA позволяет проекту использовать **модель двойного лицензирования** (dual licensing):
+- **Open Source** (бесплатно): AGPLv3 для кода, CC BY-NC-SA 4.0 для данных/моделей
+- **Commercial** (платно): Проприетарные лицензии для коммерческих пользователей
+
+### Что я должен сделать?
+
+**Для вашего первого Pull Request:**
+
+1. Прочитайте CLA: [docs/legal/CLA.md](docs/legal/CLA.md)
+2. Прочитайте про dual licensing: [docs/legal/DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md)
+3. Добавьте этот комментарий к вашему PR:
+
+```
+I have read and agree to the NeuroGraph Contributor License Agreement (CLA):
+https://github.com/dchrnv/neurograph-os/blob/main/docs/legal/CLA.md
+
+I confirm that I have the rights to submit this Contribution and grant the licenses described in the CLA.
+```
+
+### Что дает мне CLA?
+
+- ✅ Вы **сохраняете авторские права** на свой код
+- ✅ Ваше имя будет в **CONTRIBUTORS.md**
+- ✅ Вы получаете **признание** в release notes
+- ✅ Вы можете свободно использовать свой код
+- ✅ Вы помогаете проекту быть **финансово устойчивым**
+
+### Что дает проекту CLA?
+
+- ✅ Право распространять ваш вклад под AGPL/CC (open source)
+- ✅ Право продавать проприетарные лицензии (commercial)
+- ✅ Финансирование для дальнейшей разработки
+
+### Подробнее
+
+См. полную документацию:
+- **[CLA.md](docs/legal/CLA.md)** - полный текст соглашения
+- **[DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md)** - объяснение бизнес-модели
+- **[.github/CLA_INSTRUCTIONS.md](.github/CLA_INSTRUCTIONS.md)** - пошаговая инструкция
+
+---
+
 ## Процесс разработки
 
 ### Шаг 1: Fork и клонирование
@@ -136,6 +184,7 @@ git push origin feature/your-feature-name
 
 ## Checklist для Pull Request
 
+- [ ] **CLA подписан** - добавлен комментарий с согласием на CLA (см. выше)
 - [ ] Код работает и протестирован
 - [ ] Добавлены тесты для новой функциональности
 - [ ] Документация обновлена (README, docs/)
@@ -374,10 +423,29 @@ Should clamp coordinates or return Result<>
 
 ---
 
-## Лицензия
+## Лицензия и Dual Licensing
 
-Этот проект лицензирован на условиях **GNU Affero General Public License v3.0**.
-Полный текст лицензии можно найти в файле [LICENSE](LICENSE).
+Этот проект использует **модель двойного лицензирования**:
+
+### Open Source (Бесплатно)
+
+- **Код**: GNU Affero General Public License v3.0 (AGPLv3)
+- **Данные/Модели**: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0)
+
+Полный текст лицензии: [LICENSE](LICENSE)
+
+### Commercial (Платно)
+
+Проприетарные лицензии доступны для коммерческих пользователей, которым нужно:
+- Закрытый исходный код (без AGPL раскрытия)
+- Коммерческое использование моделей/данных (без CC BY-NC-SA ограничений)
+- Сублицензирование и интеграция в проприетарные продукты
+
+**Подробнее:**
+- [docs/legal/DUAL_LICENSING.md](docs/legal/DUAL_LICENSING.md) - объяснение модели
+- [docs/legal/CLA.md](docs/legal/CLA.md) - соглашение с контрибьюторами
+
+**Контакт для коммерческих лицензий:** <dreeftwood@gmail.com>
 
 ---
 
