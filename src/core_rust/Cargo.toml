@@ -102,13 +102,14 @@ persistence = ["sqlx", "dotenv"]  # Enable PostgreSQL persistence with --feature
 #name = "token-demo"
 #path = "src/bin/demo.rs"
 
-[[bin]]
-name = "neurograph-repl"
-path = "src/bin/repl.rs"
+# Temporarily disabled due to RwLock migration (will fix in v0.46.0)
+#[[bin]]
+#name = "neurograph-repl"
+#path = "src/bin/repl.rs"
 
-[[bin]]
-name = "neurograph-api"
-path = "src/bin/api.rs"
+#[[bin]]
+#name = "neurograph-api"
+#path = "src/bin/api.rs"
 
 #[[bin]]
 #name = "connection-demo"

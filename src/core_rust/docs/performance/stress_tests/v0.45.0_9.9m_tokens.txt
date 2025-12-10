@@ -1,0 +1,347 @@
+warning: unused import: `ProfileId`
+  --> src/guardian.rs:41:25
+   |
+41 | use crate::cdna::{CDNA, ProfileId};
+   |                         ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `ActionIntent` and `DecisionSource`
+   --> src/action_controller.rs:938:35
+    |
+938 |         use crate::action_types::{ActionIntent, DecisionSource};
+    |                                   ^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+
+warning: unused import: `CuriosityScore`
+   --> src/action_controller.rs:939:50
+    |
+939 |         use crate::curiosity::{CuriosityContext, CuriosityScore};
+    |                                                  ^^^^^^^^^^^^^^
+
+warning: unused import: `ExplorationMode`
+ --> src/curiosity/autonomous.rs:5:59
+  |
+5 | use crate::curiosity::{CuriosityDrive, ExplorationTarget, ExplorationMode};
+  |                                                           ^^^^^^^^^^^^^^^
+
+warning: unused import: `warn`
+ --> src/panic_handler.rs:7:22
+  |
+7 | use tracing::{error, warn};
+  |                      ^^^^
+
+warning: unused import: `warn`
+  --> src/wal.rs:42:35
+   |
+42 | use tracing::{debug, error, info, warn};
+   |                                   ^^^^
+
+warning: unused import: `warn`
+  --> src/async_wal.rs:47:35
+   |
+47 | use tracing::{debug, error, info, warn};
+   |                                   ^^^^
+
+warning: unused import: `WalEntryType`
+  --> src/async_wal.rs:49:28
+   |
+49 | use crate::wal::{WalEntry, WalEntryType, WalError, WalStats};
+   |                            ^^^^^^^^^^^^
+
+warning: unused imports: `Counter` and `register_counter`
+  --> src/metrics.rs:48:5
+   |
+48 |     register_counter, register_gauge, register_histogram, register_int_counter, register_int_gauge,
+   |     ^^^^^^^^^^^^^^^^
+49 |     Counter, Encoder, Gauge, Histogram, IntCounter, IntGauge, TextEncoder,
+   |     ^^^^^^^
+
+warning: unused import: `error`
+  --> src/black_box.rs:59:22
+   |
+59 | use tracing::{debug, error, info};
+   |                      ^^^^^
+
+warning: unused variable: `token_id`
+   --> src/gateway/mod.rs:144:17
+    |
+144 |                 token_id,
+    |                 ^^^^^^^^ help: try ignoring the field: `token_id: _`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `query`
+   --> src/api/websocket.rs:100:51
+    |
+100 |                         Ok(ClientMessage::Query { query }) => {
+    |                                                   ^^^^^ help: try ignoring the field: `query: _`
+
+warning: unused variable: `state`
+  --> src/api/websocket.rs:75:50
+   |
+75 | async fn websocket_connection(socket: WebSocket, state: ApiState) {
+   |                                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_state`
+
+warning: unused variable: `connection`
+   --> src/connection_v3.rs:686:9
+    |
+686 |         connection: &ConnectionV3,
+    |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_connection`
+
+warning: unused variable: `total_weight`
+   --> src/experience_stream.rs:745:21
+    |
+745 |                 let total_weight: f64 = indices_with_weight.iter().map(|(_, w)| w).sum();
+    |                     ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_total_weight`
+
+warning: unused variable: `i`
+   --> src/intuition_engine.rs:523:14
+    |
+523 |         for (i, &value) in state.iter().enumerate() {
+    |              ^
+    |
+help: if this is intentional, prefix it with an underscore
+    |
+523 |         for (_i, &value) in state.iter().enumerate() {
+    |              +
+help: you might have meant to pattern match on the similarly named constant `MAX_CORRECTIONS_PER_SIGNAL`
+    |
+523 -         for (i, &value) in state.iter().enumerate() {
+523 +         for (feedback::MAX_CORRECTIONS_PER_SIGNAL, &value) in state.iter().enumerate() {
+    |
+
+warning: unused variable: `executor_id`
+   --> src/action_controller.rs:562:51
+    |
+562 |     fn log_action_started(&self, intent: &Intent, executor_id: &str) {
+    |                                                   ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_executor_id`
+
+warning: unused variable: `executor_id`
+   --> src/action_controller.rs:572:52
+    |
+572 |     fn log_action_finished(&self, intent: &Intent, executor_id: &str, result: &ActionResult) {
+    |                                                    ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_executor_id`
+
+warning: unused variable: `i`
+   --> src/bootstrap.rs:527:18
+    |
+527 |             for (i, &(neighbor_id, distance)) in neighbors.iter().enumerate() {
+    |                  ^
+    |
+help: if this is intentional, prefix it with an underscore
+    |
+527 |             for (_i, &(neighbor_id, distance)) in neighbors.iter().enumerate() {
+    |                  +
+help: you might have meant to pattern match on the similarly named constant `MAX_CORRECTIONS_PER_SIGNAL`
+    |
+527 -             for (i, &(neighbor_id, distance)) in neighbors.iter().enumerate() {
+527 +             for (feedback::MAX_CORRECTIONS_PER_SIGNAL, &(neighbor_id, distance)) in neighbors.iter().enumerate() {
+    |
+
+warning: method `neighbors` is never used
+  --> src/grid.rs:70:8
+   |
+61 | impl BucketKey {
+   | -------------- method in this implementation
+...
+70 |     fn neighbors(&self) -> Vec<BucketKey> {
+   |        ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `config` is never read
+   --> src/grid.rs:148:5
+    |
+146 | pub struct Grid {
+    |            ---- field in this struct
+147 |     /// Configuration
+148 |     config: GridConfig,
+    |     ^^^^^^
+
+warning: field `config` is never read
+   --> src/graph.rs:379:5
+    |
+378 | pub struct Graph {
+    |            ----- field in this struct
+379 |     config: GraphConfig,
+    |     ^^^^^^
+
+warning: field `module_id` is never read
+   --> src/guardian.rs:119:5
+    |
+118 | pub struct Subscription {
+    |            ------------ field in this struct
+119 |     module_id: ModuleId,
+    |     ^^^^^^^^^
+    |
+    = note: `Subscription` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `cdna` is never read
+   --> src/evolution_manager.rs:128:5
+    |
+125 | pub struct EvolutionManager {
+    |            ---------------- field in this struct
+...
+128 |     cdna: Arc<CDNA>,
+    |     ^^^^
+
+warning: field `guardian` is never read
+   --> src/hybrid_learning.rs:143:5
+    |
+138 | pub struct ProposalRouter {
+    |            -------------- field in this struct
+...
+143 |     guardian: Arc<Guardian>,
+    |     ^^^^^^^^
+
+warning: function `edit_distance` is never used
+   --> src/gateway/normalizer.rs:182:4
+    |
+182 | fn edit_distance(s1: &str, s2: &str) -> usize {
+    |    ^^^^^^^^^^^^^
+
+warning: field `config` is never read
+  --> src/adapters/console.rs:33:5
+   |
+32 | pub struct ConsoleOutputAdapter {
+   |            -------------------- field in this struct
+33 |     config: ConsoleConfig,
+   |     ^^^^^^
+
+warning: field `intuition_engine` is never read
+   --> src/feedback/mod.rs:143:5
+    |
+135 | pub struct FeedbackProcessor {
+    |            ----------------- field in this struct
+...
+143 |     intuition_engine: Arc<RwLock<IntuitionEngine>>,
+    |     ^^^^^^^^^^^^^^^^
+
+warning: field `path` is never read
+   --> src/wal.rs:244:5
+    |
+242 | pub struct WalReader {
+    |            --------- field in this struct
+243 |     file: File,
+244 |     path: PathBuf,
+    |     ^^^^
+
+warning: comparison is useless due to type limits
+   --> src/connection_v3.rs:565:28
+    |
+565 |                         if conf_u8 > 255 {
+    |                            ^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_comparisons)]` on by default
+
+warning: `neurograph-core` (lib) generated 30 warnings (run `cargo fix --lib -p neurograph-core` to apply 12 suggestions)
+   Compiling neurograph-core v0.45.0 (/home/chrnv/neurograph-os-mvp/src/core_rust)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.07s
+     Running tests/stress_test_9_9m_tokens.rs (target/debug/deps/stress_test_9_9m_tokens-082afbe1422cf024)
+
+running 6 tests
+
+╔══════════════════════════════════════════════════════════════╗
+║          9.9M Tokens Creation Stress Test                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+╔══════════════════════════════════════════════════════════════╗
+║          Combined Stress Test (9.9M)                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+Phase 1: Creating 9900000 tokens...
+
+╔══════════════════════════════════════════════════════════════╗
+║          9.9M Tokens Memory Pattern Test                    ║
+╚══════════════════════════════════════════════════════════════╝
+
+Phase 1: Vec without pre-allocated capacity...
+
+╔══════════════════════════════════════════════════════════════╗
+║          Memory Footprint Analysis (9.9M)                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+Token size: 64 bytes
+
+=== Memory estimates ===
+     1000000 tokens: 61.04 MB (0.060 GB)
+     5000000 tokens: 305.18 MB (0.298 GB)
+     9900000 tokens: 604.25 MB (0.590 GB)
+    10000000 tokens: 610.35 MB (0.596 GB)
+
+╔══════════════════════════════════════════════════════════════╗
+║          Parallel Token Operations (9.9M total)             ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+=== Allocating 9.9M tokens ===
+
+╔══════════════════════════════════════════════════════════════╗
+║          Token Access Pattern Test (9.9M tokens)            ║
+╚══════════════════════════════════════════════════════════════╝
+
+Creating 9900000 tokens...
+✓ Created 9900000 tokens across 8 threads
+  Duration: 745.390826ms
+  Rate: 13281623.08 tokens/sec
+  Throughput: 13.28 M tokens/sec
+
+test test_parallel_token_operations_9_9m ... ok
+✓ Phase 1: 4.328500352s (9900000 tokens)
+
+Phase 2: Vec with pre-allocated capacity...
+✓ Allocated 9900000 tokens in 4.810837306s
+  Memory used: 604.25 MB
+  Memory used: 0.590 GB
+
+test test_memory_footprint_9_9m ... ok
+✓ Phase 1: 4.95560804s
+
+Phase 2: Accessing all tokens...
+✓ Created 9900000 tokens
+  Duration: 4.959275035s
+  Rate: 1996259.52 tokens/sec
+  Avg: 500.94 ns/token
+  Token size: 64 bytes
+  Total memory: 604.25 MB
+  Total memory: 0.59 GB
+
+✓ Created 9900000 tokens in 4.962084482s
+
+Sequential access (9900000 reads)...
+test test_9_9m_tokens_creation ... ok
+✓ Sequential: 429.097506ms (sum: 49004995050000)
+
+Random access (990k reads)...
+✓ Phase 2: 448.185511ms (checksum: 49004995050000)
+
+Phase 3: Cloning first 1M tokens...
+✓ Random: 45.969089ms (sum: 4900495050000)
+
+=== Summary ===
+Creation: 4.962084482s
+Sequential: 429.097506ms
+Random: 45.969089ms
+
+✓ Phase 3: 48.536082ms (1000000 tokens cloned)
+
+=== Summary ===
+Phase 1 (Create): 4.95560804s
+Phase 2 (Access): 448.185511ms
+Phase 3 (Clone):  48.536082ms
+Total time:       5.452389625s
+Peak memory:      665.28 MB (0.650 GB)
+
+test test_token_access_patterns_9_9m ... ok
+test test_combined_stress_9_9m ... ok
+✓ Phase 2: 2.056658843s (9900000 tokens)
+
+=== Performance Comparison ===
+Without capacity: 4.328500352s
+With capacity:    2.056658843s (2.10x faster)
+
+test test_9_9m_tokens_memory_patterns ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.60s
+
