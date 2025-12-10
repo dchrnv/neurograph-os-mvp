@@ -286,14 +286,14 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_catch_panic_async_success() {
         let result = catch_panic_async("async_test", || async { 42 }).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_catch_panic_async_error() {
         let result = catch_panic_async("async_test", || async {
             panic!("async panic");

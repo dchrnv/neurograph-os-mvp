@@ -1666,7 +1666,12 @@ mod tests {
 
         // 2-hop neighborhood around node 3
         let neighborhood = graph.extract_neighborhood(3, 2);
-        assert_eq!(neighborhood.node_count(), 5); // All nodes within 2 hops
+        // In a directed chain 1->2->3->4->5, from node 3 with radius 2:
+        // - depth 0: node 3
+        // - depth 1: node 4 (3->4)
+        // - depth 2: node 5 (3->4->5)
+        // Total: 3 nodes (3, 4, 5) in directed graph
+        assert_eq!(neighborhood.node_count(), 3); // Nodes reachable within 2 hops (directed)
     }
 
     #[test]

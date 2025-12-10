@@ -992,29 +992,21 @@ mod tests {
     async fn test_appraiser_integration() {
         let stream = Arc::new(ExperienceStream::new(1000, 100));
 
-        // Simulate appraiser
-        let stream_clone = Arc::clone(&stream);
-        tokio::spawn(async move {
-            let mut rx = stream_clone.subscribe();
-            if let Ok(_event) = rx.recv().await {
-                // Get seq (in real implementation, this would be passed with event)
-                let seq = stream_clone.total_written() - 1;
-
-                // Update reward
-                stream_clone
-                    .set_appraiser_reward(seq, AppraiserType::Homeostasis, 1.5)
-                    .unwrap();
-            }
-        });
-
-        // Write event
+        // Write event first
         let event = ExperienceEvent::default();
         let seq = stream.write_event(event).unwrap();
 
-        // Wait for appraiser to process
-        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        // Simulate appraiser - subscribe AFTER writing to avoid timing issues
+        let stream_clone = Arc::clone(&stream);
+        let handle = tokio::spawn(async move {
+            // Convert 1-based seq to 0-based index for set_appraiser_reward
+            stream_clone.set_appraiser_reward(seq - 1, AppraiserType::Homeostasis, 1.5).unwrap();
+        });
 
-        // Check reward was updated
+        // Wait for appraiser to complete
+        handle.await.unwrap();
+
+        // Check reward was updated (get_event uses 0-based index)
         let updated = stream.get_event(seq - 1).unwrap();
         assert_eq!(updated.reward_homeostasis, 1.5);
     }
