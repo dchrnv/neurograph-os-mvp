@@ -1,6 +1,7 @@
 use crate::bootstrap::BootstrapLibrary;
 use crate::gateway::config::{GatewayConfig, UnknownWordStrategy};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use parking_lot::RwLock;
 
 /// Result of text normalization
 #[derive(Debug, Clone)]
@@ -47,10 +48,7 @@ impl Normalizer {
 
         let word_count = words.len();
 
-        let bootstrap = self
-            .bootstrap
-            .read()
-            .map_err(|_| NormalizationError::BootstrapLocked)?;
+        let bootstrap = self.bootstrap.read();
 
         let mut states: Vec<[f32; 8]> = Vec::new();
         let mut matched_tokens: Vec<(String, u32, f32)> = Vec::new();

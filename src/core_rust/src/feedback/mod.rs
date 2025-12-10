@@ -12,9 +12,10 @@ use crate::{
     intuition_engine::IntuitionEngine,
 };
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use thiserror::Error;
+use parking_lot::RwLock;
 
 /// Maximum age for feedback (1 hour)
 const MAX_FEEDBACK_AGE: Duration = Duration::from_secs(3600);
@@ -235,8 +236,7 @@ impl FeedbackProcessor {
             }
             DetailedFeedbackType::Correction { .. } => {
                 // Check correction limit
-                let tracker = self.correction_tracker.read()
-                    .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+                let tracker = self.correction_tracker.read();
 
                 let count = tracker.get_count(signal.reference_id);
                 if count >= MAX_CORRECTIONS_PER_SIGNAL {
@@ -255,8 +255,7 @@ impl FeedbackProcessor {
     /// Apply positive feedback
     async fn apply_positive(&self, signal_id: u64, strength: f32) -> Result<String, FeedbackError> {
         // Update experience stream reward
-        let mut stream = self.experience_stream.write()
-            .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+        let _stream = self.experience_stream.write();
 
         // Find experience by signal_id and update reward
         // For now, just return success message
@@ -268,8 +267,7 @@ impl FeedbackProcessor {
     /// Apply negative feedback
     async fn apply_negative(&self, signal_id: u64, strength: f32) -> Result<String, FeedbackError> {
         // Update experience stream with negative reward
-        let mut stream = self.experience_stream.write()
-            .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+        let _stream = self.experience_stream.write();
 
         // Find experience by signal_id and update reward
         // For now, just return success message
@@ -281,15 +279,13 @@ impl FeedbackProcessor {
     /// Apply correction: "X is actually Y"
     async fn apply_correction(&self, signal_id: u64, correct_value: &str) -> Result<String, FeedbackError> {
         // Increment correction tracker
-        let mut tracker = self.correction_tracker.write()
-            .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+        let mut tracker = self.correction_tracker.write();
 
         tracker.increment(signal_id);
         drop(tracker);
 
         // Parse correction and create/update token
-        let mut bootstrap = self.bootstrap.write()
-            .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+        let _bootstrap = self.bootstrap.write();
 
         // For now, just normalize the correct value
         // TODO: Create actual connection between original and corrected
@@ -300,8 +296,7 @@ impl FeedbackProcessor {
     /// Apply association: "X relates to Y"
     async fn apply_association(&self, signal_id: u64, related_word: &str, strength: f32) -> Result<String, FeedbackError> {
         // Create association in bootstrap library
-        let mut bootstrap = self.bootstrap.write()
-            .map_err(|e| FeedbackError::SystemError(format!("Lock error: {}", e)))?;
+        let _bootstrap = self.bootstrap.write();
 
         // For now, just normalize the related word
         // TODO: Create actual connection with specified strength

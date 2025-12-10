@@ -14,9 +14,10 @@ use signals::{
 };
 use stats::GatewayStats;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
+use parking_lot::RwLock;
 
 /// Gateway errors
 #[derive(Debug)]
@@ -117,7 +118,8 @@ impl Gateway {
         self.pending_requests.insert(signal_id, result_tx);
 
         // Update stats
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.total_signals += 1;
         }
 
@@ -142,7 +144,8 @@ impl Gateway {
                 token_id,
                 operation: _,
             } => {
-                if let Ok(mut stats) = self.stats.write() {
+                {
+                    let mut stats = self.stats.write();
                     stats.direct_token_signals += 1;
                 }
                 return Err(GatewayError::NotImplemented(
@@ -151,7 +154,8 @@ impl Gateway {
             }
 
             InputSignal::Command { command, args: _ } => {
-                if let Ok(mut stats) = self.stats.write() {
+                {
+                    let mut stats = self.stats.write();
                     stats.command_signals += 1;
                 }
                 self.process_command(signal_id, received_at, command)?
@@ -162,7 +166,8 @@ impl Gateway {
                 feedback_type: _,
                 content: _,
             } => {
-                if let Ok(mut stats) = self.stats.write() {
+                {
+                    let mut stats = self.stats.write();
                     stats.feedback_signals += 1;
                 }
                 return Err(GatewayError::NotImplemented(
@@ -180,7 +185,8 @@ impl Gateway {
 
         // Update processing time stats
         let processing_time_us = start.elapsed().as_micros() as u64;
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.total_processing_time_us += processing_time_us;
         }
 
@@ -199,7 +205,8 @@ impl Gateway {
         source: SignalSource,
     ) -> Result<ProcessedSignal, GatewayError> {
         // Update stats
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.text_signals += 1;
         }
 
@@ -231,7 +238,8 @@ impl Gateway {
             })?;
 
         // Update unknown words stats
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.unknown_words += norm_result.unknown_words.len() as u64;
         }
 
@@ -268,7 +276,8 @@ impl Gateway {
         _tick_number: u64,
         _timestamp: u64,
     ) -> ProcessedSignal {
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.tick_signals += 1;
         }
 
@@ -293,7 +302,8 @@ impl Gateway {
         state: [f32; 8],
         label: Option<String>,
     ) -> ProcessedSignal {
-        if let Ok(mut stats) = self.stats.write() {
+        {
+            let mut stats = self.stats.write();
             stats.direct_state_signals += 1;
         }
 
@@ -399,7 +409,8 @@ impl Gateway {
         for signal_id in to_remove {
             self.pending_requests.remove(&signal_id);
 
-            if let Ok(mut stats) = self.stats.write() {
+            {
+                let mut stats = self.stats.write();
                 stats.timeouts += 1;
             }
         }
@@ -407,10 +418,7 @@ impl Gateway {
 
     /// Get current statistics
     pub fn stats(&self) -> GatewayStats {
-        self.stats
-            .read()
-            .map(|s| s.clone())
-            .unwrap_or_default()
+        self.stats.read().clone()
     }
 
     /// Get pending requests count
