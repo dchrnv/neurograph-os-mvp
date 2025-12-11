@@ -8,7 +8,7 @@ mod core_bridge;
 mod utils;
 
 use iced::{Element, Task, Size, window};
-use screens::{Screen, chat::ChatMode};
+use screens::{Screen, chat::{ChatMode, ChatMessage}};
 use theme::Theme;
 
 fn main() -> iced::Result {
@@ -33,9 +33,7 @@ struct NeuroGraphApp {
 enum Message {
     ThemeChanged(Theme),
     ScreenChanged(Screen),
-    ChatModeToggled,
-    ChatInputChanged(String),
-    ChatSend,
+    Chat(ChatMessage),
 }
 
 impl NeuroGraphApp {
@@ -60,19 +58,30 @@ impl NeuroGraphApp {
             Message::ScreenChanged(screen) => {
                 self.current_screen = screen;
             }
-            Message::ChatModeToggled => {
-                self.chat_mode = match self.chat_mode {
-                    ChatMode::Chat => ChatMode::Terminal,
-                    ChatMode::Terminal => ChatMode::Chat,
-                };
-            }
-            Message::ChatInputChanged(input) => {
-                self.chat_input = input;
-            }
-            Message::ChatSend => {
-                // TODO: Send message/command to core
-                println!("Send: {}", self.chat_input);
-                self.chat_input.clear();
+            Message::Chat(chat_msg) => {
+                match chat_msg {
+                    ChatMessage::InputChanged(input) => {
+                        self.chat_input = input;
+                    }
+                    ChatMessage::Send => {
+                        // TODO: Send message/command to core via FFI bridge
+                        println!("[{}] Sending: {}",
+                            match self.chat_mode {
+                                ChatMode::Chat => "CHAT",
+                                ChatMode::Terminal => "CMD",
+                            },
+                            self.chat_input
+                        );
+                        self.chat_input.clear();
+                    }
+                    ChatMessage::ToggleMode => {
+                        self.chat_mode = match self.chat_mode {
+                            ChatMode::Chat => ChatMode::Terminal,
+                            ChatMode::Terminal => ChatMode::Chat,
+                        };
+                        println!("Mode switched to: {:?}", self.chat_mode);
+                    }
+                }
             }
         }
         Task::none()
@@ -81,12 +90,12 @@ impl NeuroGraphApp {
     fn view(&self) -> Element<Message> {
         match self.current_screen {
             Screen::Chat => {
-                let chat_view: Element<()> = screens::chat::view(&self.theme, self.chat_mode, &self.chat_input);
-                chat_view.map(|_| Message::ChatSend)
+                screens::chat::view(&self.theme, self.chat_mode, &self.chat_input)
+                    .map(Message::Chat)
             }
             _ => {
                 let screen_view: Element<()> = self.current_screen.view(&self.theme);
-                screen_view.map(|_| Message::ChatSend)
+                screen_view.map(|_| Message::ScreenChanged(self.current_screen))
             }
         }
     }

@@ -11,7 +11,14 @@ pub enum ChatMode {
     Terminal,
 }
 
-pub fn view<Message: 'static + Clone>(_theme: &Theme, mode: ChatMode, input: &str) -> Element<'static, Message> {
+#[derive(Debug, Clone)]
+pub enum ChatMessage {
+    InputChanged(String),
+    Send,
+    ToggleMode,
+}
+
+pub fn view<'a>(_theme: &Theme, mode: ChatMode, input: &'a str) -> Element<'a, ChatMessage> {
     let header = row![
         text(match mode {
             ChatMode::Chat => "Chat Mode",
@@ -20,7 +27,8 @@ pub fn view<Message: 'static + Clone>(_theme: &Theme, mode: ChatMode, input: &st
         .size(20),
         Space::with_width(Length::Fill),
         button(text("Switch Mode (Ctrl+T)").size(12))
-            .padding([8, 16]),
+            .padding([8, 16])
+            .on_press(ChatMessage::ToggleMode),
     ]
     .padding(16)
     .align_y(Alignment::Center);
@@ -46,6 +54,8 @@ pub fn view<Message: 'static + Clone>(_theme: &Theme, mode: ChatMode, input: &st
         },
         input
     )
+    .on_input(ChatMessage::InputChanged)
+    .on_submit(ChatMessage::Send)
     .size(14)
     .padding(12);
 
@@ -56,6 +66,7 @@ pub fn view<Message: 'static + Clone>(_theme: &Theme, mode: ChatMode, input: &st
         })
         .size(14)
     )
+    .on_press(ChatMessage::Send)
     .padding([12, 24]);
 
     let input_row = row![

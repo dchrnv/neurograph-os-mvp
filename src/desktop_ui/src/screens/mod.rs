@@ -22,7 +22,8 @@ impl Screen {
         match self {
             Screen::Auth => auth::view(theme),
             Screen::Dashboard => dashboard::view(theme),
-            Screen::Chat => chat::view(theme, chat::ChatMode::Chat, ""),
+            // Chat handled separately in main.rs due to different Message type
+            Screen::Chat => placeholder_view(),
             _ => placeholder_view(),
         }
     }
