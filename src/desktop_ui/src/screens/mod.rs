@@ -1,6 +1,7 @@
 // Screen management
 pub mod auth;
 pub mod dashboard;
+pub mod chat;
 
 use iced::Element;
 use crate::theme::Theme;
@@ -21,6 +22,7 @@ impl Screen {
         match self {
             Screen::Auth => auth::view(theme),
             Screen::Dashboard => dashboard::view(theme),
+            Screen::Chat => chat::view(theme, chat::ChatMode::Chat, ""),
             _ => placeholder_view(),
         }
     }

@@ -8,7 +8,7 @@ mod core_bridge;
 mod utils;
 
 use iced::{Element, Task, Size, window};
-use screens::Screen;
+use screens::{Screen, chat::ChatMode};
 use theme::Theme;
 
 fn main() -> iced::Result {
@@ -25,12 +25,17 @@ fn main() -> iced::Result {
 struct NeuroGraphApp {
     theme: Theme,
     current_screen: Screen,
+    chat_mode: ChatMode,
+    chat_input: String,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     ThemeChanged(Theme),
     ScreenChanged(Screen),
+    ChatModeToggled,
+    ChatInputChanged(String),
+    ChatSend,
 }
 
 impl NeuroGraphApp {
@@ -39,7 +44,9 @@ impl NeuroGraphApp {
             Self {
                 theme: Theme::default(),
                 // TODO: Start with Auth, switch to Dashboard after PIN
-                current_screen: Screen::Dashboard, // Temporary: testing Dashboard
+                current_screen: Screen::Chat, // Temporary: testing Chat
+                chat_mode: ChatMode::Chat,
+                chat_input: String::new(),
             },
             Task::none(),
         )
@@ -53,12 +60,35 @@ impl NeuroGraphApp {
             Message::ScreenChanged(screen) => {
                 self.current_screen = screen;
             }
+            Message::ChatModeToggled => {
+                self.chat_mode = match self.chat_mode {
+                    ChatMode::Chat => ChatMode::Terminal,
+                    ChatMode::Terminal => ChatMode::Chat,
+                };
+            }
+            Message::ChatInputChanged(input) => {
+                self.chat_input = input;
+            }
+            Message::ChatSend => {
+                // TODO: Send message/command to core
+                println!("Send: {}", self.chat_input);
+                self.chat_input.clear();
+            }
         }
         Task::none()
     }
 
     fn view(&self) -> Element<Message> {
-        self.current_screen.view(&self.theme)
+        match self.current_screen {
+            Screen::Chat => {
+                let chat_view: Element<()> = screens::chat::view(&self.theme, self.chat_mode, &self.chat_input);
+                chat_view.map(|_| Message::ChatSend)
+            }
+            _ => {
+                let screen_view: Element<()> = self.current_screen.view(&self.theme);
+                screen_view.map(|_| Message::ChatSend)
+            }
+        }
     }
 
     fn theme(&self) -> iced::Theme {
