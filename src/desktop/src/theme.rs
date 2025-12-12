@@ -51,10 +51,6 @@ impl TerminalColors {
     pub const BORDER_SUBTLE: Color = Color::from_rgb(0.129, 0.149, 0.176);  // #21262d
 }
 
-// Alias для обратной совместимости (удалить позже)
-#[allow(dead_code)]
-pub type CyberColors = TerminalColors;
-
 // Размеры текста
 pub mod text_size {
     pub const XS: u16 = 11;

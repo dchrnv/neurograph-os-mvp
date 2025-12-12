@@ -29,7 +29,6 @@ pub enum Workspace {
     Logs,       // Новый - просмотр логов (V3)
     Settings,
     Integrations, // Новый - внешние интеграции (V3)
-    Status,     // Deprecated - будет заменен на Dashboard
     Admin,
 }
 
@@ -44,7 +43,6 @@ impl Workspace {
             Workspace::Logs => "☰",           // Логи
             Workspace::Settings => "⚙",       // Настройки
             Workspace::Integrations => "⊕",   // Интеграции
-            Workspace::Status => "◉",         // Статус (deprecated)
             Workspace::Admin => "!",          // Админ
         }
     }
@@ -58,7 +56,6 @@ impl Workspace {
             Workspace::Logs => "Logs",
             Workspace::Settings => "Settings",
             Workspace::Integrations => "Integrations",
-            Workspace::Status => "Status",
             Workspace::Admin => "Admin",
         }
     }
@@ -118,7 +115,6 @@ impl WorkspaceView for Workspace {
             Workspace::Logs => logs_view(),
             Workspace::Settings => settings_view(),
             Workspace::Integrations => integrations_view(),
-            Workspace::Status => status_view(core), // Deprecated
             Workspace::Admin => admin_view(),
         };
 
@@ -586,22 +582,6 @@ fn settings_view<'a>() -> Element<'a, Message> {
     .into()
 }
 
-fn status_view<'a>(core: &CoreBridge) -> Element<'a, Message> {
-    let status = core.process_message("status");
-
-    column![
-        text("System Status").size(24),
-        text(""),
-        text(status)
-            .font(iced::Font::MONOSPACE)
-            .size(14),
-        text(""),
-        text("Phase 5: Real-time monitoring").size(12),
-    ]
-    .spacing(10)
-    .into()
-}
-
 fn modules_view<'a>() -> Element<'a, Message> {
     column![
         text("Module Manager")
@@ -684,18 +664,20 @@ fn admin_view<'a>() -> Element<'a, Message> {
 }
 
 // ============================================================================
-// New V3 Views (заглушки - будут реализованы позже)
+// Terminal Modern UI Views (v0.46.0)
 // ============================================================================
 
 fn dashboard_view<'a>(core: &CoreBridge) -> Element<'a, Message> {
     // Get current metrics from core
     let stats = core.get_stats();
     let token_count = stats.tokens.len();
-    let active_connections = 12; // Mock for now
-    let memory_mb = 256; // Mock
-    let throughput = 1250; // req/s - mock
-    let latency_ms = 15; // Mock
-    let uptime = "2h 34m"; // Mock
+
+    // TODO: Replace with real metrics from CoreBridge
+    let active_connections = 12;
+    let memory_mb = 256;
+    let throughput = 1250; // req/s
+    let latency_ms = 15;
+    let uptime = "2h 34m";
 
     // Metric Cards Grid (3 columns)
     let metrics_row_1 = row![
@@ -718,10 +700,10 @@ fn dashboard_view<'a>(core: &CoreBridge) -> Element<'a, Message> {
         .style(iced::theme::Text::Color(TerminalColors::TEXT_MUTED));
 
     let modules_grid = row![
-        module_status_card("Core Engine", true, false),
-        module_status_card("API Gateway", true, false),
-        module_status_card("WebSocket", true, false),
-        module_status_card("Database", true, false),
+        module_status_card("Core Engine", true),
+        module_status_card("API Gateway", true),
+        module_status_card("WebSocket", true),
+        module_status_card("Database", true),
     ]
     .spacing(spacing::BASE as f32);
 
@@ -792,7 +774,7 @@ fn metric_card<'a>(label: &str, value: &str, icon: &str, accent_color: iced::Col
     .into()
 }
 
-fn module_status_card<'a>(name: &str, is_running: bool, _is_starting: bool) -> Element<'a, Message> {
+fn module_status_card<'a>(name: &str, is_running: bool) -> Element<'a, Message> {
     let (status_color, status_text) = if is_running {
         (TerminalColors::STATUS_OK, "Running")
     } else {

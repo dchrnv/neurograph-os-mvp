@@ -62,7 +62,6 @@ fn workspace_title(workspace: Workspace) -> &'static str {
         Workspace::Welcome => "Welcome",
         Workspace::Dashboard => "Dashboard",
         Workspace::Chat => "Chat",
-        Workspace::Status => "Status",
         Workspace::Modules => "Modules",
         Workspace::Settings => "Settings",
         Workspace::Admin => "Admin",
@@ -186,21 +185,6 @@ pub fn status_bar(data: &StatusBarData) -> Element<Message> {
         .width(Length::Fill)
         .style(iced::theme::Container::Custom(Box::new(StatusBarStyle)))
         .into()
-}
-
-fn status_item_direct<'a>(label: &'static str, value: &'a str) -> Element<'a, Message> {
-    row![
-        text(label)
-            .size(text_size::XS)
-            .style(iced::theme::Text::Color(TerminalColors::TEXT_SECONDARY)),
-        text(value)
-            .size(text_size::XS)
-            .font(iced::Font::MONOSPACE)
-            .style(iced::theme::Text::Color(TerminalColors::TEXT_PRIMARY)),
-    ]
-    .spacing(spacing::XS as f32)
-    .align_items(Alignment::Center)
-    .into()
 }
 
 fn separator<'a>() -> Element<'a, Message> {
