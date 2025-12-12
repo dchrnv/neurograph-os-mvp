@@ -19,7 +19,7 @@
 use iced::{widget::{container, text, column, row, progress_bar}, Element, Color, Length};
 
 use crate::app::Message;
-use crate::theme::{CyberColors, text_size, spacing};
+use crate::theme::{TerminalColors, text_size, spacing};
 
 // Метрики системы
 #[derive(Debug, Clone)]
@@ -48,10 +48,10 @@ impl Default for SystemMetrics {
 // ============================================================================
 fn cpu_color(usage: f32) -> Color {
     match usage {
-        x if x < 0.3 => CyberColors::ACCENT_PRIMARY,
-        x if x < 0.6 => CyberColors::ACCENT_BLUE,
-        x if x < 0.85 => CyberColors::ACCENT_PURPLE,
-        _ => CyberColors::STATUS_CRITICAL,
+        x if x < 0.3 => TerminalColors::STATUS_OK,
+        x if x < 0.6 => TerminalColors::ACCENT_PRIMARY,
+        x if x < 0.85 => TerminalColors::STATUS_WARNING,
+        _ => TerminalColors::STATUS_CRITICAL,
     }
 }
 
@@ -60,7 +60,7 @@ fn metric_view<'a>(label: &str, value: f32, color: Color, unit: &str) -> Element
         column![
             text(label)
                 .size(text_size::SM)
-                .style(iced::theme::Text::Color(CyberColors::TEXT_SECONDARY)),
+                .style(iced::theme::Text::Color(TerminalColors::TEXT_SECONDARY)),
             progress_bar(0.0..=1.0, value)
                 .height(Length::Fixed(8.0))
                 .width(Length::Fixed(200.0)),
@@ -83,9 +83,9 @@ impl iced::widget::container::StyleSheet for MetricCardStyle {
 
     fn appearance(&self, _style: &Self::Style) -> iced::widget::container::Appearance {
         iced::widget::container::Appearance {
-            background: Some(iced::Background::Color(CyberColors::BG_SECONDARY)),
+            background: Some(iced::Background::Color(TerminalColors::BG_SECONDARY)),
             border: iced::Border {
-                color: CyberColors::BG_HOVER,
+                color: TerminalColors::BORDER_DEFAULT,
                 width: 1.0,
                 radius: 8.0.into(),
             },
@@ -96,11 +96,11 @@ impl iced::widget::container::StyleSheet for MetricCardStyle {
 
 fn temp_color(temp: f32) -> Color {
     match temp {
-        t if t < 40.0 => Color::from_rgb(0.0, 1.0, 1.0),
-        t if t < 65.0 => CyberColors::ACCENT_BLUE,
-        t if t < 80.0 => CyberColors::ACCENT_PURPLE,
-        t if t < 90.0 => CyberColors::STATUS_WARNING,
-        _ => CyberColors::STATUS_CRITICAL,
+        t if t < 40.0 => TerminalColors::STATUS_OK,
+        t if t < 65.0 => TerminalColors::STATUS_INFO,
+        t if t < 80.0 => TerminalColors::ACCENT_PRIMARY,
+        t if t < 90.0 => TerminalColors::STATUS_WARNING,
+        _ => TerminalColors::STATUS_CRITICAL,
     }
 }
 
@@ -127,20 +127,20 @@ impl MetricsDashboard {
             column![
                 text("System Metrics")
                     .size(text_size::XXL)
-                    .style(iced::theme::Text::Color(CyberColors::TEXT_PRIMARY)),
+                    .style(iced::theme::Text::Color(TerminalColors::TEXT_PRIMARY)),
                 row![
                     metric_view("CPU Load", self.metrics.cpu_usage, cpu_color(self.metrics.cpu_usage), "%"),
-                    metric_view("Memory", self.metrics.memory_usage, CyberColors::ACCENT_BLUE, "%"),
-                    metric_view("Disk I/O", self.metrics.disk_io, CyberColors::ACCENT_PURPLE, "%"),
+                    metric_view("Memory", self.metrics.memory_usage, TerminalColors::ACCENT_PRIMARY, "%"),
+                    metric_view("Disk I/O", self.metrics.disk_io, TerminalColors::STATUS_INFO, "%"),
                 ]
                 .spacing(spacing::LG as f32),
                 row![
-                    metric_view("Network", self.metrics.network, CyberColors::ACCENT_PRIMARY, "%"),
+                    metric_view("Network", self.metrics.network, TerminalColors::ACCENT_PRIMARY, "%"),
                     container(
                         column![
                             text("Temperature")
                                 .size(text_size::SM)
-                                .style(iced::theme::Text::Color(CyberColors::TEXT_SECONDARY)),
+                                .style(iced::theme::Text::Color(TerminalColors::TEXT_SECONDARY)),
                             text(format!("{}°C", self.metrics.temperature as u32))
                                 .size(text_size::DISPLAY)
                                 .style(iced::theme::Text::Color(temp_color(self.metrics.temperature))),

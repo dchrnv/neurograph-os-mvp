@@ -14,40 +14,46 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Theme configuration - Cyberpunk aesthetic for NeuroGraph OS
+// Theme configuration - Terminal Modern aesthetic for NeuroGraph OS
+// Inspired by: Linear, Raycast, GitHub Dark, Warp Terminal
 use iced::Color;
 
 pub use iced::Theme;
 
-// Color palette from UI_Control_Panel_V2.md
-pub struct CyberColors;
+// Color palette from DESKTOP_UI_SPEC_V3.md
+pub struct TerminalColors;
 
-impl CyberColors {
-    // Фоны
-    pub const BG_PRIMARY: Color = Color::from_rgb(0.04, 0.04, 0.04);     // #0a0a0a
-    pub const BG_SECONDARY: Color = Color::from_rgb(0.08, 0.08, 0.08);   // #141414
-    pub const BG_TERTIARY: Color = Color::from_rgb(0.10, 0.10, 0.10);    // #1a1a1a
-    pub const BG_HOVER: Color = Color::from_rgb(0.15, 0.15, 0.15);       // #252525
+impl TerminalColors {
+    // Фоны (GitHub Dark inspired)
+    pub const BG_PRIMARY: Color = Color::from_rgb(0.051, 0.067, 0.090);     // #0d1117
+    pub const BG_SECONDARY: Color = Color::from_rgb(0.086, 0.106, 0.133);   // #161b22
+    pub const BG_HOVER: Color = Color::from_rgb(0.129, 0.149, 0.176);       // #21262d
+    pub const BG_ACTIVE: Color = Color::from_rgb(0.188, 0.212, 0.239);      // #30363d
 
     // Текст
-    pub const TEXT_PRIMARY: Color = Color::from_rgb(0.88, 0.88, 0.88);   // #e0e0e0
-    pub const TEXT_SECONDARY: Color = Color::from_rgb(0.63, 0.63, 0.63); // #a0a0a0
-    pub const TEXT_MUTED: Color = Color::from_rgb(0.38, 0.38, 0.38);     // #606060
+    pub const TEXT_PRIMARY: Color = Color::from_rgb(0.788, 0.820, 0.851);   // #c9d1d9
+    pub const TEXT_SECONDARY: Color = Color::from_rgb(0.545, 0.580, 0.620); // #8b949e
+    pub const TEXT_MUTED: Color = Color::from_rgb(0.282, 0.310, 0.345);     // #484f58
 
-    // Акценты
-    pub const ACCENT_PRIMARY: Color = Color::from_rgb(0.0, 1.0, 0.8);    // #00ffcc (неоново-бирюзовый)
-    pub const ACCENT_BLUE: Color = Color::from_rgb(0.2, 0.6, 1.0);       // #3399ff
-    pub const ACCENT_PURPLE: Color = Color::from_rgb(0.6, 0.4, 1.0);     // #9966ff
+    // Акцент (мягкий голубой)
+    pub const ACCENT_PRIMARY: Color = Color::from_rgb(0.345, 0.651, 1.0);   // #58a6ff
+    pub const ACCENT_HOVER: Color = Color::from_rgb(0.475, 0.722, 1.0);     // #79b8ff
 
     // Статусы
-    pub const STATUS_OK: Color = Color::from_rgb(0.2, 1.0, 0.4);         // #33ff66
-    pub const STATUS_WARNING: Color = Color::from_rgb(1.0, 0.67, 0.2);   // #ffaa33
-    pub const STATUS_CRITICAL: Color = Color::from_rgb(1.0, 0.2, 0.4);   // #ff3366
+    pub const STATUS_OK: Color = Color::from_rgb(0.247, 0.725, 0.314);      // #3fb950
+    pub const STATUS_WARNING: Color = Color::from_rgb(0.824, 0.600, 0.133); // #d29922
+    pub const STATUS_CRITICAL: Color = Color::from_rgb(0.973, 0.318, 0.286);// #f85149
+    pub const STATUS_INFO: Color = Color::from_rgb(0.345, 0.651, 1.0);      // #58a6ff
 
-    // Режимы
-    pub const MODE_USER: Color = Color::from_rgba(0.0, 1.0, 0.8, 0.2);   // #00ffcc33 (прозрачный)
-    pub const MODE_ROOT: Color = Color::from_rgb(1.0, 0.4, 0.0);         // #ff6600 (оранжевый)
+    // Границы
+    pub const BORDER_DEFAULT: Color = Color::from_rgb(0.188, 0.212, 0.239); // #30363d
+    pub const BORDER_FOCUS: Color = Color::from_rgb(0.345, 0.651, 1.0);     // #58a6ff
+    pub const BORDER_SUBTLE: Color = Color::from_rgb(0.129, 0.149, 0.176);  // #21262d
 }
+
+// Alias для обратной совместимости (удалить позже)
+#[allow(dead_code)]
+pub type CyberColors = TerminalColors;
 
 // Размеры текста
 pub mod text_size {

@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.45.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.46.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,20 +22,20 @@
 
 ---
 
-## 🚀 v0.45.0 - Cross-Service Sampling Propagation
+## 🚀 v0.46.0 - Desktop UI with Terminal Modern Aesthetic
 
-**Статус:** Production-Ready (Complete distributed tracing solution) ✅
+**Статус:** Desktop UI Ready (Complete visual redesign) ✅
 
-**Текущая версия: v0.45.0** - Полная поддержка distributed systems
+**Текущая версия: v0.46.0** - Terminal Modern UI с PIN-аутентификацией
 
-### Ключевые возможности v0.45.0:
+### Ключевые возможности v0.46.0:
 
-- 🔗 **Cross-Service Sampling** - автоматическая propagation sampling decisions
-- 🌐 **W3C TraceContext** - стандарт-совместимая интеграция
-- 📊 **Complete Traces** - 10,000x improvement в trace completeness
-- ⚡ **Head-Based Sampling** - управление через HTTP headers (v0.44.4)
-- 🎯 **Dynamic Rate Adjustment** - автоподстройка под нагрузку (v0.44.4)
-- 🔧 **Adaptive Sampling** - 9% overhead вместо 98% (v0.44.3)
+- 🎨 **Terminal Modern Design** - GitHub Dark inspired профессиональный интерфейс
+- 🔐 **PIN Authentication** - 4-6 digit PIN с визуальными индикаторами (● ● ● ○ ○ ○)
+- 📊 **Dashboard Screen** - 6 metric cards (TOKENS, CONNECTIONS, MEMORY, THROUGHPUT, LATENCY, UPTIME)
+- 💬 **Chat/Terminal Modes** - Двойной интерфейс с табами и terminal prompt styling
+- 📋 **Logs Viewer** - Фильтрация логов по уровням с color-coded badges
+- 🧭 **Sidebar Navigation** - Левая панель с workspace navigation (Dashboard, Chat, Logs, Integrations)
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -48,24 +48,26 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🎯 Distributed Tracing Features (v0.43.0 - v0.45.0):
+### 🎨 Desktop UI Quick Start:
 
-**Evolution of observability:**
+**Запуск Desktop UI:**
 
+```bash
+# Build и запуск
+cd src/desktop
+cargo build --release
+cargo run --release
+
+# Или через корневой Cargo.toml
+cargo build --manifest-path src/desktop/Cargo.toml
+cargo run --manifest-path src/desktop/Cargo.toml
 ```
-v0.44.0: OpenTelemetry + Jaeger (17x overhead) ❌
-    ↓
-v0.44.3: Adaptive Sampling (9% overhead) ✅
-    ↓
-v0.44.4: Head-Based + Dynamic Rate ✅
-    ↓
-v0.45.0: Cross-Service Propagation ✅ ← YOU ARE HERE
-```
 
-**Trace Completeness Improvement:**
-- **Before v0.45.0**: 0.001% complete traces (broken distributed traces)
-- **After v0.45.0**: 10% complete traces (parent sampling inherited)
-- **Improvement**: **10,000x more complete traces** 🚀
+**Login Credentials:**
+- **User PIN**: `1234` (обычный режим)
+- **Root PIN**: `0000` (admin режим)
+
+**См. полную документацию**: [QUICKSTART.md](QUICKSTART.md)
 
 ### Production Deployment Guide:
 
@@ -118,9 +120,9 @@ http://localhost:3001          # Grafana (optional)
 - ✅ High-load scenarios (22% total overhead)
 
 **Roadmap (Next Steps):**
-- 🎯 **v0.46.0** - Desktop UI (таск-менеджер интерфейс)
-- ⏳ **v0.47.0** - Tail-Based Sampling (OpenTelemetry Collector)
-- ⏳ **v0.48.0** - ML-Based Sampling (IntuitionEngine integration)
+- ✅ **v0.46.0** - Desktop UI (Terminal Modern aesthetic) ← YOU ARE HERE
+- 🎯 **v0.47.0** - Real-time metrics updates, working Quick Actions
+- ⏳ **v0.48.0** - WebSocket integration, module control (start/stop/restart)
 
 ---
 
@@ -207,6 +209,14 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.46.0** — Desktop UI with Terminal Modern Aesthetic 🎨
+  - Complete UI redesign with GitHub Dark inspired color palette
+  - PIN-based authentication with visual feedback (● ● ● ○ ○ ○)
+  - Dashboard screen with 6 metric cards and modules status
+  - Chat/Terminal dual-mode interface with tab switching
+  - Logs viewer with filtering by level (Error, Warn, Info, Debug)
+  - Sidebar navigation replacing bottom dock
+  - Comprehensive QUICKSTART.md documentation
 - **v0.45.0** — Cross-Service Sampling Propagation 🔗
   - W3C TraceContext integration for parent trace sampling inheritance
   - Automatic sampling decision propagation across distributed services

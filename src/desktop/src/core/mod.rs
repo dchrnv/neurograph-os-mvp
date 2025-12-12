@@ -184,6 +184,25 @@ impl CoreBridge {
          - clear / очистить        - удалить все токены и связи"
             .to_string()
     }
+
+    /// Get system stats for Dashboard
+    pub fn get_stats(&self) -> SystemStats {
+        let grid = self.grid.lock().unwrap();
+        let graph = self.graph.lock().unwrap();
+
+        SystemStats {
+            tokens: (0..grid.len()).map(|i| format!("token_{}", i)).collect(),
+            node_count: graph.node_count(),
+            edge_count: graph.edge_count(),
+        }
+    }
+}
+
+/// System statistics
+pub struct SystemStats {
+    pub tokens: Vec<String>,
+    pub node_count: usize,
+    pub edge_count: usize,
 }
 
 impl Default for CoreBridge {

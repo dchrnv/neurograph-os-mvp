@@ -30,6 +30,7 @@ pub struct NeuroGraphApp {
     chat_input: String,
     chat_history: Vec<ChatMessage>,
     chat_scroll: scrollable::Id,
+    chat_mode: ChatMode,  // V3: Chat/Terminal tabs
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +43,12 @@ pub struct ChatMessage {
 pub enum MessageRole {
     User,
     System,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ChatMode {
+    Chat,
+    Terminal,
 }
 
 #[derive(Debug, Clone)]
@@ -57,6 +64,7 @@ pub enum Message {
     // Chat
     ChatInput(String),
     SendMessage,
+    SwitchChatMode(ChatMode),  // V3: Toggle between Chat/Terminal tabs
 }
 
 impl Application for NeuroGraphApp {
@@ -74,6 +82,7 @@ impl Application for NeuroGraphApp {
                 chat_input: String::new(),
                 chat_history: Vec::new(),
                 chat_scroll: scrollable::Id::unique(),
+                chat_mode: ChatMode::Chat,  // V3: Default to Chat mode
             },
             Command::none(),
         )
@@ -129,6 +138,9 @@ impl Application for NeuroGraphApp {
                     );
                 }
             }
+            Message::SwitchChatMode(mode) => {
+                self.chat_mode = mode;
+            }
         }
         Command::none()
     }
@@ -143,6 +155,7 @@ impl Application for NeuroGraphApp {
                 &self.chat_input,
                 &self.chat_history,
                 &self.chat_scroll,
+                self.chat_mode,  // V3: Pass chat mode
             )
         }
     }

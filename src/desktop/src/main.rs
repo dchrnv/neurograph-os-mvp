@@ -25,6 +25,7 @@ mod core;   // Прямой доступ к neurograph-core
 mod theme;
 mod workspaces;
 mod metrics;
+mod layout;  // Header & Status Bar components (V3)
 
 fn main() -> iced::Result {
     println!("🚀 Starting NeuroGraph Desktop (Direct Rust Core)...");
