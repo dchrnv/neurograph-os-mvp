@@ -1,23 +1,30 @@
-// NeuroGraph OS - Python Bindings v0.40.0
+// NeuroGraph OS - Python Bindings v0.45.0
 // PyO3-based bindings for NeuroGraph OS core
 
-#![cfg(feature = "python")]
+#![cfg(feature = "python-bindings")]
 
 use pyo3::prelude::*;
 
 mod token;
 mod intuition;
+mod runtime;
 
 use token::PyToken;
 use intuition::{PyIntuitionEngine, PyIntuitionConfig};
+use runtime::PyRuntime;
 
-/// NeuroGraph OS Python Module
+/// NeuroGraph OS Python Module (_core)
+///
+/// This is the low-level FFI module. Users should import `neurograph` instead.
 #[pymodule]
-fn neurograph(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Module metadata
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("__author__", "Chernov Denys")?;
-    m.add("__license__", "AGPL-3.0")?;
+    m.add("__author__", "NeuroGraph Team")?;
+    m.add("__license__", "AGPL-3.0-or-later")?;
+
+    // Runtime (new in v0.45.0)
+    m.add_class::<PyRuntime>()?;
 
     // Core types
     m.add_class::<PyToken>()?;

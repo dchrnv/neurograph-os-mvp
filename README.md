@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.46.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.47.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,20 +22,20 @@
 
 ---
 
-## 🚀 v0.46.0 - Desktop UI with Terminal Modern Aesthetic
+## 🚀 v0.47.0 - Python Library (Phase 1 Complete)
 
-**Статус:** Desktop UI Ready (Complete visual redesign) ✅
+**Статус:** Python Library Ready ✅
 
-**Текущая версия: v0.46.0** - Terminal Modern UI с PIN-аутентификацией
+**Текущая версия: v0.47.0** - Full Python library with semantic search
 
-### Ключевые возможности v0.46.0:
+### Ключевые возможности v0.47.0:
 
-- 🎨 **Terminal Modern Design** - GitHub Dark inspired профессиональный интерфейс
-- 🔐 **PIN Authentication** - 4-6 digit PIN с визуальными индикаторами (● ● ● ○ ○ ○)
-- 📊 **Dashboard Screen** - 6 metric cards (TOKENS, CONNECTIONS, MEMORY, THROUGHPUT, LATENCY, UPTIME)
-- 💬 **Chat/Terminal Modes** - Двойной интерфейс с табами и terminal prompt styling
-- 📋 **Logs Viewer** - Фильтрация логов по уровням с color-coded badges
-- 🧭 **Sidebar Navigation** - Левая панель с workspace navigation (Dashboard, Chat, Logs, Integrations)
+- 🐍 **Python Package** - Complete neurograph library with PyO3 FFI bindings
+- 🔍 **Semantic Search** - Real KNN search in 3D embedding space with Grid
+- 📦 **Bootstrap System** - GloVe/Word2Vec embedding loading with PCA projection
+- ⚡ **High Performance** - Rust core with Python convenience layer
+- 📊 **Query Engine** - Distance-to-similarity scoring with exponential decay
+- 🧪 **Test Suite** - 88% coverage, 26/28 tests passing
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -48,26 +48,41 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🎨 Desktop UI Quick Start:
+### 🐍 Python Library Quick Start:
 
-**Запуск Desktop UI:**
+**Installation:**
 
 ```bash
-# Build и запуск
-cd src/desktop
-cargo build --release
-cargo run --release
+# From source
+cd src/python
+pip install -e ".[dev]"
 
-# Или через корневой Cargo.toml
-cargo build --manifest-path src/desktop/Cargo.toml
-cargo run --manifest-path src/desktop/Cargo.toml
+# Build with maturin
+maturin develop --features python-bindings
 ```
 
-**Login Credentials:**
-- **User PIN**: `1234` (обычный режим)
-- **Root PIN**: `0000` (admin режим)
+**Usage:**
 
-**См. полную документацию**: [QUICKSTART.md](QUICKSTART.md)
+```python
+import neurograph as ng
+
+# Initialize runtime
+runtime = ng.Runtime()
+
+# Load embeddings (GloVe format)
+runtime.bootstrap("glove.6B.50d.txt", limit=50000)
+
+# Semantic query
+result = runtime.query("cat", top_k=5)
+for word, similarity in result.top(5):
+    print(f"{word}: {similarity:.4f}")
+# Output: kitten: 0.9980, dog: 0.9950, puppy: 0.9940, ...
+
+# Provide feedback
+result.feedback("positive")
+```
+
+**См. полную документацию**: [src/python/README.md](src/python/README.md) | [docs/PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md)
 
 ### Production Deployment Guide:
 
@@ -84,10 +99,9 @@ http://localhost:3001          # Grafana (optional)
 ```
 
 **См. также:**
+- [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md) - Python Library (Phase 1)
+- [PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md) - Complete implementation summary
 - [CHANGELOG v0.45.0](docs/changelogs/CHANGELOG_v0.45.0.md) - Cross-service sampling
-- [CHANGELOG v0.44.4](docs/changelogs/CHANGELOG_v0.44.4.md) - Head-based sampling
-- [CHANGELOG v0.44.3](docs/changelogs/CHANGELOG_v0.44.3.md) - Adaptive sampling
-- [CHANGELOG v0.44.2](docs/changelogs/CHANGELOG_v0.44.2.md) - Async WAL
 - [Performance Tests](docs/performance/STRESS_TEST_v0.44.0.md)
 
 ### Production-Ready Features (v0.45.0):
@@ -120,9 +134,10 @@ http://localhost:3001          # Grafana (optional)
 - ✅ High-load scenarios (22% total overhead)
 
 **Roadmap (Next Steps):**
-- ✅ **v0.46.0** - Desktop UI (Terminal Modern aesthetic) ← YOU ARE HERE
-- 🎯 **v0.47.0** - Real-time metrics updates, working Quick Actions
-- ⏳ **v0.48.0** - WebSocket integration, module control (start/stop/restart)
+- ✅ **v0.47.0** - Python Library (Phase 1: Complete semantic search) ← YOU ARE HERE
+- 🎯 **v0.48.0** - REST API (Phase 2: FastAPI + WebSocket)
+- ⏳ **v0.49.0** - Web Dashboard (Phase 3: React + visualization)
+- ⏳ **v0.50.0** - Jupyter Integration (Phase 4: Magic commands + widgets)
 
 ---
 
@@ -209,14 +224,15 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
-- **v0.46.0** — Desktop UI with Terminal Modern Aesthetic 🎨
-  - Complete UI redesign with GitHub Dark inspired color palette
-  - PIN-based authentication with visual feedback (● ● ● ○ ○ ○)
-  - Dashboard screen with 6 metric cards and modules status
-  - Chat/Terminal dual-mode interface with tab switching
-  - Logs viewer with filtering by level (Error, Warn, Info, Debug)
-  - Sidebar navigation replacing bottom dock
-  - Comprehensive QUICKSTART.md documentation
+- **v0.47.0** — Python Library (Phase 1 Complete) 🐍
+  - Complete Python package with PyO3 FFI bindings
+  - Real semantic search using Grid KNN in 3D space
+  - Bootstrap system for GloVe/Word2Vec embeddings with PCA projection
+  - Query engine with exponential decay similarity scoring
+  - Full test suite (88% coverage, 26/28 tests)
+  - Working examples with visual similarity display
+  - Incremental releases: v0.47.1 (setup) → v0.47.5 (final)
+  - See: [PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md), [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md)
 - **v0.45.0** — Cross-Service Sampling Propagation 🔗
   - W3C TraceContext integration for parent trace sampling inheritance
   - Automatic sampling decision propagation across distributed services

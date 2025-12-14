@@ -1,0 +1,90 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "neurograph"
+version = "0.1.0"
+description = "High-performance semantic knowledge graph system"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "AGPL-3.0-or-later" }
+authors = [
+    { name = "NeuroGraph Team", email = "dreeftwood@gmail.com" }
+]
+keywords = ["knowledge-graph", "semantic-search", "embeddings", "cognitive-architecture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+    "tqdm>=4.60.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+jupyter = [
+    "ipython>=8.0.0",
+    "matplotlib>=3.5.0",
+    "pandas>=1.5.0",
+    "plotly>=5.0.0",
+]
+all = [
+    "neurograph[dev,jupyter]",
+]
+
+[project.urls]
+Homepage = "https://github.com/dchrnv/neurograph-os"
+Repository = "https://github.com/dchrnv/neurograph-os"
+Documentation = "https://github.com/dchrnv/neurograph-os/docs"
+"Bug Tracker" = "https://github.com/dchrnv/neurograph-os/issues"
+
+[tool.maturin]
+# Path to Cargo.toml for the Rust extension
+manifest-path = "../core_rust/Cargo.toml"
+# Python source directory
+python-source = "."
+# Module name in Rust
+module-name = "neurograph._core"
+# Features to enable
+features = ["python-bindings"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=neurograph --cov-report=term-missing"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

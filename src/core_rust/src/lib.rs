@@ -80,7 +80,7 @@ pub mod tracing_otel;        // NEW: v1.0 OpenTelemetry Distributed Tracing (v0.
 pub mod tracing_sampling;    // NEW: v1.0 Adaptive Tracing Sampling (v0.44.3)
 
 // Python bindings v1.0 (v0.40.0) - PyO3 FFI
-#[cfg(feature = "python")]
+#[cfg(feature = "python-bindings")]
 pub mod python;
 
 // Old FFI (deprecated, will be removed in favor of python module)

@@ -191,6 +191,11 @@ impl BootstrapLibrary {
     pub fn get_concept(&self, word: &str) -> Option<&SemanticConcept> {
         self.concepts.get(word)
     }
+
+    /// Get iterator over all concepts
+    pub fn concepts_iter(&self) -> impl Iterator<Item = (&String, &SemanticConcept)> {
+        self.concepts.iter()
+    }
 }
 
 // ============================================================================

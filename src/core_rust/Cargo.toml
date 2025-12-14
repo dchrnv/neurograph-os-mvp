@@ -1,6 +1,6 @@
 [package]
 name = "neurograph-core"
-version = "0.45.0"
+version = "0.47.0"
 edition = "2021"
 authors = ["NeuroGraph Team"]
 description = "NeuroGraph: Cognitive architecture with emergent knowledge structures in 8D semantic space"
@@ -93,7 +93,7 @@ crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
 
 [features]
 default = []
-python = ["pyo3", "numpy"]  # Enable Python bindings with --features python
+python-bindings = ["pyo3", "numpy"]  # Enable Python bindings with --features python-bindings
 demo-tokio = ["tokio/rt-multi-thread", "tokio/time"]
 persistence = ["sqlx", "dotenv"]  # Enable PostgreSQL persistence with --features persistence
 
