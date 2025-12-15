@@ -18,8 +18,10 @@
 """
 NeuroGraph REST API - FastAPI Application
 
-Version: 1.0.0 (v0.48.0)
+Version: 1.0.0 (v0.49.0)
 Base URL: http://localhost:8000/api/v1
+
+Phase 1 & 2 Complete: Storage layer + Token/Grid/CDNA routers
 """
 
 from fastapi import FastAPI
@@ -31,6 +33,7 @@ import logging
 
 from .config import settings
 from .routers import health, query, status, modules, metrics
+from .routers import tokens, grid, cdna
 from .models.response import ErrorResponse
 
 # Configure logging
@@ -69,11 +72,19 @@ async def add_process_time_header(request, call_next):
     return response
 
 # Include routers
+# System routers
 app.include_router(health.router, prefix="/api/v1", tags=["Health"])
-app.include_router(query.router, prefix="/api/v1", tags=["Query"])
 app.include_router(status.router, prefix="/api/v1", tags=["Status"])
-app.include_router(modules.router, prefix="/api/v1", tags=["Modules"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
+app.include_router(modules.router, prefix="/api/v1", tags=["Modules"])
+
+# Core functionality routers (Phase 2)
+app.include_router(tokens.router, prefix="/api/v1", tags=["Tokens"])
+app.include_router(grid.router, prefix="/api/v1", tags=["Grid"])
+app.include_router(cdna.router, prefix="/api/v1", tags=["CDNA"])
+
+# Query router (will be enhanced in Phase 4)
+app.include_router(query.router, prefix="/api/v1", tags=["Query"])
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -107,7 +118,14 @@ async def shutdown_event():
 async def root():
     return {
         "name": "NeuroGraph API",
-        "version": "1.0.0",
+        "version": "1.0.0 (v0.49.0)",
+        "phase": "Phase 2 Complete - Storage + Token/Grid/CDNA",
+        "storage_backend": settings.STORAGE_BACKEND,
+        "features": {
+            "tokens": settings.ENABLE_NEW_TOKEN_API,
+            "grid": settings.ENABLE_NEW_GRID_API,
+            "cdna": settings.ENABLE_NEW_CDNA_API
+        },
         "docs": "/docs",
         "health": "/api/v1/health"
     }

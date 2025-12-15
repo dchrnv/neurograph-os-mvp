@@ -18,13 +18,30 @@
 """
 FastAPI Dependencies
 
-Dependency injection for runtime, authentication, etc.
+Dependency injection for runtime, storage, authentication, etc.
 """
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 import logging
+
+from .storage import (
+    TokenStorageInterface,
+    GridStorageInterface,
+    CDNAStorageInterface
+)
+from .storage.memory import (
+    InMemoryTokenStorage,
+    InMemoryGridStorage,
+    InMemoryCDNAStorage
+)
+from .storage.runtime import (
+    RuntimeTokenStorage,
+    RuntimeGridStorage,
+    RuntimeCDNAStorage
+)
+from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +50,11 @@ security = HTTPBearer(auto_error=False)
 
 # Global runtime instance (will be initialized on startup)
 _runtime_instance: Optional[object] = None
+
+# Global storage instances (singletons)
+_token_storage: Optional[TokenStorageInterface] = None
+_grid_storage: Optional[GridStorageInterface] = None
+_cdna_storage: Optional[CDNAStorageInterface] = None
 
 
 def get_runtime():
@@ -111,3 +133,116 @@ async def require_admin(user_id: Optional[str] = Depends(verify_token)) -> str:
 
     # TODO: Check if user is admin
     return user_id
+
+
+# =============================================================================
+# Storage Dependencies
+# =============================================================================
+
+def get_token_storage() -> TokenStorageInterface:
+    """
+    Get token storage instance.
+
+    Returns appropriate storage backend based on settings.
+    Uses singleton pattern for lifecycle management.
+    """
+    global _token_storage
+
+    if _token_storage is None:
+        backend = settings.STORAGE_BACKEND.lower()
+
+        if backend == "memory":
+            _token_storage = InMemoryTokenStorage()
+            logger.info("Initialized InMemory token storage")
+        elif backend == "runtime":
+            _token_storage = RuntimeTokenStorage()
+            logger.info("Initialized Runtime token storage")
+        else:
+            logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
+            _token_storage = InMemoryTokenStorage()
+
+    return _token_storage
+
+
+def get_grid_storage() -> GridStorageInterface:
+    """
+    Get grid storage instance.
+
+    Returns appropriate storage backend based on settings.
+    Uses singleton pattern for lifecycle management.
+    """
+    global _grid_storage
+
+    if _grid_storage is None:
+        backend = settings.STORAGE_BACKEND.lower()
+
+        if backend == "memory":
+            _grid_storage = InMemoryGridStorage()
+            logger.info("Initialized InMemory grid storage")
+        elif backend == "runtime":
+            _grid_storage = RuntimeGridStorage()
+            logger.info("Initialized Runtime grid storage")
+        else:
+            logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
+            _grid_storage = InMemoryGridStorage()
+
+    return _grid_storage
+
+
+def get_cdna_storage() -> CDNAStorageInterface:
+    """
+    Get CDNA storage instance.
+
+    Returns appropriate storage backend based on settings.
+    Uses singleton pattern for lifecycle management.
+    """
+    global _cdna_storage
+
+    if _cdna_storage is None:
+        backend = settings.STORAGE_BACKEND.lower()
+
+        if backend == "memory":
+            _cdna_storage = InMemoryCDNAStorage()
+            logger.info("Initialized InMemory CDNA storage")
+        elif backend == "runtime":
+            _cdna_storage = RuntimeCDNAStorage()
+            logger.info("Initialized Runtime CDNA storage")
+        else:
+            logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
+            _cdna_storage = InMemoryCDNAStorage()
+
+    return _cdna_storage
+
+
+def reset_storage():
+    """
+    Reset all storage instances.
+
+    Useful for testing or when changing storage backend at runtime.
+    """
+    global _token_storage, _grid_storage, _cdna_storage
+
+    _token_storage = None
+    _grid_storage = None
+    _cdna_storage = None
+
+    logger.info("Storage instances reset")
+
+
+# =============================================================================
+# Grid Availability Check
+# =============================================================================
+
+def check_grid_available() -> bool:
+    """
+    Check if Grid V2.0 (Rust FFI) is available.
+
+    Returns:
+        True if Grid is available, False otherwise
+    """
+    try:
+        # Try to import Rust Grid V2.0
+        import neurograph_grid_v2
+        return True
+    except ImportError:
+        return False
