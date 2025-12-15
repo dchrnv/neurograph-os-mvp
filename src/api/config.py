@@ -1,3 +1,21 @@
+
+    # NeuroGraph - Высокопроизводительная система пространственных вычислений на основе токенов.
+    # Copyright (C) 2024-2025 Chernov Denys
+
+    # This program is free software: you can redistribute it and/or modify
+    # it under the terms of the GNU Affero General Public License as published by
+    # the Free Software Foundation, either version 3 of the License, or
+    # (at your option) any later version.
+
+    # This program is distributed in the hope that it will be useful,
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    # GNU Affero General Public License for more details.
+
+    # You should have received a copy of the GNU Affero General Public License
+    # along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
 """
 API Configuration
 
@@ -48,6 +66,32 @@ class Settings(BaseSettings):
     NEUROGRAPH_BOOTSTRAP_LIMIT: int = 50000
     NEUROGRAPH_DIMENSIONS: int = 50
     NEUROGRAPH_GRID_SIZE: int = 1000
+
+    # Storage Backend
+    STORAGE_BACKEND: str = "memory"  # "memory" or "runtime" (Phase 2.2)
+
+    # Token Storage
+    TOKEN_STORAGE_MAX_SIZE: int = 1000000  # Maximum number of tokens
+    TOKEN_AUTO_CLEANUP: bool = True  # Auto-cleanup inactive tokens
+    TOKEN_CLEANUP_INTERVAL: int = 3600  # Cleanup interval in seconds
+
+    # Grid Configuration
+    GRID_ENABLED: bool = True  # Enable Grid functionality
+    GRID_MAX_INSTANCES: int = 100  # Maximum number of grid instances
+    GRID_DEFAULT_BUCKET_SIZE: float = 10.0  # Default spatial bucket size
+    GRID_DEFAULT_DENSITY_THRESHOLD: float = 0.5  # Default density threshold
+    GRID_DEFAULT_MIN_FIELD_NODES: int = 3  # Default min nodes for field
+
+    # CDNA Configuration
+    CDNA_ENABLED: bool = True  # Enable CDNA functionality
+    CDNA_DEFAULT_PROFILE: str = "explorer"  # Default CDNA profile
+    CDNA_HISTORY_LIMIT: int = 1000  # Maximum history entries
+    CDNA_QUARANTINE_DURATION: int = 300  # Quarantine duration in seconds
+
+    # Feature Flags (for gradual rollout)
+    ENABLE_NEW_TOKEN_API: bool = True  # Enable new Token API
+    ENABLE_NEW_GRID_API: bool = True  # Enable new Grid API
+    ENABLE_NEW_CDNA_API: bool = True  # Enable new CDNA API
 
     class Config:
         env_file = ".env"

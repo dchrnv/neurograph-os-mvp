@@ -6,7 +6,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(cargo check:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(find:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
