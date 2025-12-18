@@ -87,7 +87,7 @@ tempfile = "3.8"
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [lib]
-name = "neurograph_core"
+name = "_core"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]  # cdylib for Python, rlib for Rust
 

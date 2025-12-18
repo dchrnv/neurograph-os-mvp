@@ -78,6 +78,7 @@ pub mod black_box;           // NEW: v1.0 Black Box Recorder (v0.42.0)
 pub mod logging_utils;       // NEW: v1.0 Logging Utilities (v0.42.0)
 pub mod tracing_otel;        // NEW: v1.0 OpenTelemetry Distributed Tracing (v0.44.0)
 pub mod tracing_sampling;    // NEW: v1.0 Adaptive Tracing Sampling (v0.44.3)
+pub mod runtime_storage;     // NEW: v1.0 Runtime Storage (v0.50.0)
 
 // Python bindings v1.0 (v0.40.0) - PyO3 FFI
 #[cfg(feature = "python-bindings")]
@@ -401,4 +402,11 @@ pub use wal::{
     WalReader,
     WalStats,
     WalWriter,
+};
+
+// Runtime Storage v1.0 (v0.50.0)
+pub use runtime_storage::{
+    RuntimeStorage,
+    StorageError,
+    StorageResult,
 };

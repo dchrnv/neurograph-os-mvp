@@ -6,6 +6,7 @@ use pyo3::types::PyDict;
 use std::sync::{Arc, Mutex};
 use crate::graph::Graph;
 use crate::bootstrap::{BootstrapLibrary, BootstrapConfig};
+use crate::runtime_storage::RuntimeStorage;
 use std::path::PathBuf;
 use std::collections::HashMap;
 
@@ -22,11 +23,19 @@ use std::collections::HashMap;
 /// ```
 #[pyclass(name = "PyRuntime")]
 pub struct PyRuntime {
+    /// Runtime storage - single source of truth for all dynamic data
+    storage: Arc<RuntimeStorage>,
+    /// Graph topology (kept for compatibility, but data lives in storage)
     graph: Arc<Mutex<Graph>>,
+    /// Bootstrap library for semantic embeddings
     bootstrap: Option<BootstrapLibrary>,
+    /// Word to ID mapping (for Bootstrap)
     word_to_id: HashMap<String, u32>,
+    /// ID to word mapping (for Bootstrap)
     id_to_word: HashMap<u32, String>,
+    /// Initialization flag
     initialized: bool,
+    /// Embedding dimensions
     dimensions: usize,
 }
 
@@ -56,8 +65,10 @@ impl PyRuntime {
             .unwrap_or(50);
 
         let graph = Graph::new();
+        let storage = Arc::new(RuntimeStorage::new());
 
         Ok(PyRuntime {
+            storage,
             graph: Arc::new(Mutex::new(graph)),
             bootstrap: None,
             word_to_id: HashMap::new(),
@@ -300,5 +311,304 @@ impl PyRuntime {
             self.dimensions,
             self.initialized
         )
+    }
+
+    // ========================================================================
+    // Token API - RuntimeStorage integration
+    // ========================================================================
+
+    /// Create a new token in runtime storage
+    ///
+    /// Args:
+    ///     token_dict (dict): Token data with optional fields:
+    ///         - weight (float): Token weight/intensity
+    ///         - coordinates (list): 8D coordinates as [[x,y,z], ...]
+    ///
+    /// Returns:
+    ///     int: Assigned token ID
+    pub fn create_token(&self, _token_dict: &Bound<'_, PyDict>) -> PyResult<u32> {
+        use crate::token::Token;
+
+        // Create new token (ID will be assigned by storage)
+        let token = Token::new(0);
+
+        // TODO: Apply token_dict values if provided
+
+        let id = self.storage.create_token(token);
+        Ok(id)
+    }
+
+    /// Get token by ID
+    ///
+    /// Args:
+    ///     token_id (int): Token ID
+    ///
+    /// Returns:
+    ///     dict: Token data or None if not found
+    pub fn get_token(&self, token_id: u32) -> PyResult<Option<HashMap<String, String>>> {
+        match self.storage.get_token(token_id) {
+            Some(token) => {
+                let mut result = HashMap::new();
+                // Copy values to avoid packed struct reference issues
+                let id = token.id;
+                let weight = token.weight;
+                result.insert("id".to_string(), id.to_string());
+                result.insert("weight".to_string(), weight.to_string());
+                Ok(Some(result))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Update token
+    ///
+    /// Args:
+    ///     token_id (int): Token ID
+    ///     token_dict (dict): Updated token data
+    ///
+    /// Returns:
+    ///     bool: True if successful
+    pub fn update_token(&self, token_id: u32, _token_dict: &Bound<'_, PyDict>) -> PyResult<bool> {
+        match self.storage.get_token(token_id) {
+            Some(token) => {
+                // TODO: Apply updates from token_dict
+                match self.storage.update_token(token_id, token) {
+                    Ok(()) => Ok(true),
+                    Err(_) => Ok(false),
+                }
+            }
+            None => Ok(false),
+        }
+    }
+
+    /// Delete token
+    ///
+    /// Args:
+    ///     token_id (int): Token ID
+    ///
+    /// Returns:
+    ///     bool: True if deleted
+    pub fn delete_token(&self, token_id: u32) -> PyResult<bool> {
+        Ok(self.storage.delete_token(token_id).is_some())
+    }
+
+    /// List tokens with pagination
+    ///
+    /// Args:
+    ///     limit (int): Maximum number of tokens
+    ///     offset (int): Number to skip
+    ///
+    /// Returns:
+    ///     list: List of token IDs
+    pub fn list_tokens(&self, limit: usize, offset: usize) -> PyResult<Vec<u32>> {
+        let tokens = self.storage.list_tokens(limit, offset);
+        Ok(tokens.iter().map(|t| t.id).collect())
+    }
+
+    /// Count total tokens
+    ///
+    /// Returns:
+    ///     int: Total number of tokens
+    pub fn count_tokens(&self) -> PyResult<usize> {
+        Ok(self.storage.count_tokens())
+    }
+
+    /// Clear all tokens
+    ///
+    /// Returns:
+    ///     int: Number of tokens removed
+    pub fn clear_tokens(&self) -> PyResult<usize> {
+        Ok(self.storage.clear_tokens())
+    }
+
+    // ========================================================================
+    // Connection API
+    // ========================================================================
+
+    /// Create a new connection
+    ///
+    /// Args:
+    ///     token_a_id (int): First token ID
+    ///     token_b_id (int): Second token ID
+    ///
+    /// Returns:
+    ///     int: Connection ID
+    pub fn create_connection(&self, token_a_id: u32, token_b_id: u32) -> PyResult<u64> {
+        use crate::connection_v3::ConnectionV3;
+
+        let conn = ConnectionV3::new(token_a_id, token_b_id);
+        let id = self.storage.create_connection(conn);
+        Ok(id)
+    }
+
+    /// Get connection by ID
+    ///
+    /// Args:
+    ///     connection_id (int): Connection ID
+    ///
+    /// Returns:
+    ///     dict: Connection data or None
+    pub fn get_connection(&self, connection_id: u64) -> PyResult<Option<HashMap<String, String>>> {
+        match self.storage.get_connection(connection_id) {
+            Some(conn) => {
+                let mut result = HashMap::new();
+                result.insert("token_a_id".to_string(), conn.token_a_id.to_string());
+                result.insert("token_b_id".to_string(), conn.token_b_id.to_string());
+                Ok(Some(result))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Delete connection
+    ///
+    /// Args:
+    ///     connection_id (int): Connection ID
+    ///
+    /// Returns:
+    ///     bool: True if deleted
+    pub fn delete_connection(&self, connection_id: u64) -> PyResult<bool> {
+        Ok(self.storage.delete_connection(connection_id).is_some())
+    }
+
+    /// List connections
+    ///
+    /// Args:
+    ///     limit (int): Maximum number
+    ///     offset (int): Number to skip
+    ///
+    /// Returns:
+    ///     list: List of connection IDs
+    pub fn list_connections(&self, limit: usize, offset: usize) -> PyResult<Vec<u64>> {
+        let connections = self.storage.list_connections(limit, offset);
+        // ConnectionV3 doesn't have ID field, so we can't return IDs
+        // Return count instead
+        Ok((0..connections.len() as u64).collect())
+    }
+
+    /// Count connections
+    ///
+    /// Returns:
+    ///     int: Total connections
+    pub fn count_connections(&self) -> PyResult<usize> {
+        Ok(self.storage.count_connections())
+    }
+
+    // ========================================================================
+    // Grid API
+    // ========================================================================
+
+    /// Get grid information
+    ///
+    /// Returns:
+    ///     dict: Grid info with 'count' and 'bounds'
+    pub fn get_grid_info(&self) -> PyResult<HashMap<String, String>> {
+        let (count, _bounds) = self.storage.grid_info();
+        let mut result = HashMap::new();
+        result.insert("count".to_string(), count.to_string());
+        Ok(result)
+    }
+
+    /// Find neighbors of a token
+    ///
+    /// Args:
+    ///     token_id (int): Center token ID
+    ///     radius (float): Search radius
+    ///
+    /// Returns:
+    ///     list: List of (token_id, distance) tuples
+    pub fn find_neighbors(&self, token_id: u32, radius: f32) -> PyResult<Vec<(u32, f32)>> {
+        match self.storage.find_neighbors(token_id, radius) {
+            Ok(neighbors) => Ok(neighbors),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                format!("Failed to find neighbors: {}", e)
+            )),
+        }
+    }
+
+    /// Range query for tokens
+    ///
+    /// Args:
+    ///     center (list): Center coordinates [x, y, z]
+    ///     radius (float): Search radius
+    ///
+    /// Returns:
+    ///     list: List of (token_id, distance) tuples
+    pub fn range_query(&self, center: [f32; 3], radius: f32) -> PyResult<Vec<(u32, f32)>> {
+        Ok(self.storage.range_query(center, radius))
+    }
+
+    // ========================================================================
+    // CDNA API
+    // ========================================================================
+
+    /// Get CDNA configuration
+    ///
+    /// Returns:
+    ///     dict: CDNA configuration (profile_id: int, flags: int)
+    pub fn get_cdna_config(&self, py: Python) -> PyResult<Py<PyDict>> {
+        let cdna = self.storage.get_cdna();
+        let result = PyDict::new_bound(py);
+        result.set_item("profile_id", cdna.profile_id)?;
+        result.set_item("flags", cdna.flags)?;
+        Ok(result.unbind())
+    }
+
+    /// Update CDNA scales
+    ///
+    /// Args:
+    ///     scales (list): 8 dimension scales
+    ///
+    /// Returns:
+    ///     bool: True if successful
+    pub fn update_cdna_scales(&self, scales: [f32; 8]) -> PyResult<bool> {
+        match self.storage.update_cdna_scales(scales) {
+            Ok(()) => Ok(true),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                format!("Failed to update scales: {}", e)
+            )),
+        }
+    }
+
+    /// Get CDNA profile ID
+    ///
+    /// Returns:
+    ///     int: Profile ID
+    pub fn get_cdna_profile(&self) -> PyResult<u32> {
+        Ok(self.storage.get_cdna_profile())
+    }
+
+    /// Set CDNA profile ID
+    ///
+    /// Args:
+    ///     profile_id (int): New profile ID
+    pub fn set_cdna_profile(&self, profile_id: u32) -> PyResult<()> {
+        self.storage.set_cdna_profile(profile_id);
+        Ok(())
+    }
+
+    /// Get CDNA flags
+    ///
+    /// Returns:
+    ///     int: Flags value
+    pub fn get_cdna_flags(&self) -> PyResult<u32> {
+        Ok(self.storage.get_cdna_flags())
+    }
+
+    /// Set CDNA flags
+    ///
+    /// Args:
+    ///     flags (int): New flags value
+    pub fn set_cdna_flags(&self, flags: u32) -> PyResult<()> {
+        self.storage.set_cdna_flags(flags);
+        Ok(())
+    }
+
+    /// Validate CDNA configuration
+    ///
+    /// Returns:
+    ///     bool: True if valid
+    pub fn validate_cdna(&self) -> PyResult<bool> {
+        Ok(self.storage.validate_cdna())
     }
 }

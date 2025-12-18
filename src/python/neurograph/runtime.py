@@ -7,6 +7,12 @@ import logging
 from neurograph.exceptions import RuntimeError, BootstrapError, ConfigError
 from neurograph.query import QueryResult, QueryContext
 from neurograph.types import EmbeddingFormat
+from neurograph.runtime_storage import (
+    RuntimeTokenStorage,
+    RuntimeConnectionStorage,
+    RuntimeGridStorage,
+    RuntimeCDNAStorage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +69,24 @@ class Config:
 class Runtime:
     """Main runtime interface for neurograph.
 
+    Provides access to semantic queries, runtime storage, and system configuration.
+
+    Attributes:
+        tokens: Token storage interface (RuntimeTokenStorage)
+        connections: Connection storage interface (RuntimeConnectionStorage)
+        grid: Spatial grid interface (RuntimeGridStorage)
+        cdna: CDNA configuration interface (RuntimeCDNAStorage)
+
     Example:
         >>> runtime = Runtime()
         >>> runtime.bootstrap("glove.6B.50d.txt", limit=50000)
         >>> result = runtime.query("cat")
         >>> print(result.top(5))
         [('dog', 0.92), ('kitten', 0.87), ('pet', 0.81), ...]
+
+        >>> # Use runtime storage
+        >>> token_id = runtime.tokens.create(weight=1.0)
+        >>> neighbors = runtime.grid.find_neighbors(token_id, radius=5.0)
     """
 
     def __init__(self, config: Optional[Config] = None):
@@ -91,6 +109,18 @@ class Runtime:
             # FFI not built yet - use stub mode
             self._core = None
             logger.warning("FFI module not available - running in stub mode")
+
+        # Initialize storage interfaces
+        if self._core is not None:
+            self.tokens = RuntimeTokenStorage(self._core)
+            self.connections = RuntimeConnectionStorage(self._core)
+            self.grid = RuntimeGridStorage(self._core)
+            self.cdna = RuntimeCDNAStorage(self._core)
+        else:
+            self.tokens = None
+            self.connections = None
+            self.grid = None
+            self.cdna = None
 
         logger.info(f"Runtime initialized with config: {self._config.to_dict()}")
 
