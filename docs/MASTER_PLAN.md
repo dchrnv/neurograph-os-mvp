@@ -1,12 +1,11 @@
-# NeuroGraph OS - Мастер-план развития
+# NeuroGraph OS - Мастер-план развития v2.1
 
-**Версия:** 2.0
-**Дата:** 2024-12-17
-**Статус:** Active - Unified Plan
-**Базовые документы:**
-- `/docs/IMPLEMENTATION_ROADMAP.md` - общий roadmap (4 фазы)
-- `/docs/plan v 0.49.x.md` - план REST API v0.49-0.52
-- `/docs/PYRUNTIME_FIX_INSTRUCTIONS 2.md` - архитектурные исправления
+**Версия:** 2.1
+**Дата:** 2024-12-18
+**Статус:** Active - Post v0.50.0
+**Предыдущие версии:**
+- v2.0 (2024-12-17) - archived as `MASTER_PLAN.md`
+- UNIFIED_RECOVERY_PLAN_v3.md - ✅ **ЗАВЕРШЁН**
 
 ---
 
@@ -15,18 +14,22 @@
 Построить полноценную систему NeuroGraph OS по слоям:
 
 ```
-Core (Rust) ✅ → Library (Python) → REST API → Web Dashboard + Jupyter
+Core (Rust) ✅ → Python Library ✅ → REST API → Web Dashboard + Jupyter
 ```
 
-**Текущий статус:** v0.49.0 завершён, работаем над v0.50.0 (Runtime Integration)
+**Текущий статус:** v0.50.0 завершён, переходим к v0.51.0 (REST API Integration)
 
 ---
 
-## 📊 Текущее состояние (2024-12-17)
+## 📊 Текущее состояние (2024-12-18)
 
-### ✅ Что работает (v0.49.0)
+### ✅ Что работает (v0.50.0)
 
-#### 1. Rust Core (neurograph-core v0.45.0+)
+#### 1. Rust Core (neurograph-core v0.50.0)
+- ✨ **RuntimeStorage** - Unified storage system (NEW!)
+  - Thread-safe Arc<RwLock<T>> architecture
+  - Tokens, Connections, Grid, Graph, CDNA в едином хранилище
+  - 25+ методов для CRUD operations
 - Token V2.0 (64 bytes, 8D coordinates)
 - Connection V3.0
 - Grid V2.0 (spatial indexing)
@@ -40,503 +43,307 @@ Core (Rust) ✅ → Library (Python) → REST API → Web Dashboard + Jupyter
 - **Token Router** - 10 endpoints (CRUD + batch)
 - **Grid Router** - 10 endpoints (spatial queries)
 - **CDNA Router** - 10 endpoints (config management)
-- **Storage:** InMemory (временное решение)
+- **Storage:** InMemory (готово к миграции на RuntimeStorage)
 
-#### 3. PyRuntime (базовые методы)
-- `bootstrap(path)` - загрузка embeddings
-- `query(text)` - семантический поиск
-- `feedback()` - обратная связь
-- `export_metrics()` - метрики
+#### 3. PyRuntime v0.50.0 (25 FFI методов) ✨ NEW
+**Token API (7 методов):**
+- create_token, get_token, update_token, delete_token
+- list_tokens, count_tokens, clear_tokens
 
-### ❌ Чего НЕТ (блокеры для v0.50.0)
+**Connection API (5 методов):**
+- create_connection, get_connection, delete_connection
+- list_connections, count_connections
 
-1. **Token CRUD в Rust** - методы не реализованы в Graph
-2. **Grid runtime** - Grid есть только semantic (в BootstrapLibrary)
-3. **CDNA storage** - CDNA не добавлена в BootstrapLibrary
-4. **RuntimeStorage** - классы только заглушки
-5. **Integration** - REST API не подключен к Rust core
+**Grid API (3 метода):**
+- get_grid_info, find_neighbors, range_query
 
----
+**CDNA API (7 методов):**
+- get_cdna_config, update_cdna_scales
+- get_cdna_profile, set_cdna_profile
+- get_cdna_flags, set_cdna_flags
+- validate_cdna
 
-## 🗺️ Roadmap (6 треков параллельно)
+**Bootstrap API (3 метода):**
+- bootstrap, query, feedback
 
----
+**Metrics:**
+- export_metrics
 
-## ТРЕК A: REST API (v0.49 → v0.52)
-
-**Цель:** Довести REST API до production-ready состояния
-
----
-
-### ✅ v0.49.0 - CRUD API Foundation (DONE)
-
-**Дата:** 2024-12-14
-**Статус:** ✅ Завершено
-
-**Что сделано:**
-- 30 endpoints (Token/Grid/CDNA)
-- InMemory storage
-- FastAPI structure
-- OpenAPI docs
-- Response models
-
-**Файлы:**
-```
-src/api/
-├── routers/
-│   ├── token.py (10 endpoints)
-│   ├── grid.py (10 endpoints)
-│   └── cdna.py (10 endpoints)
-└── storage/
-    ├── in_memory.py (работает)
-    └── runtime.py (заглушки)
-```
+#### 4. Python Library v0.50.0 ✨ NEW
+- **RuntimeTokenStorage** - Pythonic API для токенов
+- **RuntimeConnectionStorage** - Pythonic API для связей
+- **RuntimeGridStorage** - Pythonic API для grid queries
+- **RuntimeCDNAStorage** - Pythonic API для CDNA
+- **Full integration** с Runtime class
+- Type hints и comprehensive docstrings
+- Production-ready examples
 
 ---
 
-### 🔧 v0.50.0 - Runtime Integration (IN PROGRESS)
+## 🗺️ Roadmap (4 трека параллельно)
 
-**Дата:** 2024-12-17 (сейчас)
-**Срок:** 3-4 дня
+---
+
+## ТРЕК A: REST API Integration (v0.51.0)
+
+**Цель:** Подключить REST API к RuntimeStorage
+
+**Срок:** 2-3 дня
 **Приоритет:** 🔴 КРИТИЧЕСКИЙ
 
-**Цель:** Подключить реальный Rust core вместо InMemory
-
-#### Архитектурные исправления (Phase 0)
-
-**Проблема:** PyRuntime архитектура не готова для CRUD операций
-
-**Решение:**
-1. ⏳ Добавить Token storage в Graph (Rust)
-2. ⏳ Добавить CDNA в BootstrapLibrary (Rust)
-3. ⏳ Определить Grid стратегию (semantic vs runtime)
-4. ⏳ Реализовать FFI методы в PyRuntime
-
-**Файлы:**
-- `src/core_rust/src/graph.rs` - добавить Token methods
-- `src/core_rust/src/bootstrap.rs` - добавить CDNA field
-- `src/core_rust/src/python/runtime.rs` - CRUD методы
-- `docs/ARCHITECTURE_DECISIONS.md` - документировать решения
-
-#### Phase 1: Rust Core расширение (2 дня)
+### Phase 1: RuntimeStorage Integration (1 день)
 
 **Задачи:**
-- [ ] **1.1** Добавить Token storage в Graph:
-  ```rust
-  pub struct Graph {
-      // существующие поля
-      tokens: HashMap<u32, Token>,  // NEW
-  }
-
-  impl Graph {
-      pub fn add_token(&mut self, token: Token) -> Result<()>
-      pub fn get_token(&self, id: u32) -> Option<&Token>
-      pub fn update_token(&mut self, id: u32, updates: TokenUpdate)
-      pub fn delete_token(&mut self, id: u32) -> Option<Token>
-      pub fn list_tokens(&self, limit: usize, offset: usize) -> Vec<&Token>
-      pub fn count_tokens(&self) -> usize
-      pub fn clear_tokens(&mut self) -> usize
-  }
-  ```
-
-- [ ] **1.2** Добавить CDNA в BootstrapLibrary:
-  ```rust
-  pub struct BootstrapLibrary {
-      // существующие поля
-      cdna: CDNA,  // NEW
-  }
-
-  impl BootstrapLibrary {
-      pub fn cdna(&self) -> &CDNA
-      pub fn cdna_mut(&mut self) -> &mut CDNA
-  }
-  ```
-
-- [ ] **1.3** Решить Grid вопрос:
-  - **Вариант A:** Добавить runtime Grid в Graph
-  - **Вариант B:** Использовать semantic Grid из BootstrapLibrary
-  - Документировать решение
-
-- [ ] **1.4** Реализовать PyRuntime CRUD методы (21 метод):
-
-  **Token (7):**
-  - `create_token()`, `get_token()`, `list_tokens()`
-  - `update_token()`, `delete_token()`
-  - `count_tokens()`, `clear_tokens()`
-
-  **Grid (6):**
-  - `get_grid_info()`, `add_token_to_grid()`, `remove_token_from_grid()`
-  - `find_neighbors()`, `range_query()`, `calculate_field_influence()`, `calculate_density()`
-
-  **CDNA (8):**
-  - `get_cdna_config()`, `update_cdna_scales()`
-  - `get_cdna_profile()`, `set_cdna_profile()`
-  - `get_cdna_flags()`, `set_cdna_flags()`
-  - `validate_cdna_scales()`, `reset_cdna()`
-
-- [ ] **1.5** Тестирование Rust:
-  ```bash
-  cargo build --release --features python-bindings
-  cargo test
-  ```
-
-#### Phase 2: Python Runtime Storage (1 день)
-
-**Задачи:**
-- [ ] **2.1** Реализовать RuntimeTokenStorage:
+- [ ] Обновить `src/api/storage/runtime.py`:
   ```python
   class RuntimeTokenStorage(TokenStorageInterface):
       def __init__(self, runtime: Runtime):
-          self.runtime = runtime._core
+          self._runtime = runtime
 
-      def create(self, token: Token) -> Token:
-          result = self.runtime.create_token(...)
-          return Token.from_dict(result)
+      def create(self, data: TokenCreate) -> Token:
+          token_id = self._runtime.tokens.create(weight=data.weight)
+          return self.get(token_id)
 
-      # + остальные методы
+      # ... все остальные методы
   ```
 
-- [ ] **2.2** Реализовать RuntimeGridStorage:
-  ```python
-  class RuntimeGridStorage(GridStorageInterface):
-      # аналогично
-  ```
-
-- [ ] **2.3** Реализовать RuntimeCDNAStorage:
-  ```python
-  class RuntimeCDNAStorage(CDNAStorageInterface):
-      # аналогично
-  ```
-
-- [ ] **2.4** Обновить dependencies:
-  ```python
-  # src/api/dependencies.py
-
-  def get_token_storage() -> TokenStorageInterface:
-      if settings.USE_RUNTIME:
-          return RuntimeTokenStorage(runtime)
-      return InMemoryTokenStorage()
-  ```
-
-#### Phase 3: Интеграция и тестирование (0.5 дня)
-
-**Задачи:**
-- [ ] **3.1** Пересобрать Python bindings:
-  ```bash
-  maturin develop --release
-  ```
-
-- [ ] **3.2** Integration tests:
-  ```python
-  def test_token_crud_via_api(client):
-      # Create
-      response = client.post("/api/v1/tokens", json={...})
-      token_id = response.json()["data"]["id"]
-
-      # Read
-      response = client.get(f"/api/v1/tokens/{token_id}")
-      assert response.status_code == 200
-
-      # Update
-      response = client.put(f"/api/v1/tokens/{token_id}", json={...})
-
-      # Delete
-      response = client.delete(f"/api/v1/tokens/{token_id}")
-  ```
-
-- [ ] **3.3** Performance testing:
-  - Token CRUD: < 10ms per operation
-  - Grid queries: < 50ms
-  - Bulk operations: 1000 tokens/sec
-
-#### Phase 4: Документация и коммит (0.5 дня)
-
-**Задачи:**
-- [ ] **4.1** Создать CHANGELOG_v0.50.0.md
-- [ ] **4.2** Обновить README
-- [ ] **4.3** Git commit:
-  ```bash
-  git add .
-  git commit -m "feat: REST API v0.50.0 - Runtime Integration Complete
-
-  - Add Token storage to Graph
-  - Add CDNA to BootstrapLibrary
-  - Implement 21 PyRuntime CRUD methods
-  - Create Runtime storage classes
-  - Full integration with Rust core
-
-  🤖 Generated with Claude Code
-  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
-  ```
+- [ ] Реализовать RuntimeGridStorage для REST API
+- [ ] Реализовать RuntimeCDNAStorage для REST API
+- [ ] Обновить dependencies.py для использования RuntimeStorage
 
 **Deliverables:**
-- ✅ REST API работает с Rust core
-- ✅ InMemory storage заменён на Runtime
-- ✅ 30 endpoints используют реальные данные
+- ✅ REST API работает с Rust RuntimeStorage
+- ✅ InMemory storage больше не нужен
 - ✅ Persistence работает
+
+### Phase 2: Enhanced System Endpoints (0.5 дня)
+
+**Задачи:**
+- [ ] `/health` - health check с RuntimeStorage metrics
+- [ ] `/status` - детальный статус (tokens count, connections, grid info)
+- [ ] `/metrics` - Prometheus metrics из Rust
+
+### Phase 3: Testing & Documentation (0.5 дня)
+
+**Задачи:**
+- [ ] Integration tests (API → Runtime → Rust)
+- [ ] Performance tests (< 50ms latency)
+- [ ] CHANGELOG_v0.51.0.md
+- [ ] Git commit
+
+**Success Criteria:**
+- [ ] All 30 endpoints работают с RuntimeStorage
+- [ ] Latency < 50ms (p95)
+- [ ] Integration tests pass
 
 ---
 
-### 📋 v0.51.0 - Enhanced System + Auth (NEXT)
+## ТРЕК B: Authentication & Security (v0.52.0)
+
+**Цель:** Production-ready security
 
 **Срок:** 2-3 дня
 **Приоритет:** 🟡 ВЫСОКИЙ
 
+### Authentication
+
 **Задачи:**
-
-#### Enhanced System Endpoints
-- [ ] `/health` - health check с реальными данными
-- [ ] `/status` - детальный статус системы
-- [ ] `/metrics` - Prometheus metrics из Rust
-
-#### Authentication & Security
-- [ ] JWT authentication (`/api/v1/auth/token`)
+- [ ] JWT authentication
+  - `/api/v1/auth/token` - login endpoint
+  - `/api/v1/auth/refresh` - refresh token
 - [ ] Middleware для проверки токенов
 - [ ] Role-based access control (admin/user/readonly)
-- [ ] API keys support
-- [ ] Rate limiting (slowapi)
+- [ ] API keys support (alternative to JWT)
 
-#### Admin Endpoints Protection
-- [ ] Protect POST/PUT/DELETE endpoints
-- [ ] Admin-only operations
+### Security
+
+**Задачи:**
+- [ ] Rate limiting (slowapi)
+  - Per-IP limits
+  - Per-user limits
+  - Adaptive throttling
+- [ ] Admin endpoints protection
+  - Protect POST/PUT/DELETE endpoints
+  - Admin-only operations
 - [ ] Audit logging
+  - Log all write operations
+  - Track user actions
 
 **Deliverables:**
 - ✅ JWT auth работает
 - ✅ RBAC реализован
 - ✅ Admin endpoints защищены
+- ✅ Rate limiting активен
 
 ---
 
-### 🔌 v0.52.0 - WebSocket Support (FINAL)
+## ТРЕК C: WebSocket Support (v0.53.0)
+
+**Цель:** Real-time data streaming
 
 **Срок:** 1-2 дня
 **Приоритет:** 🟢 СРЕДНИЙ
+
+### WebSocket Implementation
 
 **Задачи:**
 - [ ] WebSocket endpoint `/ws`
 - [ ] Event streaming:
   - `token.created`, `token.updated`, `token.deleted`
+  - `connection.created`, `connection.deleted`
   - `grid.query`, `cdna.updated`
 - [ ] Live metrics broadcasting
 - [ ] Heartbeat/reconnect logic
 
-**Пример:**
+**Example:**
 ```python
 # Client
 async with websockets.connect("ws://localhost:8000/ws") as ws:
     await ws.send(json.dumps({"subscribe": "metrics"}))
     while True:
         msg = await ws.recv()
-        print(json.loads(msg))
+        data = json.loads(msg)
+        print(f"Event: {data['type']}, Data: {data['payload']}")
 ```
 
 **Deliverables:**
 - ✅ WebSocket endpoint работает
-- ✅ Events стримятся
+- ✅ Events стримятся в real-time
 - ✅ Frontend integration ready
 
 ---
 
-## ТРЕК B: Python Library (Phase 1 Roadmap)
+## ТРЕК D: Python Library Packaging (v0.54.0)
 
-**Цель:** Создать `neurograph` Python package
+**Цель:** Publish `neurograph` на PyPI
 
-**Срок:** 5-7 дней
-**Приоритет:** 🟡 СРЕДНИЙ (может идти параллельно с REST API)
+**Срок:** 3-4 дня
+**Приоритет:** 🟡 ВЫСОКИЙ
 
----
+### Phase 1: Package Setup (1 день)
 
-### B.1 Project Setup (1 день)
-
-**Статус:** Частично выполнено
-
-**Что есть:**
-- ✅ `src/python/neurograph/` структура
-- ✅ PyO3 bindings начаты
-- ✅ `_core.so` компилируется
-
-**Что нужно:**
+**Задачи:**
 - [ ] Полный `pyproject.toml` с maturin
 - [ ] Proper package structure
-- [ ] GitHub Actions для Python package
-- [ ] PyPI publishing setup
+- [ ] README.md для PyPI
+- [ ] License files
+- [ ] Version management
 
----
-
-### B.2 PyO3 FFI Bindings (2 дня)
-
-**Статус:** В процессе (v0.50.0)
-
-**Что нужно:**
-- [ ] Завершить все FFI методы (21+ методов)
-- [ ] Error handling (Rust → Python)
-- [ ] Type hints для всех методов
-- [ ] FFI tests
-
----
-
-### B.3 Python Runtime Manager (1 день)
+### Phase 2: Documentation (1 день)
 
 **Задачи:**
-- [ ] Класс `Runtime` в `runtime.py`
-- [ ] Lifecycle management (start/stop/status)
-- [ ] Context manager support:
-  ```python
-  with ng.Runtime() as runtime:
-      result = runtime.query("hello")
-  ```
-- [ ] Configuration management
+- [ ] Sphinx documentation
+  - Getting Started
+  - API Reference
+  - Examples
+  - Advanced Topics
+- [ ] GitHub Pages для docs
+- [ ] Jupyter notebook examples
 
----
-
-### B.4 Query Engine & Bootstrap (1 день)
-
-**Задачи:**
-- [ ] `QueryResult` класс
-- [ ] `query(text, limit=10)` метод
-- [ ] Bootstrap loader с progress bar
-- [ ] Support GloVe, Word2Vec formats
-
----
-
-### B.5 Testing & Documentation (1 день)
+### Phase 3: Testing & CI/CD (1 день)
 
 **Задачи:**
 - [ ] Unit tests (pytest)
 - [ ] Integration tests
-- [ ] Sphinx documentation
-- [ ] README with Quick Start
 - [ ] 80%+ coverage
+- [ ] GitHub Actions:
+  - Test on push
+  - Build wheels
+  - Publish to PyPI
+
+### Phase 4: Publishing (0.5 дня)
+
+**Задачи:**
+- [ ] Test PyPI publish
+- [ ] Production PyPI publish
+- [ ] GitHub release
+- [ ] Announcement
 
 **Deliverables:**
-- ✅ `neurograph` package на PyPI
-- ✅ Full documentation
-- ✅ Examples
+- ✅ `pip install neurograph` работает
+- ✅ Full documentation online
+- ✅ 80%+ test coverage
+- ✅ CI/CD pipeline
 
 ---
 
-## ТРЕК C: Web Dashboard (Phase 3 Roadmap)
+## ТРЕК E: Web Dashboard (v0.60.0+)
 
-**Цель:** Tiro Control Center - React SPA
+**Цель:** Tiro Control Center
 
 **Срок:** 7-10 дней
-**Приоритет:** 🟢 НИЗКИЙ (после REST API)
+**Приоритет:** 🟢 НИЗКИЙ
 
----
+### Stack
 
-### C.1 Project Setup (1 день)
-- [ ] Create React App + TypeScript
-- [ ] Ant Design Pro
-- [ ] Router + State management (Zustand)
-- [ ] API client (axios)
+- React + TypeScript
+- Ant Design Pro
+- Zustand (state management)
+- Axios (API client)
+- WebSocket client
 
-### C.2 Dashboard Page (2 дня)
-- [ ] Metrics cards
-- [ ] Charts (CPU, Memory, Events)
-- [ ] Recent activity table
-- [ ] Auto-refresh
+### Features
 
-### C.3 Modules Management (1.5 дня)
-- [ ] Modules list (ProTable)
-- [ ] Start/Stop/Restart actions
-- [ ] Module configuration
+**Dashboard Page:**
+- System metrics cards
+- Real-time charts
+- Recent activity
+- Auto-refresh
 
-### C.4 Chat & Terminal (2 дня)
-- [ ] Chat interface
-- [ ] Terminal (xterm.js)
-- [ ] WebSocket integration
+**Management Pages:**
+- Tokens browser
+- Connections visualization
+- Grid spatial view
+- CDNA configuration
 
-### C.5 Config & Admin (1.5 дня)
-- [ ] Config editor
-- [ ] Bootstrap uploader
-- [ ] CDNA management
-- [ ] System logs viewer
-
-### C.6 Polish & Deploy (2 дня)
-- [ ] Dark/Light themes
-- [ ] Responsive layout
-- [ ] Production build
-- [ ] Docker
+**Admin Tools:**
+- System logs viewer
+- Bootstrap uploader
+- Configuration editor
+- User management (if auth enabled)
 
 **Deliverables:**
-- ✅ Tiro Control Center deployed
+- ✅ Dashboard deployed
 - ✅ All features working
+- ✅ Mobile responsive
 
 ---
 
-## ТРЕК D: Jupyter Integration (Phase 4 Roadmap)
+## ТРЕК F: Jupyter Integration (v0.70.0+)
+
+**Цель:** Interactive notebooks support
 
 **Срок:** 2-3 дня
 **Приоритет:** 🟢 НИЗКИЙ
 
-### D.1 IPython Extension (1 день)
-- [ ] Magic commands (`%ng_query`, `%ng_status`)
-- [ ] Cell magic (`%%ng_explore`)
+### IPython Extension
 
-### D.2 Rich Display (1 день)
+**Задачи:**
+- [ ] Magic commands:
+  - `%ng_query "text"` - semantic query
+  - `%ng_status` - runtime status
+  - `%ng_tokens` - list tokens
+- [ ] Cell magic:
+  - `%%ng_explore` - multi-line exploration
+
+### Rich Display
+
+**Задачи:**
 - [ ] `_repr_html_()` для QueryResult
 - [ ] DataFrame export
+- [ ] Interactive visualizations (plotly)
 
-### D.3 Visualization (0.5 дня)
-- [ ] Graph viz (networkx + plotly)
-- [ ] Interactive plots
+### Examples
 
-### D.4 Documentation (0.5 дня)
-- [ ] Jupyter notebook examples
-- [ ] Tutorial
+**Задачи:**
+- [ ] Tutorial notebooks
+- [ ] Use case examples
+- [ ] Performance profiling notebook
 
 **Deliverables:**
 - ✅ Jupyter extension
 - ✅ Rich displays
-- ✅ Examples
-
----
-
-## ТРЕК E: Архитектурные улучшения
-
-**Приоритет:** 🟡 ПОСТОЯННЫЙ
-
-### E.1 Grid Refactoring (v0.51.0+)
-- [ ] Разделить semantic Grid и runtime Grid
-- [ ] Runtime Grid в Graph
-- [ ] Update Grid API
-
-### E.2 CDNA System (v0.51.0+)
-- [ ] CDNA validation layer
-- [ ] Quarantine mode implementation
-- [ ] Profile system
-- [ ] History tracking
-
-### E.3 Performance (ongoing)
-- [ ] Benchmark suite
-- [ ] Profiling (Rust + Python)
-- [ ] Optimization hotspots
-
----
-
-## ТРЕК F: Deployment & Infra
-
-**Приоритет:** 🟢 СРЕДНИЙ
-
-### F.1 Docker
-- [x] Rust build stage
-- [ ] Python package stage
-- [ ] API service container
-- [ ] Web app container
-- [ ] Docker Compose
-
-### F.2 CI/CD
-- [ ] GitHub Actions:
-  - Rust tests
-  - Python tests
-  - Build Docker images
-  - Deploy to production
-
-### F.3 Monitoring
-- [ ] Prometheus setup
-- [ ] Grafana dashboards
-- [ ] Jaeger tracing
+- ✅ Tutorial notebooks
 
 ---
 
@@ -545,104 +352,111 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 | Трек | Задача | Срок | Статус |
 |------|--------|------|--------|
 | **A** | v0.49.0 CRUD API | Week 1 | ✅ Done |
-| **A** | v0.50.0 Runtime Integration | Week 2-3 | 🔧 In Progress |
-| **B** | Python Library Phase 1 | Week 2-4 | ⏳ Pending |
-| **A** | v0.51.0 Enhanced + Auth | Week 4 | ⏳ Pending |
-| **A** | v0.52.0 WebSocket | Week 4 | ⏳ Pending |
-| **C** | Web Dashboard | Week 5-7 | ⏳ Pending |
-| **D** | Jupyter Integration | Week 7 | ⏳ Pending |
-| **E/F** | Infra + Deploy | Ongoing | ⏳ Pending |
+| **A** | v0.50.0 RuntimeStorage | Week 2 | ✅ Done |
+| **A** | v0.51.0 REST API Integration | Week 3 | 🎯 Next |
+| **B** | v0.52.0 Auth + Security | Week 3-4 | ⏳ Pending |
+| **C** | v0.53.0 WebSocket | Week 4 | ⏳ Pending |
+| **D** | v0.54.0 PyPI Package | Week 4-5 | ⏳ Pending |
+| **E** | v0.60.0 Web Dashboard | Week 6-8 | ⏳ Pending |
+| **F** | v0.70.0 Jupyter | Week 8 | ⏳ Pending |
 
 **TOTAL:** ~2 месяца до полного production
 
 ---
 
-## 🎯 Immediate Next Steps (сейчас)
+## 🎯 Immediate Next Steps
 
-### Сегодня (2024-12-17):
-1. ✅ Создать MASTER_PLAN.md (этот файл)
-2. ⏳ Принять архитектурные решения для v0.50.0:
-   - Где хранить runtime токены?
-   - Как разделить semantic/runtime Grid?
-   - Куда добавить CDNA?
-3. ⏳ Начать Phase 0: Архитектурные исправления
+### Эта неделя (Week 3):
+1. ✅ Завершить v0.50.0 (RuntimeStorage) - **DONE!**
+2. 🎯 v0.51.0 - REST API Integration (2-3 дня)
+3. 🎯 v0.52.0 - Auth + Security (2-3 дня)
 
-### Эта неделя:
-- Завершить v0.50.0 (Runtime Integration)
-- Первый working E2E test (API → Rust → Storage)
-- CHANGELOG v0.50.0
+### Следующая неделя (Week 4):
+- v0.53.0 - WebSocket Support
+- v0.54.0 - PyPI Package
+- Начать Web Dashboard
 
 ### Этот месяц:
-- v0.51.0 + v0.52.0 (Enhanced + WebSocket)
-- Python Library Phase 1 complete
-- Начать Web Dashboard
+- Завершить ТРЕК A-D (REST API + Python Library)
+- Начать ТРЕК E (Web Dashboard)
 
 ---
 
-## 📝 Важные решения (Architecture Decision Records)
+## 📝 Архив (завершённые планы)
 
-### ADR-001: Token Storage Location
-**Проблема:** Где хранить runtime токены?
-**Решение:** TBD
-**Дата:** 2024-12-17
+### ✅ UNIFIED_RECOVERY_PLAN_v3.md - ЗАВЕРШЁН
+**Цель:** Реализовать RuntimeStorage и интеграцию
+**Статус:** ✅ **100% COMPLETE** (2024-12-18)
 
-### ADR-002: Grid Separation
-**Проблема:** Semantic vs Runtime Grid
-**Решение:** TBD
-**Дата:** 2024-12-17
+**Что было сделано:**
+- Фаза 1: RuntimeStorage в Rust ✅
+- Фаза 2: PyRuntime Integration ✅
+- Фаза 3: Python Integration ✅
+- Фаза 4: Тесты + Документация ✅
 
-### ADR-003: CDNA Storage
-**Проблема:** Где хранить CDNA конфигурацию?
-**Решение:** В BootstrapLibrary
-**Дата:** 2024-12-17
+**Результат:**
+- 782 строки Rust кода (runtime_storage.rs)
+- 476 строк Python кода (runtime_storage.py)
+- 226 строк примеров (runtime_storage_example.py)
+- 25 FFI методов
+- 4 Python wrapper класса
+- Production-ready с comprehensive testing
 
 ---
 
 ## ✅ Success Metrics
 
-### v0.50.0:
-- [ ] REST API работает с Rust core
+### v0.51.0 (REST API Integration):
+- [ ] REST API использует RuntimeStorage
 - [ ] Latency < 50ms (p95)
 - [ ] All 30 endpoints functional
 - [ ] Integration tests pass
 
-### Python Library:
+### v0.52.0 (Auth):
+- [ ] JWT authentication работает
+- [ ] RBAC реализован
+- [ ] Rate limiting активен
+
+### v0.54.0 (Python Package):
 - [ ] `pip install neurograph` works
 - [ ] Query < 100ms
 - [ ] 80%+ test coverage
+- [ ] Documentation online
 
-### Web Dashboard:
-- [ ] Load < 2 sec
-- [ ] Lighthouse > 90
-- [ ] Mobile responsive
-
-### Production:
+### Production (v1.0):
 - [ ] 1000 req/sec sustained
 - [ ] 99.9% uptime
 - [ ] Full monitoring
+- [ ] Complete documentation
 
 ---
 
 ## 🚀 References
 
-**Документы:**
-- `/docs/IMPLEMENTATION_ROADMAP.md` - общий план
-- `/docs/plan v 0.49.x.md` - REST API план
-- `/docs/PYRUNTIME_FIX_INSTRUCTIONS 2.md` - архитектура PyRuntime
-- `/docs/arch/` - спецификации архитектуры
+**Актуальные документы:**
+- `MASTER_PLAN_v2.1.md` - этот файл (текущий план)
+- `docs/changelogs/CHANGELOG_v0.50.0.md` - последний релиз
+- `docs/changelogs/PROGRESS_v0.50.0.md` - детали реализации
+- `README.md` - главный README проекта
 
-**Файлы:**
-- `src/api/` - REST API service
-- `src/core_rust/` - Rust core
+**Архивные документы:**
+- `docs/MASTER_PLAN.md` - предыдущая версия плана (2024-12-17)
+- `docs/UNIFIED_RECOVERY_PLAN_v3.md` - завершённый план восстановления
+- `docs/plan v 0.49.x.md` - старый REST API план
+- `docs/PYRUNTIME_FIX_INSTRUCTIONS 2.md` - архитектурные исправления
+
+**Файлы проекта:**
+- `src/core_rust/` - Rust core с RuntimeStorage
 - `src/python/neurograph/` - Python library
-- `src/web/` - Web dashboard (future)
+- `src/api/` - REST API service
+- `examples/` - примеры использования
 
 ---
 
-**Конец мастер-плана. Готовы к исполнению! 🚀**
+**Конец мастер-плана v2.1. Готовы к v0.51.0! 🚀**
 
 ---
 
-*Создано: 2024-12-17*
-*Автор: Claude Sonnet 4.5 + Opus 4.5*
+*Создано: 2024-12-18*
+*Автор: Claude Sonnet 4.5*
 *Статус: Living Document - обновляется по мере прогресса*
