@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.47.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.50.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,20 +22,21 @@
 
 ---
 
-## 🚀 v0.47.0 - Python Library (Phase 1 Complete)
+## 🚀 v0.50.0 - RuntimeStorage Complete Integration
 
-**Статус:** Python Library Ready ✅
+**Статус:** Production Ready ✅
 
-**Текущая версия: v0.47.0** - Full Python library with semantic search
+**Текущая версия: v0.50.0** - Unified runtime storage with full Python API
 
-### Ключевые возможности v0.47.0:
+### Ключевые возможности v0.50.0:
 
-- 🐍 **Python Package** - Complete neurograph library with PyO3 FFI bindings
-- 🔍 **Semantic Search** - Real KNN search in 3D embedding space with Grid
-- 📦 **Bootstrap System** - GloVe/Word2Vec embedding loading with PCA projection
-- ⚡ **High Performance** - Rust core with Python convenience layer
-- 📊 **Query Engine** - Distance-to-similarity scoring with exponential decay
-- 🧪 **Test Suite** - 88% coverage, 26/28 tests passing
+- 🗄️ **RuntimeStorage** - Unified storage system for tokens, connections, grid, and CDNA
+- 🔗 **FFI Integration** - 25 FFI methods exposing full Rust functionality to Python
+- 🐍 **Python Wrappers** - 4 high-level classes for convenient API access
+- ⚡ **Thread-Safe** - Arc<RwLock<T>> for concurrent access from multiple threads
+- 📊 **Spatial Queries** - Neighbor search and range queries in semantic space
+- 🎯 **CDNA Configuration** - Runtime control of dimension scales and profiles
+- 🧪 **Production Tested** - All operations verified with comprehensive examples
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -53,22 +54,45 @@
 **Installation:**
 
 ```bash
-# From source
-cd src/python
-pip install -e ".[dev]"
+# Build FFI module with maturin
+cd src/core_rust
+maturin develop --release --features python-bindings
 
-# Build with maturin
-maturin develop --features python-bindings
+# Install Python package (development mode)
+cd ../python
+pip install -e ".[dev]"
 ```
 
-**Usage:**
+**Usage - RuntimeStorage API:**
 
 ```python
-import neurograph as ng
+from neurograph import Runtime, Config
 
-# Initialize runtime
-runtime = ng.Runtime()
+# Initialize runtime with storage
+config = Config(grid_size=1000, dimensions=50)
+runtime = Runtime(config)
 
+# Token operations
+token_id = runtime.tokens.create(weight=1.0)
+token = runtime.tokens.get(token_id)
+runtime.tokens.update(token_id, weight=0.9)
+
+# Connection operations
+conn_id = runtime.connections.create(token_a=token_id, token_b=another_token)
+
+# Spatial queries
+neighbors = runtime.grid.find_neighbors(token_id=token_id, radius=10.0)
+for neighbor_id, distance in neighbors:
+    print(f"Token {neighbor_id} at distance {distance:.2f}")
+
+# CDNA configuration
+runtime.cdna.update_scales([1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5])
+runtime.cdna.set_profile(1)  # Explorer profile
+```
+
+**Usage - Semantic Search (v0.47.0):**
+
+```python
 # Load embeddings (GloVe format)
 runtime.bootstrap("glove.6B.50d.txt", limit=50000)
 
@@ -82,7 +106,7 @@ for word, similarity in result.top(5):
 result.feedback("positive")
 ```
 
-**См. полную документацию**: [src/python/README.md](src/python/README.md) | [docs/PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md)
+**См. полную документацию**: [examples/runtime_storage_example.py](examples/runtime_storage_example.py) | [docs/changelogs/CHANGELOG_v0.50.0.md](docs/changelogs/CHANGELOG_v0.50.0.md)
 
 ### Production Deployment Guide:
 
@@ -99,8 +123,9 @@ http://localhost:3001          # Grafana (optional)
 ```
 
 **См. также:**
+- [CHANGELOG v0.50.0](docs/changelogs/CHANGELOG_v0.50.0.md) - RuntimeStorage Integration ← **NEW**
+- [CHANGELOG v0.49.0](docs/changelogs/CHANGELOG_v0.49.0.md) - REST API Phase 2 Complete
 - [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md) - Python Library (Phase 1)
-- [PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md) - Complete implementation summary
 - [CHANGELOG v0.45.0](docs/changelogs/CHANGELOG_v0.45.0.md) - Cross-service sampling
 - [Performance Tests](docs/performance/STRESS_TEST_v0.44.0.md)
 
@@ -134,10 +159,12 @@ http://localhost:3001          # Grafana (optional)
 - ✅ High-load scenarios (22% total overhead)
 
 **Roadmap (Next Steps):**
-- ✅ **v0.47.0** - Python Library (Phase 1: Complete semantic search) ← YOU ARE HERE
-- 🎯 **v0.48.0** - REST API (Phase 2: FastAPI + WebSocket)
-- ⏳ **v0.49.0** - Web Dashboard (Phase 3: React + visualization)
-- ⏳ **v0.50.0** - Jupyter Integration (Phase 4: Magic commands + widgets)
+- ✅ **v0.47.0** - Python Library (Phase 1: Complete semantic search)
+- ✅ **v0.49.0** - REST API (Phase 2: FastAPI routers complete)
+- ✅ **v0.50.0** - RuntimeStorage (Unified storage with full Python API) ← **YOU ARE HERE**
+- 🎯 **v0.51.0** - Advanced Runtime Features (persistence, transactions, batch operations)
+- ⏳ **v0.52.0** - Web Dashboard (React + visualization)
+- ⏳ **v0.53.0** - Jupyter Integration (Magic commands + widgets)
 
 ---
 
@@ -172,33 +199,54 @@ docker-compose --profile monitoring up -d
 - Persistent volumes для данных
 - Optional monitoring stack
 
-### Python Bindings (v0.40.0)
+### Python Library with RuntimeStorage (v0.50.0)
 
 ```bash
-# Build Python bindings
+# Build FFI module
 pip install maturin
 cd src/core_rust
-maturin develop --release --features python
+maturin develop --release --features python-bindings
 
-# Use in Python
-python
->>> import neurograph
->>>
->>> # Batch API (4x faster!)
->>> tokens = neurograph.Token.create_batch(100_000)
->>>
->>> # IntuitionEngine
->>> engine = neurograph.IntuitionEngine.with_defaults()
->>> stats = engine.stats()
->>> print(stats)
+# Run example
+cd ../..
+python examples/runtime_storage_example.py
 ```
 
-**Документация:** [python/README.md](python/README.md)
+**RuntimeStorage API:**
+
+```python
+from neurograph import Runtime, Config
+
+# Initialize runtime
+config = Config(grid_size=1000, dimensions=50)
+runtime = Runtime(config)
+
+# Token operations
+token_id = runtime.tokens.create(weight=1.0)
+token = runtime.tokens.get(token_id)
+runtime.tokens.update(token_id, weight=0.9)
+runtime.tokens.delete(token_id)
+
+# Connection operations
+conn_id = runtime.connections.create(token_a=1, token_b=2)
+conn = runtime.connections.get(conn_id)
+
+# Spatial grid queries
+neighbors = runtime.grid.find_neighbors(token_id=1, radius=10.0)
+results = runtime.grid.range_query(center=(0, 0, 0), radius=5.0)
+
+# CDNA configuration
+runtime.cdna.update_scales([1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5])
+runtime.cdna.set_profile(1)  # Explorer profile
+```
+
+**Документация:** [docs/changelogs/CHANGELOG_v0.50.0.md](docs/changelogs/CHANGELOG_v0.50.0.md)
 
 **Примеры:**
 
-- [examples/python/token_batch_performance.py](examples/python/token_batch_performance.py)
-- [examples/python/intuition_simple.py](examples/python/intuition_simple.py)
+- [examples/runtime_storage_example.py](examples/runtime_storage_example.py) - Complete RuntimeStorage demo
+- [examples/python/token_batch_performance.py](examples/python/token_batch_performance.py) - Batch operations
+- [examples/python/intuition_simple.py](examples/python/intuition_simple.py) - IntuitionEngine
 
 ### REPL Interface
 
@@ -224,6 +272,20 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.50.0** — RuntimeStorage Complete Integration 🗄️
+  - Unified RuntimeStorage in Rust with thread-safe Arc<RwLock<T>>
+  - 25 FFI methods exposing tokens, connections, grid, and CDNA to Python
+  - 4 Python wrapper classes: RuntimeTokenStorage, RuntimeConnectionStorage, RuntimeGridStorage, RuntimeCDNAStorage
+  - Complete integration with Runtime class for seamless access
+  - Full example demonstrating all RuntimeStorage features
+  - Production-ready with comprehensive testing and documentation
+  - See: [CHANGELOG v0.50.0](docs/changelogs/CHANGELOG_v0.50.0.md), [PROGRESS v0.50.0](docs/changelogs/PROGRESS_v0.50.0.md)
+- **v0.49.0** — REST API Phase 2 Complete 🚀
+  - Token, Grid, and CDNA routers with full CRUD operations
+  - Pydantic models for request/response validation
+  - Storage and models infrastructure
+  - Single production API implementation (MVP removed)
+  - See: [CHANGELOG v0.49.0](docs/changelogs/CHANGELOG_v0.49.0.md)
 - **v0.47.0** — Python Library (Phase 1 Complete) 🐍
   - Complete Python package with PyO3 FFI bindings
   - Real semantic search using Grid KNN in 3D space
@@ -232,7 +294,7 @@ cargo run --bin neurograph-repl
   - Full test suite (88% coverage, 26/28 tests)
   - Working examples with visual similarity display
   - Incremental releases: v0.47.1 (setup) → v0.47.5 (final)
-  - See: [PHASE1_COMPLETE.md](docs/PHASE1_COMPLETE.md), [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md)
+  - See: [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md)
 - **v0.45.0** — Cross-Service Sampling Propagation 🔗
   - W3C TraceContext integration for parent trace sampling inheritance
   - Automatic sampling decision propagation across distributed services
