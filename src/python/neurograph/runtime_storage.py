@@ -354,6 +354,18 @@ class RuntimeCDNAStorage:
         """
         return self._core.get_cdna_config()
 
+    def get_scales(self) -> List[float]:
+        """Get current dimension scales (L1-L8).
+
+        Returns:
+            List of 8 scale values
+
+        Example:
+            >>> scales = cdna.get_scales()
+            >>> print(f"L1 scale: {scales[0]}")
+        """
+        return self._core.get_cdna_scales()
+
     def update_scales(self, scales: List[float]) -> bool:
         """Update dimension scales (L1-L8).
 

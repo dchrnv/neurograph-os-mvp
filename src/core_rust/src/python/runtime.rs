@@ -345,16 +345,14 @@ impl PyRuntime {
     ///
     /// Returns:
     ///     dict: Token data or None if not found
-    pub fn get_token(&self, token_id: u32) -> PyResult<Option<HashMap<String, String>>> {
+    pub fn get_token(&self, token_id: u32, py: Python) -> PyResult<Option<Py<PyDict>>> {
         match self.storage.get_token(token_id) {
             Some(token) => {
-                let mut result = HashMap::new();
-                // Copy values to avoid packed struct reference issues
-                let id = token.id;
-                let weight = token.weight;
-                result.insert("id".to_string(), id.to_string());
-                result.insert("weight".to_string(), weight.to_string());
-                Ok(Some(result))
+                let result = PyDict::new_bound(py);
+                // Return proper types instead of all strings
+                result.set_item("id", token.id)?;
+                result.set_item("weight", token.weight)?;
+                Ok(Some(result.unbind()))
             }
             None => Ok(None),
         }
@@ -549,9 +547,19 @@ impl PyRuntime {
     pub fn get_cdna_config(&self, py: Python) -> PyResult<Py<PyDict>> {
         let cdna = self.storage.get_cdna();
         let result = PyDict::new_bound(py);
-        result.set_item("profile_id", cdna.profile_id)?;
-        result.set_item("flags", cdna.flags)?;
+        // Convert u32 to i64 to avoid format code issues
+        result.set_item("profile_id", cdna.profile_id as i64)?;
+        result.set_item("flags", cdna.flags as i64)?;
         Ok(result.unbind())
+    }
+
+    /// Get CDNA dimension scales
+    ///
+    /// Returns:
+    ///     list: 8 dimension scales [L1, L2, ..., L8]
+    pub fn get_cdna_scales(&self) -> PyResult<Vec<f32>> {
+        let cdna = self.storage.get_cdna();
+        Ok(cdna.dimension_scales.to_vec())
     }
 
     /// Update CDNA scales

@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 # Security scheme
 security = HTTPBearer(auto_error=False)
 
-# Global runtime instance (will be initialized on startup)
+# Global runtime instance (v0.51.0 - initialized on demand)
 _runtime_instance: Optional[object] = None
 
 # Global storage instances (singletons)
@@ -62,18 +62,37 @@ def get_runtime():
     Dependency to get the NeuroGraph runtime instance.
 
     Returns:
-        Runtime instance
+        Runtime instance (neurograph.Runtime v0.50.0)
 
     Raises:
-        HTTPException: If runtime is not initialized
+        HTTPException: If runtime initialization fails
     """
     global _runtime_instance
 
     if _runtime_instance is None:
-        # For now, return None - will initialize in Phase 2.2
-        # TODO: Initialize runtime on first call
-        logger.warning("Runtime not initialized yet")
-        return None
+        try:
+            from neurograph import Runtime, Config
+
+            # Initialize runtime with default config
+            config = Config(
+                grid_size=settings.NEUROGRAPH_GRID_SIZE,
+                dimensions=settings.NEUROGRAPH_DIMENSIONS
+            )
+            _runtime_instance = Runtime(config)
+            logger.info(f"Runtime initialized: grid_size={settings.NEUROGRAPH_GRID_SIZE}, "
+                       f"dimensions={settings.NEUROGRAPH_DIMENSIONS}")
+        except ImportError as e:
+            logger.error(f"Failed to import neurograph: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="neurograph package not available. Build with: maturin develop --release --features python-bindings"
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize runtime: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Runtime initialization failed: {str(e)}"
+            )
 
     return _runtime_instance
 
@@ -82,6 +101,7 @@ def set_runtime(runtime):
     """Set the global runtime instance."""
     global _runtime_instance
     _runtime_instance = runtime
+    logger.info("Runtime instance set externally")
 
 
 async def verify_token(
@@ -144,7 +164,7 @@ def get_token_storage() -> TokenStorageInterface:
     Get token storage instance.
 
     Returns appropriate storage backend based on settings.
-    Uses singleton pattern for lifecycle management.
+    Uses singleton pattern with shared Runtime instance.
     """
     global _token_storage
 
@@ -155,8 +175,10 @@ def get_token_storage() -> TokenStorageInterface:
             _token_storage = InMemoryTokenStorage()
             logger.info("Initialized InMemory token storage")
         elif backend == "runtime":
-            _token_storage = RuntimeTokenStorage()
-            logger.info("Initialized Runtime token storage")
+            # Get shared runtime instance
+            runtime = get_runtime()
+            _token_storage = RuntimeTokenStorage(runtime=runtime)
+            logger.info("Initialized Runtime token storage with shared Runtime")
         else:
             logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
             _token_storage = InMemoryTokenStorage()
@@ -169,7 +191,7 @@ def get_grid_storage() -> GridStorageInterface:
     Get grid storage instance.
 
     Returns appropriate storage backend based on settings.
-    Uses singleton pattern for lifecycle management.
+    Uses singleton pattern with shared Runtime instance.
     """
     global _grid_storage
 
@@ -180,8 +202,10 @@ def get_grid_storage() -> GridStorageInterface:
             _grid_storage = InMemoryGridStorage()
             logger.info("Initialized InMemory grid storage")
         elif backend == "runtime":
-            _grid_storage = RuntimeGridStorage()
-            logger.info("Initialized Runtime grid storage")
+            # Get shared runtime instance
+            runtime = get_runtime()
+            _grid_storage = RuntimeGridStorage(runtime=runtime)
+            logger.info("Initialized Runtime grid storage with shared Runtime")
         else:
             logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
             _grid_storage = InMemoryGridStorage()
@@ -194,7 +218,7 @@ def get_cdna_storage() -> CDNAStorageInterface:
     Get CDNA storage instance.
 
     Returns appropriate storage backend based on settings.
-    Uses singleton pattern for lifecycle management.
+    Uses singleton pattern with shared Runtime instance.
     """
     global _cdna_storage
 
@@ -205,8 +229,10 @@ def get_cdna_storage() -> CDNAStorageInterface:
             _cdna_storage = InMemoryCDNAStorage()
             logger.info("Initialized InMemory CDNA storage")
         elif backend == "runtime":
-            _cdna_storage = RuntimeCDNAStorage()
-            logger.info("Initialized Runtime CDNA storage")
+            # Get shared runtime instance
+            runtime = get_runtime()
+            _cdna_storage = RuntimeCDNAStorage(runtime=runtime)
+            logger.info("Initialized Runtime CDNA storage with shared Runtime")
         else:
             logger.warning(f"Unknown storage backend '{backend}', defaulting to memory")
             _cdna_storage = InMemoryCDNAStorage()

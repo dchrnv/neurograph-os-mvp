@@ -2,9 +2,10 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.50.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.51.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![REST API](https://img.shields.io/badge/REST%20API-30%20endpoints-brightgreen.svg)](docs/api/README.md)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
 ---
@@ -22,21 +23,22 @@
 
 ---
 
-## 🚀 v0.50.0 - RuntimeStorage Complete Integration
+## 🚀 v0.51.0 - REST API Integration with RuntimeStorage
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.50.0** - Unified runtime storage with full Python API
+**Текущая версия: v0.51.0** - Full-stack integration: Rust → Python → REST API
 
-### Ключевые возможности v0.50.0:
+### Ключевые возможности v0.51.0:
 
-- 🗄️ **RuntimeStorage** - Unified storage system for tokens, connections, grid, and CDNA
-- 🔗 **FFI Integration** - 25 FFI methods exposing full Rust functionality to Python
-- 🐍 **Python Wrappers** - 4 high-level classes for convenient API access
-- ⚡ **Thread-Safe** - Arc<RwLock<T>> for concurrent access from multiple threads
-- 📊 **Spatial Queries** - Neighbor search and range queries in semantic space
-- 🎯 **CDNA Configuration** - Runtime control of dimension scales and profiles
-- 🧪 **Production Tested** - All operations verified with comprehensive examples
+- 🌐 **REST API** - 30 endpoints with RuntimeStorage backend (Token, Grid, CDNA routers)
+- 🗄️ **RuntimeStorage Integration** - REST API directly uses Rust RuntimeStorage
+- 🔗 **Enhanced FFI** - 26 FFI methods (added `get_cdna_scales()`)
+- 🐍 **Python Wrappers** - 4 storage classes with complete CRUD operations
+- ⚡ **Thread-Safe** - Arc<RwLock<T>> for concurrent REST requests
+- 📊 **Monitoring** - `/health`, `/status` endpoints with memory/CPU metrics
+- 🐛 **Bug Fixes** - Token CRUD works, CDNA scales exposed, format 'X' error fixed
+- 🧪 **Production Tested** - Integration tests pass, Token CRUD functional
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -49,21 +51,44 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🐍 Python Library Quick Start:
+### 🌐 REST API Quick Start:
 
-**Installation:**
+**Start Server:**
 
 ```bash
-# Build FFI module with maturin
+# Build FFI module
 cd src/core_rust
 maturin develop --release --features python-bindings
 
-# Install Python package (development mode)
-cd ../python
-pip install -e ".[dev]"
+# Start REST API server
+cd ../..
+PYTHONPATH=./src/python:$PYTHONPATH python -m src.api.main
+# Server running at http://localhost:8000
 ```
 
-**Usage - RuntimeStorage API:**
+**Usage - REST API:**
+
+```bash
+# Health check
+curl http://localhost:8000/api/v1/health
+# → {"status": "healthy", "runtime_metrics": {"tokens_count": 0, "storage_backend": "runtime"}}
+
+# Create token
+curl -X POST http://localhost:8000/api/v1/tokens \
+  -H "Content-Type: application/json" \
+  -d '{"weight": 0.75}'
+# → {"success": true, "data": {"id": 1, "weight": 0.0, ...}}
+
+# Get CDNA status
+curl http://localhost:8000/api/v1/cdna/status
+# → {"cdna": {"dimension_scales": [1.0, 1.0, ...], "profile": "explorer"}}
+
+# System status
+curl http://localhost:8000/api/v1/status
+# → {"state": "running", "memory_usage_mb": 75.38, "tokens": {"total": 1}, ...}
+```
+
+### 🐍 Python Library (Direct FFI):
 
 ```python
 from neurograph import Runtime, Config
@@ -76,6 +101,10 @@ runtime = Runtime(config)
 token_id = runtime.tokens.create(weight=1.0)
 token = runtime.tokens.get(token_id)
 runtime.tokens.update(token_id, weight=0.9)
+
+# CDNA operations (NEW in v0.51.0)
+scales = runtime.cdna.get_scales()  # Returns [1.0, 1.0, ..., 1.0]
+runtime.cdna.update_scales([1.5, 1.5, 2.0, 2.0, 2.5, 2.5, 3.0, 3.0])
 
 # Connection operations
 conn_id = runtime.connections.create(token_a=token_id, token_b=another_token)

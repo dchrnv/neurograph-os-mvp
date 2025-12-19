@@ -67,8 +67,8 @@ class Settings(BaseSettings):
     NEUROGRAPH_DIMENSIONS: int = 50
     NEUROGRAPH_GRID_SIZE: int = 1000
 
-    # Storage Backend
-    STORAGE_BACKEND: str = "memory"  # "memory" or "runtime" (Phase 2.2)
+    # Storage Backend (v0.51.0 - RuntimeStorage by default)
+    STORAGE_BACKEND: str = "runtime"  # "memory" or "runtime"
 
     # Token Storage
     TOKEN_STORAGE_MAX_SIZE: int = 1000000  # Maximum number of tokens
