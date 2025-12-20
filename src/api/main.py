@@ -29,19 +29,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import time
 from datetime import datetime
-import logging
 
 from .config import settings
 from .routers import health, query, status, modules, metrics
 from .routers import tokens, grid, cdna
 from .models.response import ErrorResponse
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# v0.52.0: Structured logging and middleware
+from .logging_config import setup_logging, get_logger
+from .middleware import (
+    CorrelationIDMiddleware,
+    RequestLoggingMiddleware,
+    ErrorLoggingMiddleware
 )
-logger = logging.getLogger(__name__)
+
+# Configure structured logging
+setup_logging(
+    level=settings.LOG_LEVEL,
+    json_format=settings.LOG_JSON_FORMAT,
+    correlation_tracking=settings.LOG_CORRELATION_TRACKING
+)
+logger = get_logger(__name__, service="api")
 
 # Create FastAPI app
 app = FastAPI(
@@ -53,7 +61,22 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# CORS middleware
+# v0.52.0: Observability middlewares (order matters!)
+# 1. Error logging (outermost - catches everything)
+app.add_middleware(ErrorLoggingMiddleware, debug=settings.DEBUG)
+
+# 2. Request logging (logs all requests/responses)
+app.add_middleware(
+    RequestLoggingMiddleware,
+    skip_paths=["/health", "/api/v1/health", "/api/v1/health/ready"],
+    log_request_body=settings.LOG_REQUEST_BODY,
+    log_response_body=settings.LOG_RESPONSE_BODY
+)
+
+# 3. Correlation ID (sets context for logging)
+app.add_middleware(CorrelationIDMiddleware)
+
+# 4. CORS (innermost - before route handlers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -61,15 +84,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Request ID and timing middleware
-@app.middleware("http")
-async def add_process_time_header(request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = (time.time() - start_time) * 1000  # Convert to ms
-    response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
-    return response
 
 # Include routers
 # System routers
@@ -86,16 +100,23 @@ app.include_router(cdna.router, prefix="/api/v1", tags=["CDNA"])
 # Query router (will be enhanced in Phase 4)
 app.include_router(query.router, prefix="/api/v1", tags=["Query"])
 
-# Global exception handler
+# Global exception handler (fallback - middleware should catch most)
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc: Exception):
-    logger.error(f"Global exception: {exc}", exc_info=True)
+    logger.exception(
+        "Global exception handler triggered",
+        extra={
+            "event": "global_exception",
+            "path": request.url.path,
+            "method": request.method,
+        }
+    )
     return JSONResponse(
         status_code=500,
         content=ErrorResponse(
             code="INTERNAL_ERROR",
             message="Internal server error",
-            details={"error": str(exc)}
+            details={"error": str(exc)} if settings.DEBUG else None
         ).dict()
     )
 

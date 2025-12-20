@@ -2,10 +2,10 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.51.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.52.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
-[![REST API](https://img.shields.io/badge/REST%20API-30%20endpoints-brightgreen.svg)](docs/api/README.md)
+[![REST API](https://img.shields.io/badge/REST%20API-34%20endpoints-brightgreen.svg)](docs/api/README.md)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
 ---
@@ -23,22 +23,22 @@
 
 ---
 
-## 🚀 v0.51.0 - REST API Integration with RuntimeStorage
+## 🚀 v0.52.0 - Observability & Monitoring
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.51.0** - Full-stack integration: Rust → Python → REST API
+**Текущая версия: v0.52.0** - Production observability stack with structured logging and metrics
 
-### Ключевые возможности v0.51.0:
+### Ключевые возможности v0.52.0:
 
-- 🌐 **REST API** - 30 endpoints with RuntimeStorage backend (Token, Grid, CDNA routers)
-- 🗄️ **RuntimeStorage Integration** - REST API directly uses Rust RuntimeStorage
-- 🔗 **Enhanced FFI** - 26 FFI methods (added `get_cdna_scales()`)
-- 🐍 **Python Wrappers** - 4 storage classes with complete CRUD operations
-- ⚡ **Thread-Safe** - Arc<RwLock<T>> for concurrent REST requests
-- 📊 **Monitoring** - `/health`, `/status` endpoints with memory/CPU metrics
-- 🐛 **Bug Fixes** - Token CRUD works, CDNA scales exposed, format 'X' error fixed
-- 🧪 **Production Tested** - Integration tests pass, Token CRUD functional
+- 📊 **Structured Logging** - JSON logs with correlation ID tracking and ISO 8601 timestamps
+- 🔍 **Prometheus Metrics** - 12 metric types (HTTP, tokens, grid, CDNA, FFI, system)
+- ⚡ **Performance Optimized** - `/status` endpoint 11.3x faster (108ms → 9.5ms P95)
+- 🏥 **Enhanced Health Checks** - 4 endpoints for Kubernetes probes (live/ready/startup)
+- 🌐 **REST API** - 34 endpoints with full observability integration
+- 🎯 **Production Ready** - Real-time monitoring, debugging, and performance tracking
+- 📈 **Metrics Endpoints** - `/api/v1/metrics` (Prometheus) + `/api/v1/metrics/json`
+- 🔗 **Zero Breaking Changes** - Fully backward compatible with v0.51.0
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -60,32 +60,53 @@
 cd src/core_rust
 maturin develop --release --features python-bindings
 
-# Start REST API server
+# Start REST API server (with structured logging)
 cd ../..
-PYTHONPATH=./src/python:$PYTHONPATH python -m src.api.main
+LOG_LEVEL=INFO LOG_JSON_FORMAT=true python -m src.api.main
 # Server running at http://localhost:8000
+# JSON logs output to stdout with correlation IDs
 ```
 
 **Usage - REST API:**
 
 ```bash
-# Health check
-curl http://localhost:8000/api/v1/health
+# Health checks (Kubernetes-ready)
+curl http://localhost:8000/api/v1/health/live    # Liveness probe
+curl http://localhost:8000/api/v1/health/ready   # Readiness probe
+curl http://localhost:8000/api/v1/health/startup # Startup probe
+curl http://localhost:8000/api/v1/health         # Basic health
 # → {"status": "healthy", "runtime_metrics": {"tokens_count": 0, "storage_backend": "runtime"}}
 
-# Create token
+# Prometheus metrics (NEW in v0.52.0)
+curl http://localhost:8000/api/v1/metrics        # Prometheus text format
+curl http://localhost:8000/api/v1/metrics/json   # JSON format (human-readable)
+
+# Create token (auto-tracked in metrics)
 curl -X POST http://localhost:8000/api/v1/tokens \
   -H "Content-Type: application/json" \
   -d '{"weight": 0.75}'
 # → {"success": true, "data": {"id": 1, "weight": 0.0, ...}}
+# Automatically tracked: neurograph_token_operations_total, neurograph_http_requests_total
 
-# Get CDNA status
-curl http://localhost:8000/api/v1/cdna/status
-# → {"cdna": {"dimension_scales": [1.0, 1.0, ...], "profile": "explorer"}}
-
-# System status
+# System status (optimized: <10ms)
 curl http://localhost:8000/api/v1/status
 # → {"state": "running", "memory_usage_mb": 75.38, "tokens": {"total": 1}, ...}
+```
+
+**Structured Logging Example:**
+
+```json
+{
+  "timestamp": "2024-12-20T09:17:14.873680+00:00",
+  "level": "INFO",
+  "logger": "src.api.main",
+  "message": "POST /api/v1/tokens - 201",
+  "correlation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "method": "POST",
+  "path": "/api/v1/tokens",
+  "status_code": 201,
+  "duration_ms": 5.23
+}
 ```
 
 ### 🐍 Python Library (Direct FFI):
@@ -152,7 +173,9 @@ http://localhost:3001          # Grafana (optional)
 ```
 
 **См. также:**
-- [CHANGELOG v0.50.0](docs/changelogs/CHANGELOG_v0.50.0.md) - RuntimeStorage Integration ← **NEW**
+- [CHANGELOG v0.52.0](docs/changelogs/CHANGELOG_v0.52.0.md) - Observability & Monitoring ← **NEW**
+- [CHANGELOG v0.51.0](docs/changelogs/CHANGELOG_v0.51.0.md) - REST API + RuntimeStorage Integration
+- [CHANGELOG v0.50.0](docs/changelogs/CHANGELOG_v0.50.0.md) - RuntimeStorage Integration
 - [CHANGELOG v0.49.0](docs/changelogs/CHANGELOG_v0.49.0.md) - REST API Phase 2 Complete
 - [CHANGELOG v0.47.0](docs/changelogs/CHANGELOG_v0.47.0.md) - Python Library (Phase 1)
 - [CHANGELOG v0.45.0](docs/changelogs/CHANGELOG_v0.45.0.md) - Cross-service sampling
@@ -168,7 +191,10 @@ http://localhost:3001          # Grafana (optional)
 - ✅ **GIL Release** - Non-blocking Python integration (v0.41.0)
 
 **Observability & Monitoring:**
-- ✅ **Prometheus Metrics** - /metrics endpoint с 15+ метриками (v0.42.0)
+- ✅ **Structured Logging** - JSON logs с correlation ID tracking (v0.52.0)
+- ✅ **Prometheus Metrics** - 12 metric types для полного мониторинга (v0.52.0)
+- ✅ **Kubernetes Health Checks** - 4 endpoints (live/ready/startup) (v0.52.0)
+- ✅ **Performance Optimized** - /status endpoint 11.3x faster (v0.52.0)
 - ✅ **Black Box Recorder** - Flight recorder для post-mortem анализа (v0.42.0)
 - ✅ **Distributed Tracing** - OpenTelemetry + Jaeger (v0.44.0)
 - ✅ **Adaptive Sampling** - 9% overhead вместо 98% (v0.44.3)
@@ -190,10 +216,12 @@ http://localhost:3001          # Grafana (optional)
 **Roadmap (Next Steps):**
 - ✅ **v0.47.0** - Python Library (Phase 1: Complete semantic search)
 - ✅ **v0.49.0** - REST API (Phase 2: FastAPI routers complete)
-- ✅ **v0.50.0** - RuntimeStorage (Unified storage with full Python API) ← **YOU ARE HERE**
-- 🎯 **v0.51.0** - Advanced Runtime Features (persistence, transactions, batch operations)
-- ⏳ **v0.52.0** - Web Dashboard (React + visualization)
-- ⏳ **v0.53.0** - Jupyter Integration (Magic commands + widgets)
+- ✅ **v0.50.0** - RuntimeStorage (Unified storage with full Python API)
+- ✅ **v0.51.0** - REST API + RuntimeStorage Integration
+- ✅ **v0.52.0** - Observability & Monitoring (Structured logging + Prometheus) ← **YOU ARE HERE**
+- 🎯 **v0.53.0** - Authentication & Security (JWT, RBAC, rate limiting)
+- ⏳ **v0.54.0** - Web Dashboard (React + visualization)
+- ⏳ **v0.55.0** - Jupyter Integration (Magic commands + widgets)
 
 ---
 
@@ -301,6 +329,22 @@ cargo run --bin neurograph-repl
 
 ### Последние обновления
 
+- **v0.52.0** — Observability & Monitoring 📊
+  - Structured JSON logging with correlation ID tracking
+  - Prometheus metrics (12 types: HTTP, tokens, grid, CDNA, FFI, system)
+  - /status endpoint optimized 11.3x (108ms → 9.5ms P95)
+  - Enhanced health checks: /health/live, /health/ready, /health/startup
+  - Kubernetes-ready probes with proper lifecycle management
+  - Zero breaking changes, fully backward compatible
+  - Production-ready observability stack for real-time monitoring
+  - See: [CHANGELOG v0.52.0](docs/changelogs/CHANGELOG_v0.52.0.md)
+- **v0.51.0** — REST API + RuntimeStorage Integration 🌐
+  - Full REST API with RuntimeStorage backend (34 endpoints)
+  - Enhanced FFI with 26 methods exposing RuntimeStorage to Python
+  - Thread-safe Arc<RwLock<T>> for concurrent REST requests
+  - Bug fixes: Token CRUD, CDNA scales, format 'X' error
+  - Production tested with integration tests
+  - See: [CHANGELOG v0.51.0](docs/changelogs/CHANGELOG_v0.51.0.md)
 - **v0.50.0** — RuntimeStorage Complete Integration 🗄️
   - Unified RuntimeStorage in Rust with thread-safe Arc<RwLock<T>>
   - 25 FFI methods exposing tokens, connections, grid, and CDNA to Python

@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
+    # Logging (v0.52.0)
+    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    LOG_JSON_FORMAT: bool = True  # JSON format for structured logging
+    LOG_CORRELATION_TRACKING: bool = True  # Enable correlation ID tracking
+    LOG_REQUEST_BODY: bool = False  # Log request bodies (security risk!)
+    LOG_RESPONSE_BODY: bool = False  # Log response bodies
+
     # API Configuration
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "NeuroGraph API"

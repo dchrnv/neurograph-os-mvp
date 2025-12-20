@@ -1,9 +1,10 @@
-# NeuroGraph OS - Мастер-план развития v2.1
+# NeuroGraph OS - Мастер-план развития v2.3
 
-**Версия:** 2.2
-**Дата:** 2024-12-19
+**Версия:** 2.3
+**Дата:** 2024-12-20
 **Статус:** Active - Post v0.51.0
 **Предыдущие версии:**
+- v2.2 (2024-12-19) - archived as `MASTER_PLAN_v2.2.md`
 - v2.1 (2024-12-18) - archived as `MASTER_PLAN_v2.1.md`
 - v2.0 (2024-12-17) - archived as `MASTER_PLAN.md`
 - UNIFIED_RECOVERY_PLAN_v3.md - ✅ **ЗАВЕРШЁН**
@@ -18,11 +19,11 @@
 Core (Rust) ✅ → Python Library ✅ → REST API ✅ → Web Dashboard + Jupyter
 ```
 
-**Текущий статус:** ✅ v0.51.0 завершён, переходим к v0.52.0 (Connection Tracking + Auth)
+**Текущий статус:** ✅ v0.51.0 завершён + Benchmark complete, переходим к v0.52.0 (Observability)
 
 ---
 
-## 📊 Текущее состояние (2024-12-19)
+## 📊 Текущее состояние (2024-12-20)
 
 ### ✅ Что работает (v0.51.0)
 
@@ -81,6 +82,13 @@ Core (Rust) ✅ → Python Library ✅ → REST API ✅ → Web Dashboard + Jupy
 - Type hints и comprehensive docstrings
 - Production-ready examples
 
+#### 5. Performance Benchmarks v0.51.0 ✨ NEW
+- **Rust Core:** 40µs/token creation, 1.1µs/token retrieval (~900K tokens/sec)
+- **Python FFI:** <1µs overhead, efficient PyO3 bindings
+- **REST API:** 4-5ms latency (210 req/s health, 180 req/s token create)
+- **Release Build:** 2-4x faster than debug, LLVM optimizations verified
+- **Full Report:** BENCHMARK_v0.51.0.md + JSON data
+
 ---
 
 ## 🗺️ Roadmap (4 трека параллельно)
@@ -138,34 +146,91 @@ Core (Rust) ✅ → Python Library ✅ → REST API ✅ → Web Dashboard + Jupy
 
 ---
 
-## 🚀 ТРЕК B: Connection Tracking (v0.52.0) - NEXT
+## 🔍 ТРЕК B: Observability & Monitoring (v0.52.0) - NEXT ⭐
 
-**Цель:** Добавить Connection tracking в FFI и REST API
+**Цель:** Production-ready observability stack
 
-**Срок:** 1 день
-**Приоритет:** 🟡 ВЫСОКИЙ
+**Срок:** 2-3 дня
+**Приоритет:** 🔴 КРИТИЧЕСКИЙ
+**Обоснование:** Benchmark показал узкие места (/status: 108ms), нужен мониторинг перед Auth
 
-### Tasks:
-- [ ] Add `count_connections()` to PyRuntime FFI
-- [ ] Add `get_connections_for_token()` to PyRuntime FFI
-- [ ] Update `/status` endpoint to show real connections count
-- [ ] Add `/api/v1/connections` REST endpoint
-- [ ] Integration tests
+### Phase 1: Structured Logging (1 день)
+
+**Задачи:**
+- [ ] Настроить structured logging (JSON format)
+  - Request/response logging с timing
+  - Error logging с stack traces
+  - Security events logging
+- [ ] Correlation ID для трассировки запросов
+- [ ] Log levels по environment (DEBUG/INFO/WARNING/ERROR)
+- [ ] Rotation и archival политики
+
+### Phase 2: Metrics & Monitoring (1 день)
+
+**Задачи:**
+- [ ] Prometheus metrics endpoint `/metrics`
+  - HTTP request latency histograms
+  - Request count по endpoint/method/status
+  - Token operations metrics (create/get/update/delete counts)
+  - Grid query performance metrics
+  - CDNA operation counters
+- [ ] Custom metrics из Rust RuntimeStorage
+  - FFI call latency
+  - Lock contention metrics
+  - Memory usage tracking
+- [ ] Health checks enhancement
+  - `/health/live` - liveness probe
+  - `/health/ready` - readiness probe (check Rust runtime)
+  - `/health/startup` - startup probe
+
+### Phase 3: Performance Profiling (1 день)
+
+**Задачи:**
+- [ ] Оптимизировать `/status` endpoint (текущий: 108ms → цель: <10ms)
+  - Убрать psutil или кэшировать результаты
+  - Асинхронный сбор метрик
+- [ ] Добавить profiling endpoints (dev/staging only)
+  - `/debug/profile` - memory profiling
+  - `/debug/trace` - request tracing
+- [ ] Performance regression testing
+  - Automated benchmark на CI/CD
+  - Alerts при деградации performance
+
+### Phase 4: Dashboards (опционально)
+
+**Задачи:**
+- [ ] Grafana dashboard templates
+  - API performance dashboard
+  - System health dashboard
+  - Business metrics (tokens/connections growth)
+- [ ] Prometheus alerts
+  - High error rate (>5%)
+  - High latency (p95 > 100ms)
+  - Low health score
 
 **Deliverables:**
-- Connection metrics in `/status`
-- REST API для connections
-- Full CRUD через API
-- [ ] Integration tests pass
+- ✅ Structured logging с correlation ID
+- ✅ Prometheus `/metrics` endpoint работает
+- ✅ Enhanced health checks (live/ready/startup)
+- ✅ `/status` endpoint оптимизирован (<10ms)
+- ✅ Performance regression tests на CI
+- ✅ Grafana dashboard готов (опционально)
+
+**Success Criteria:**
+- Можем видеть все запросы и их timing
+- Можем отследить медленные операции
+- Alerts срабатывают при проблемах
+- Performance не деградирует между релизами
 
 ---
 
-## ТРЕК B: Authentication & Security (v0.52.0)
+## 🔐 ТРЕК C: Authentication & Security (v0.53.0)
 
-**Цель:** Production-ready security
+**Цель:** Production-ready security (после Observability)
 
 **Срок:** 2-3 дня
 **Приоритет:** 🟡 ВЫСОКИЙ
+**Зависимости:** Требует v0.52.0 (Observability) для логирования auth events
 
 ### Authentication
 
@@ -199,7 +264,29 @@ Core (Rust) ✅ → Python Library ✅ → REST API ✅ → Web Dashboard + Jupy
 
 ---
 
-## ТРЕК C: WebSocket Support (v0.53.0)
+## 🚀 ТРЕК D: Connection Tracking (v0.54.0)
+
+**Цель:** Добавить Connection tracking в FFI и REST API
+
+**Срок:** 1 день
+**Приоритет:** 🟢 СРЕДНИЙ
+
+### Tasks:
+- [ ] Add `count_connections()` to PyRuntime FFI
+- [ ] Add `get_connections_for_token()` to PyRuntime FFI
+- [ ] Update `/status` endpoint to show real connections count
+- [ ] Add `/api/v1/connections` REST endpoint
+- [ ] Integration tests
+
+**Deliverables:**
+- Connection metrics in `/status`
+- REST API для connections
+- Full CRUD через API
+- [ ] Integration tests pass
+
+---
+
+## 🌐 ТРЕК E: WebSocket Support (v0.55.0)
 
 **Цель:** Real-time data streaming
 
@@ -235,7 +322,7 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 
 ---
 
-## ТРЕК D: Python Library Packaging (v0.54.0)
+## 📦 ТРЕК F: Python Library Packaging (v0.56.0)
 
 **Цель:** Publish `neurograph` на PyPI
 
@@ -369,38 +456,66 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 
 ---
 
-## 📋 Timeline (общий)
+## 📋 Updated Timeline (v2.3)
 
-| Трек | Задача | Срок | Статус |
-|------|--------|------|--------|
-| **A** | v0.49.0 CRUD API | Week 1 | ✅ Done |
-| **A** | v0.50.0 RuntimeStorage | Week 2 | ✅ Done |
-| **A** | v0.51.0 REST API Integration | Week 3 | 🎯 Next |
-| **B** | v0.52.0 Auth + Security | Week 3-4 | ⏳ Pending |
-| **C** | v0.53.0 WebSocket | Week 4 | ⏳ Pending |
-| **D** | v0.54.0 PyPI Package | Week 4-5 | ⏳ Pending |
-| **E** | v0.60.0 Web Dashboard | Week 6-8 | ⏳ Pending |
-| **F** | v0.70.0 Jupyter | Week 8 | ⏳ Pending |
+| Трек | Задача | Срок | Статус | Приоритет |
+|------|--------|------|--------|-----------|
+| **A** | v0.49.0 CRUD API | Week 1 | ✅ Done | - |
+| **A** | v0.50.0 RuntimeStorage | Week 2 | ✅ Done | - |
+| **A** | v0.51.0 REST API Integration | Week 3 | ✅ Done | - |
+| **B** | v0.52.0 Observability | Week 4 | 🎯 **NEXT** | 🔴 Critical |
+| **C** | v0.53.0 Auth + Security | Week 4-5 | ⏳ Pending | 🟡 High |
+| **D** | v0.54.0 Connection Tracking | Week 5 | ⏳ Pending | 🟢 Medium |
+| **E** | v0.55.0 WebSocket | Week 5-6 | ⏳ Pending | 🟢 Medium |
+| **F** | v0.56.0 PyPI Package | Week 6-7 | ⏳ Pending | 🟡 High |
+| **G** | v0.60.0 Web Dashboard | Week 8-10 | ⏳ Pending | 🟢 Low |
+| **H** | v0.70.0 Jupyter | Week 10 | ⏳ Pending | 🟢 Low |
 
-**TOTAL:** ~2 месяца до полного production
+**TOTAL:** ~2.5 месяца до полного production
 
 ---
 
-## 🎯 Immediate Next Steps
+## 🎯 Immediate Next Steps (Updated 2024-12-20)
 
-### Эта неделя (Week 3):
-1. ✅ Завершить v0.50.0 (RuntimeStorage) - **DONE!**
-2. 🎯 v0.51.0 - REST API Integration (2-3 дня)
-3. 🎯 v0.52.0 - Auth + Security (2-3 дня)
+### ✅ Завершено:
+1. ✅ v0.50.0 (RuntimeStorage) - **DONE!**
+2. ✅ v0.51.0 (REST API Integration) - **DONE!**
+3. ✅ Full System Benchmark - **DONE!**
 
-### Следующая неделя (Week 4):
-- v0.53.0 - WebSocket Support
-- v0.54.0 - PyPI Package
-- Начать Web Dashboard
+### 🎯 Week 4 (Текущая):
+1. **v0.52.0 - Observability & Monitoring** (2-3 дня) 🔴 PRIORITY
+   - Phase 1: Structured Logging
+   - Phase 2: Prometheus Metrics
+   - Phase 3: Performance Optimization (/status: 108ms → <10ms)
+   - Phase 4: Dashboards (optional)
 
-### Этот месяц:
-- Завершить ТРЕК A-D (REST API + Python Library)
-- Начать ТРЕК E (Web Dashboard)
+### Week 4-5:
+2. **v0.53.0 - Auth + Security** (2-3 дня)
+   - JWT authentication
+   - RBAC
+   - Rate limiting
+   - Audit logging
+
+### Week 5:
+3. **v0.54.0 - Connection Tracking** (1 день)
+   - FFI methods
+   - REST endpoints
+   - Integration tests
+
+### Week 5-6:
+4. **v0.55.0 - WebSocket Support** (1-2 дня)
+   - Real-time event streaming
+   - Live metrics broadcasting
+
+### Этот месяц (Декабрь):
+- ✅ Завершить ТРЕК A (REST API Integration)
+- 🎯 Завершить ТРЕК B-D (Observability, Auth, Connections)
+- 🎯 Начать PyPI packaging
+
+### Январь:
+- PyPI publish
+- Web Dashboard (начало)
+- Jupyter integration
 
 ---
 
@@ -428,16 +543,25 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 
 ## ✅ Success Metrics
 
-### v0.51.0 (REST API Integration):
-- [ ] REST API использует RuntimeStorage
-- [ ] Latency < 50ms (p95)
-- [ ] All 30 endpoints functional
-- [ ] Integration tests pass
+### v0.51.0 (REST API Integration): ✅ ACHIEVED
+- ✅ REST API использует RuntimeStorage
+- ⏳ Latency < 50ms (p95) - measured: 4-5ms (better than target!)
+- ✅ All 30 endpoints functional
+- ✅ Integration tests pass
+- ✅ All critical bugs fixed
 
-### v0.52.0 (Auth):
+### v0.52.0 (Observability):
+- [ ] Structured logging working
+- [ ] Prometheus /metrics endpoint
+- [ ] /status optimized (<10ms from 108ms)
+- [ ] Health checks enhanced (live/ready/startup)
+- [ ] Performance regression tests on CI
+
+### v0.53.0 (Auth):
 - [ ] JWT authentication работает
 - [ ] RBAC реализован
 - [ ] Rate limiting активен
+- [ ] Audit logging
 
 ### v0.54.0 (Python Package):
 - [ ] `pip install neurograph` works
@@ -456,16 +580,18 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 ## 🚀 References
 
 **Актуальные документы:**
-- `MASTER_PLAN_v2.1.md` - этот файл (текущий план)
-- `docs/changelogs/CHANGELOG_v0.50.0.md` - последний релиз
-- `docs/changelogs/PROGRESS_v0.50.0.md` - детали реализации
+- `docs/MASTER_PLAN.md` - **этот файл** (v2.3, текущий план)
+- `docs/changelogs/CHANGELOG_v0.51.0.md` - последний релиз
+- `BENCHMARK_v0.51.0.md` - performance benchmark report
+- `BENCHMARK_v0.51.0.json` - benchmark raw data
 - `README.md` - главный README проекта
 
 **Архивные документы:**
-- `docs/MASTER_PLAN.md` - предыдущая версия плана (2024-12-17)
+- `docs/MASTER_PLAN_v2.2.md` - предыдущая версия (2024-12-19)
+- `docs/MASTER_PLAN_v2.1.md` - версия v2.1 (2024-12-18)
+- `docs/changelogs/CHANGELOG_v0.50.0.md` - RuntimeStorage релиз
 - `docs/UNIFIED_RECOVERY_PLAN_v3.md` - завершённый план восстановления
 - `docs/plan v 0.49.x.md` - старый REST API план
-- `docs/PYRUNTIME_FIX_INSTRUCTIONS 2.md` - архитектурные исправления
 
 **Файлы проекта:**
 - `src/core_rust/` - Rust core с RuntimeStorage
@@ -475,10 +601,34 @@ async with websockets.connect("ws://localhost:8000/ws") as ws:
 
 ---
 
-**Конец мастер-плана v2.1. Готовы к v0.51.0! 🚀**
+---
+
+## 📝 Changelog
+
+### v2.3 (2024-12-20)
+- ✅ v0.51.0 завершён + баги исправлены
+- ✅ Full system benchmark completed (BENCHMARK_v0.51.0.md)
+- 🔄 Изменён приоритет: Observability перед Auth (обоснование: benchmark показал узкие места)
+- 🔄 Обновлена нумерация версий: v0.52.0 - Observability, v0.53.0 - Auth
+- ➕ Добавлен Performance Benchmarks раздел в "Текущее состояние"
+
+### v2.2 (2024-12-19)
+- ✅ v0.51.0 завершён (REST API Integration)
+- ✅ Исправлены 3 критических бага (format 'X', token dict types, missing get_scales)
+- ➕ Добавлено 26 FFI методов (было 25)
+- ✅ Обновлена документация (CHANGELOG, README)
+
+### v2.1 (2024-12-18)
+- ✅ v0.50.0 завершён (RuntimeStorage)
+- Первая версия плана после UNIFIED_RECOVERY_PLAN
+
+---
+
+**Конец мастер-плана v2.3. Готовы к v0.52.0 Observability! 🚀**
 
 ---
 
 *Создано: 2024-12-18*
+*Обновлено: 2024-12-20*
 *Автор: Claude Sonnet 4.5*
 *Статус: Living Document - обновляется по мере прогресса*
