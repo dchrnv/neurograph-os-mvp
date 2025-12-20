@@ -1,0 +1,96 @@
+{
+  "version": "0.51.0",
+  "date": "2024-12-19",
+  "system": {
+    "os": "Linux 6.17.8-arch1-1",
+    "python_version": "3.12.12",
+    "cpu_count": 4,
+    "cpu_threads": 8,
+    "memory_gb": 5.73
+  },
+  "rust_core": {
+    "token_creation_100": {
+      "total_ms": 4.58,
+      "per_token_us": 45.82,
+      "tokens_per_sec": 21826.25
+    },
+    "token_creation_1000": {
+      "total_ms": 40.22,
+      "per_token_us": 40.22,
+      "tokens_per_sec": 24864.13
+    },
+    "token_creation_10000": {
+      "total_ms": 439.99,
+      "per_token_us": 44.0,
+      "tokens_per_sec": 22727.89
+    },
+    "token_retrieval_1000": {
+      "total_ms": 1.1,
+      "per_token_us": 1.1,
+      "tokens_per_sec": 907082.13
+    },
+    "grid_queries_100": {
+      "total_ms": 11.33,
+      "per_query_ms": 0.11,
+      "queries_per_sec": 8828.68
+    },
+    "cdna_get_config_1000": {
+      "total_ms": 0.64,
+      "per_op_us": 0.64,
+      "ops_per_sec": 1563332.96
+    },
+    "cdna_get_scales_1000": {
+      "total_ms": 0.39,
+      "per_op_us": 0.39,
+      "ops_per_sec": 2581271.33
+    },
+    "memory_usage": {
+      "rss_mb": 21.32,
+      "vms_mb": 25.94
+    }
+  },
+  "python_ffi": {
+    "storage_get_1000": {
+      "total_ms": 0.9,
+      "per_op_us": 0.9,
+      "ops_per_sec": 1114675.6
+    },
+    "storage_list_100": {
+      "total_ms": 0.54,
+      "per_op_ms": 0.01,
+      "ops_per_sec": 184506.61
+    },
+    "grid_range_query_100": {
+      "total_ms": 2.17,
+      "per_op_ms": 0.02,
+      "ops_per_sec": 46148.19
+    },
+    "cdna_storage_get_config_1000": {
+      "total_ms": 0.51,
+      "per_op_us": 0.51,
+      "ops_per_sec": 1977859.84
+    }
+  },
+  "rest_api": {
+    "health_100": {
+      "total_ms": 475.93,
+      "per_req_ms": 4.76,
+      "req_per_sec": 210.11
+    },
+    "token_create_100": {
+      "total_ms": 556.28,
+      "per_req_ms": 5.56,
+      "req_per_sec": 179.77
+    },
+    "token_get_100": {
+      "total_ms": 465.61,
+      "per_req_ms": 4.66,
+      "req_per_sec": 214.77
+    },
+    "status_100": {
+      "total_ms": 10856.43,
+      "per_req_ms": 108.56,
+      "req_per_sec": 9.21
+    }
+  }
+}

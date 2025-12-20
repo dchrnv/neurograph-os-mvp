@@ -1,0 +1,44 @@
+{
+  "profile": "smoke",
+  "description": "Smoke test - \u0431\u044b\u0441\u0442\u0440\u0430\u044f \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0440\u0430\u0431\u043e\u0442\u043e\u0441\u043f\u043e\u0441\u043e\u0431\u043d\u043e\u0441\u0442\u0438",
+  "total_time_sec": 8.31,
+  "timestamp": "2025-12-20T10:45:55.529630",
+  "results": {
+    "rust_core": {
+      "status": "\u2705 SUCCESS",
+      "tokens_created": 1000,
+      "create_time_sec": 0.05,
+      "create_rate_per_sec": 18394.74,
+      "read_count": 1000,
+      "read_time_ms": 1.06,
+      "read_rate_per_sec": 940814.32,
+      "grid_queries": 200,
+      "grid_time_ms": 1.27,
+      "grid_rate_per_sec": 157218.86,
+      "avg_results_per_query": 10.0,
+      "memory_start_mb": 17.7,
+      "memory_end_mb": 19.5,
+      "memory_delta_mb": 1.8,
+      "total_time_sec": 0.06
+    },
+    "rest_api": {
+      "status": "\u2705 SUCCESS",
+      "health_requests": 100,
+      "health_success": 100,
+      "health_time_ms": 500.43,
+      "health_latency_ms": 5.0,
+      "token_create_requests": 500,
+      "token_create_success": 500,
+      "token_create_time_sec": 3.61,
+      "token_create_rate": 138.32,
+      "token_read_requests": 100,
+      "token_read_success": 100,
+      "token_read_time_ms": 644.24,
+      "status_requests": 50,
+      "status_success": 50,
+      "status_time_ms": 328.42,
+      "status_latency_ms": 6.57
+    }
+  },
+  "overall_status": "\u2705 SUCCESS"
+}

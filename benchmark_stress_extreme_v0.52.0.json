@@ -1,0 +1,44 @@
+{
+  "profile": "extreme",
+  "description": "Extreme load - \u044d\u043a\u0441\u0442\u0440\u0435\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u043d\u0430\u0433\u0440\u0443\u0437\u043a\u0430",
+  "total_time_sec": 166.48,
+  "timestamp": "2025-12-20T10:49:44.119100",
+  "results": {
+    "rust_core": {
+      "status": "\u2705 SUCCESS",
+      "tokens_created": 1000000,
+      "create_time_sec": 59.4,
+      "create_rate_per_sec": 16834.33,
+      "read_count": 1000,
+      "read_time_ms": 1.46,
+      "read_rate_per_sec": 682914.1,
+      "grid_queries": 5000,
+      "grid_time_ms": 36159.52,
+      "grid_rate_per_sec": 138.28,
+      "avg_results_per_query": 10000.0,
+      "memory_start_mb": 52.9,
+      "memory_end_mb": 532.9,
+      "memory_delta_mb": 480.0,
+      "total_time_sec": 95.56
+    },
+    "rest_api": {
+      "status": "\u2705 SUCCESS",
+      "health_requests": 100,
+      "health_success": 100,
+      "health_time_ms": 454.13,
+      "health_latency_ms": 4.54,
+      "token_create_requests": 10000,
+      "token_create_success": 10000,
+      "token_create_time_sec": 66.5,
+      "token_create_rate": 150.38,
+      "token_read_requests": 100,
+      "token_read_success": 100,
+      "token_read_time_ms": 556.98,
+      "status_requests": 50,
+      "status_success": 50,
+      "status_time_ms": 302.49,
+      "status_latency_ms": 6.05
+    }
+  },
+  "overall_status": "\u2705 SUCCESS"
+}
