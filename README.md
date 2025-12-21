@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.52.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.53.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![REST API](https://img.shields.io/badge/REST%20API-34%20endpoints-brightgreen.svg)](docs/api/README.md)
@@ -23,22 +23,22 @@
 
 ---
 
-## 🚀 v0.52.0 - Observability & Monitoring
+## 🚀 v0.53.0 - SignalSystem v1.1: Event Processing & Python Bindings
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.52.0** - Production observability stack with structured logging and metrics
+**Текущая версия: v0.53.0** - Event-driven architecture with subscription filters and Python bindings
 
-### Ключевые возможности v0.52.0:
+### Ключевые возможности v0.53.0:
 
-- 📊 **Structured Logging** - JSON logs with correlation ID tracking and ISO 8601 timestamps
-- 🔍 **Prometheus Metrics** - 12 metric types (HTTP, tokens, grid, CDNA, FFI, system)
-- ⚡ **Performance Optimized** - `/status` endpoint 11.3x faster (108ms → 9.5ms P95)
-- 🏥 **Enhanced Health Checks** - 4 endpoints for Kubernetes probes (live/ready/startup)
-- 🌐 **REST API** - 34 endpoints with full observability integration
-- 🎯 **Production Ready** - Real-time monitoring, debugging, and performance tracking
-- 📈 **Metrics Endpoints** - `/api/v1/metrics` (Prometheus) + `/api/v1/metrics/json`
-- 🔗 **Zero Breaking Changes** - Fully backward compatible with v0.51.0
+- 🎯 **SignalSystem v1.1** - High-performance event processing with <100μs latency
+- 🔍 **Subscription Filters** - Wildcard patterns, numeric comparisons, compound logic
+- 🐍 **Python Bindings** - Full PyO3 integration with clean API
+- ⚡ **Performance** - <1μs filter matching, non-blocking delivery
+- 📊 **Statistics** - Event tracking, filter metrics, processing times
+- 🔗 **Reactive Architecture** - Pub/sub pattern for cross-component communication
+- 🧪 **Production Tested** - Comprehensive test coverage and benchmarks
+- 🌐 **Cross-Language** - Seamless Rust ↔ Python integration
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -50,6 +50,57 @@
 | **Prometheus Metrics** | <5% | ✅ Lock-free | v0.42.0 |
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
+
+### 🎯 SignalSystem Quick Start (NEW in v0.53.0):
+
+**Build Python module:**
+
+```bash
+cd src/core_rust
+maturin develop --features python-bindings
+cd ../..
+```
+
+**Usage - Python:**
+
+```python
+import _core
+
+# Create system
+system = _core.SignalSystem()
+
+# Emit event
+result = system.emit(
+    event_type="signal.input.text",
+    vector=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+    priority=200
+)
+print(f"Token ID: {result['token_id']}, Novel: {result['is_novel']}")
+
+# Subscribe with filter
+def handler(event):
+    print(f"Received: {event}")
+
+sub_id = system.subscribe(
+    name="my_handler",
+    filter_dict={
+        "event_type": {"$wildcard": "signal.input.*"},
+        "priority": {"$gte": 150}
+    },
+    callback=handler
+)
+
+# Get statistics
+stats = system.get_stats()
+print(f"Total events: {stats['total_events']}")
+print(f"Avg processing time: {stats['avg_processing_time_us']}μs")
+```
+
+**Run examples:**
+
+```bash
+python examples/signal_system_basic.py
+```
 
 ### 🌐 REST API Quick Start:
 

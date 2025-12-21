@@ -1,6 +1,6 @@
 use crate::signal_system::{
     EventTypeRegistry, SignalEvent, ProcessingResult, Subscriber, SubscriberId,
-    SubscriptionFilter, ProcessedEvent, DeliveryMeta, NeighborInfo,
+    ProcessedEvent, DeliveryMeta,
 };
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -295,7 +295,7 @@ pub enum SignalSystemError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::signal_system::FilterCondition;
+    use crate::signal_system::{FilterCondition, SubscriptionFilter};
 
     #[test]
     fn test_signal_system_new() {

@@ -14,8 +14,7 @@ NOTE: Requires neurograph._core to be built with python-bindings feature:
     maturin develop --features python-bindings
 """
 
-# TODO: Uncomment when _core is built
-# from neurograph._core import SignalSystem
+import _core
 
 def example_basic_emit():
     """Example 1: Basic event emission"""
@@ -23,23 +22,20 @@ def example_basic_emit():
     print("Example 1: Basic Event Emission")
     print("=" * 60)
 
-    # TODO: Uncomment when ready
-    # system = SignalSystem()
-    #
-    # # Emit a simple event
-    # result = system.emit(
-    #     event_type="signal.input.text",
-    #     vector=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
-    #     priority=200
-    # )
-    #
-    # print(f"Event processed:")
-    # print(f"  Token ID: {result['token_id']}")
-    # print(f"  Novel: {result['is_novel']}")
-    # print(f"  Processing time: {result['processing_time_us']}μs")
-    # print(f"  Neighbors found: {len(result['neighbors'])}")
+    system = _core.SignalSystem()
 
-    print("TODO: Build _core with python-bindings feature")
+    # Emit a simple event
+    result = system.emit(
+        event_type="signal.input.text",
+        vector=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+        priority=200
+    )
+
+    print(f"Event processed:")
+    print(f"  Token ID: {result['token_id']}")
+    print(f"  Novel: {result['is_novel']}")
+    print(f"  Processing time: {result['processing_time_us']}μs")
+    print(f"  Neighbors found: {len(result['neighbors'])}")
     print()
 
 

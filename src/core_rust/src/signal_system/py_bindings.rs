@@ -6,11 +6,10 @@
 
 use crate::signal_system::{
     SignalSystem, SignalEvent, ProcessingResult, SubscriptionFilter,
-    Subscriber, SubscriberId, CallbackType, ProcessedEvent,
-    EventTypeRegistry, FilterCondition, NeighborInfo,
+    Subscriber,
 };
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyFloat};
+use pyo3::types::{PyDict, PyList};
 use pyo3::exceptions::{PyValueError, PyRuntimeError};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -64,7 +63,7 @@ impl PySignalSystem {
         event_type: &str,
         vector: Vec<f32>,
         priority: u8,
-        kwargs: Option<&PyDict>,
+        kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<PyObject> {
         // Валидация вектора
         if vector.len() != 8 {
@@ -117,11 +116,12 @@ impl PySignalSystem {
     ///         filter_dict={"event_type": {"$wildcard": "signal.input.*"}},
     ///         callback=handler
     ///     )
+    #[pyo3(signature = (name, filter_dict, callback=None))]
     pub fn subscribe(
         &self,
-        py: Python<'_>,
+        _py: Python<'_>,
         name: &str,
-        filter_dict: &PyDict,
+        filter_dict: &Bound<'_, PyDict>,
         callback: Option<PyObject>,
     ) -> PyResult<u64> {
         // Компилируем фильтр из Python dict
@@ -177,7 +177,7 @@ impl PySignalSystem {
     pub fn get_stats(&self, py: Python<'_>) -> PyResult<PyObject> {
         let stats = self.inner.get_stats();
 
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
         dict.set_item("total_events", stats.total_events)?;
         dict.set_item("avg_processing_time_us", stats.avg_processing_time_us)?;
         dict.set_item("subscriber_notifications", stats.subscriber_notifications)?;
@@ -185,7 +185,7 @@ impl PySignalSystem {
         dict.set_item("filter_misses", stats.filter_misses)?;
 
         // events_by_type как dict
-        let events_by_type = PyDict::new(py);
+        let events_by_type = PyDict::new_bound(py);
         for (type_id, count) in &stats.events_by_type {
             events_by_type.set_item(type_id, count)?;
         }
@@ -211,7 +211,7 @@ impl PySignalSystem {
 
 impl PySignalSystem {
     /// Применить kwargs к SignalEvent
-    fn apply_kwargs_to_event(&self, event: &mut SignalEvent, kwargs: &PyDict) -> PyResult<()> {
+    fn apply_kwargs_to_event(&self, event: &mut SignalEvent, kwargs: &Bound<'_, PyDict>) -> PyResult<()> {
         // confidence
         if let Some(v) = kwargs.get_item("confidence")? {
             event.confidence = v.extract::<u8>()?;
@@ -240,7 +240,7 @@ impl PySignalSystem {
 
     /// Конвертировать ProcessingResult в Python dict
     fn result_to_py(&self, py: Python<'_>, result: &ProcessingResult) -> PyResult<PyObject> {
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
 
         dict.set_item("token_id", result.token_id)?;
         dict.set_item("energy_delta", result.energy_delta)?;
@@ -250,9 +250,9 @@ impl PySignalSystem {
         dict.set_item("processing_time_us", result.processing_time_us)?;
 
         // neighbors
-        let neighbors = PyList::empty(py);
+        let neighbors = PyList::empty_bound(py);
         for n in &result.neighbors {
-            let neighbor_dict = PyDict::new(py);
+            let neighbor_dict = PyDict::new_bound(py);
             neighbor_dict.set_item("token_id", n.token_id)?;
             neighbor_dict.set_item("distance", n.distance)?;
             neighbor_dict.set_item("resonance", n.resonance)?;
@@ -263,18 +263,23 @@ impl PySignalSystem {
         dict.set_item("neighbors", neighbors)?;
 
         // triggered_actions
-        let actions = PyList::new(py, &result.triggered_actions);
+        let actions = PyList::new_bound(py, &result.triggered_actions);
         dict.set_item("triggered_actions", actions)?;
 
         Ok(dict.into())
     }
 
     /// Компилировать фильтр из Python dict
-    fn compile_filter_from_dict(&self, filter_dict: &PyDict) -> PyResult<SubscriptionFilter> {
-        // Конвертируем PyDict в serde_json::Value
-        let json_str = filter_dict.to_string();
+    fn compile_filter_from_dict(&self, filter_dict: &Bound<'_, PyDict>) -> PyResult<SubscriptionFilter> {
+        // Конвертируем PyDict в serde_json::Value через repr
+        use pyo3::types::PyAnyMethods;
+        let repr_str = filter_dict.repr()?.to_string();
+
+        // Parse Python dict repr as JSON (rough conversion)
+        // Better: use pythonize crate, but for now simple approach
+        let json_str = repr_str.replace("'", "\"");
         let json_value: serde_json::Value = serde_json::from_str(&json_str)
-            .map_err(|e| PyValueError::new_err(format!("Invalid filter JSON: {}", e)))?;
+            .map_err(|e| PyValueError::new_err(format!("Invalid filter JSON: {}. Dict was: {}", e, json_str)))?;
 
         // Компилируем фильтр
         let mut registry = self.inner.event_registry().write();
@@ -283,12 +288,6 @@ impl PySignalSystem {
 
         Ok(filter)
     }
-}
-
-/// Регистрация модуля в Python
-pub fn register_signal_system(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-    parent_module.add_class::<PySignalSystem>()?;
-    Ok(())
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

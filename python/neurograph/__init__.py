@@ -62,10 +62,11 @@ Python adds ~48 bytes/object overhead (PyObject header).
 AGPL-3.0 - Copyright (C) 2024-2025 Chernov Denys
 """
 
-from .neurograph import (
+from ._core import (
     Token,
     IntuitionEngine,
     IntuitionConfig,
+    SignalSystem,
     __version__,
     __author__,
     __license__,
@@ -75,6 +76,7 @@ __all__ = [
     "Token",
     "IntuitionEngine",
     "IntuitionConfig",
+    "SignalSystem",
     "__version__",
     "__author__",
     "__license__",
