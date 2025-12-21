@@ -56,6 +56,9 @@ fasthash = "0.4"
 # Parallel processing
 rayon = "1.10"
 
+# Crossbeam for concurrent channels (SignalSystem v1.1)
+crossbeam-channel = "0.5"
+
 # WAL (Write-Ahead Log) v0.41.0
 crc32fast = "1.4"
 
