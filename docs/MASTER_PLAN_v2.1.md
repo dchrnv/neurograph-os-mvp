@@ -30,7 +30,7 @@ Action Controllers (Response Generation)
 External World (Actions)
 ```
 
-**Текущий статус:** v0.52.0 завершён (REST API + Monitoring), начинаем Gateway v2.0
+**Текущий статус:** v0.53.0 завершён (SignalSystem v1.1 + PyO3), начинаем Gateway v2.0
 
 ---
 
@@ -126,7 +126,7 @@ External World (Actions)
 ### 🎯 v0.53.0 - SignalSystem v1.1 (Rust Core + PyO3)
 
 **Срок:** 5-7 дней
-**Статус:** 🔧 PLANNING
+**Статус:** ✅ ЗАВЕРШЕНО (2025-12-21)
 
 **Цель:** Реализовать event processing с подписками в Rust Core
 
@@ -278,7 +278,7 @@ External World (Actions)
 ### 🎯 v0.54.0 - Gateway v2.0 (Python Sensory Interface)
 
 **Срок:** 4-5 дней
-**Статус:** ⏳ NEXT
+**Статус:** 🔧 IN PROGRESS (начато 2025-12-21)
 
 **Цель:** Создать сенсорный интерфейс для всех внешних входов
 
@@ -541,8 +541,8 @@ External World (Actions)
 | Версия | Трек | Задача | Срок | Статус |
 |--------|------|--------|------|--------|
 | **v0.52.0** | A | Observability & Monitoring | Done | ✅ Завершено |
-| **v0.53.0** | A | SignalSystem v1.1 (Rust) | 5-7 дней | 🔧 Планирование |
-| **v0.54.0** | A | Gateway v2.0 (Python) | 4-5 дней | ⏳ Следующее |
+| **v0.53.0** | A | SignalSystem v1.1 (Rust) | 5-7 дней | ✅ Завершено |
+| **v0.54.0** | A | Gateway v2.0 (Python) | 4-5 дней | 🔧 В процессе |
 | **v0.55.0** | A | Filters & First Sensors | 2-3 дня | ⏳ После Gateway |
 | **v0.56.0** | B | ActionController | 3-4 дня | ⏳ Future |
 | **v0.57.0** | C | Audio & Vision | 5-7 дней | ⏳ Future |
@@ -554,20 +554,21 @@ External World (Actions)
 
 ## 🎯 Immediate Next Steps (сейчас - 2025-12-20)
 
-### Сегодня:
-1. ✅ Актуализировать MASTER_PLAN v2.1 (этот файл)
-2. ⏳ Начать v0.53.0 Phase 1: SignalEvent структуры в Rust
-3. ⏳ Создать директорию `src/core_rust/src/signal_system/`
+### Сегодня (2025-12-21):
+1. ✅ v0.53.0 завершён (SignalSystem v1.1 + PyO3 bindings)
+2. ✅ Актуализировать MASTER_PLAN v2.1
+3. 🔧 Начать v0.54.0 Phase 1: Data Structures (SignalEvent Pydantic models)
+4. 🔧 Создать директорию `src/gateway/`
 
 ### Эта неделя:
-- Завершить v0.53.0 Phase 1-2 (Structures + Filters)
-- Начать v0.53.0 Phase 3 (SignalSystem Core)
-- Первые unit tests
+- Завершить v0.54.0 Phase 1-2 (Data Structures + SensorRegistry)
+- Начать v0.54.0 Phase 3 (SignalGateway Core)
+- Базовые энкодеры (PASSTHROUGH, TEXT_TFIDF)
 
 ### Следующая неделя:
-- Завершить v0.53.0 (PyO3 bindings + tests)
-- Начать v0.54.0 (Gateway v2.0)
-- First integration test: Gateway → SignalSystem
+- Завершить v0.54.0 (Testing + Integration)
+- Начать v0.55.0 (Subscription Filters + First Sensors)
+- Telegram bot integration
 
 ---
 

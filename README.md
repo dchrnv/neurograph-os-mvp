@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.53.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.54.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![REST API](https://img.shields.io/badge/REST%20API-34%20endpoints-brightgreen.svg)](docs/api/README.md)
@@ -23,22 +23,24 @@
 
 ---
 
-## 🚀 v0.53.0 - SignalSystem v1.1: Event Processing & Python Bindings
+## 🚀 v0.54.0 - Gateway v2.0: Sensory Interface Layer
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.53.0** - Event-driven architecture with subscription filters and Python bindings
+**Текущая версия: v0.54.0** - Complete Python sensory layer with signal encoding and routing
 
-### Ключевые возможности v0.53.0:
+### Ключевые возможности v0.54.0:
 
-- 🎯 **SignalSystem v1.1** - High-performance event processing with <100μs latency
-- 🔍 **Subscription Filters** - Wildcard patterns, numeric comparisons, compound logic
-- 🐍 **Python Bindings** - Full PyO3 integration with clean API
-- ⚡ **Performance** - <1μs filter matching, non-blocking delivery
-- 📊 **Statistics** - Event tracking, filter metrics, processing times
-- 🔗 **Reactive Architecture** - Pub/sub pattern for cross-component communication
-- 🧪 **Production Tested** - Comprehensive test coverage and benchmarks
-- 🌐 **Cross-Language** - Seamless Rust ↔ Python integration
+- 🌐 **Gateway v2.0** - Unified sensory interface for all external signals
+- 🎨 **Pydantic Models** - Complete SignalEvent schema v2.0 with 8 nested structures
+- 🔧 **Sensor Registry** - Dynamic sensor management with built-in & custom sensors
+- 🧬 **4 MVP Encoders** - TEXT_TFIDF, NUMERIC_DIRECT, SENTIMENT_SIMPLE, PASSTHROUGH
+- 🎯 **8D Encoding** - Automatic transformation to semantic space
+- 📊 **Signal Tracking** - NeuroTick counter, sequence IDs, conversation threading
+- 🔌 **Modular Architecture** - Easy encoder/sensor extensibility
+- 📝 **JSON Serialization** - Full event export/import for persistence & APIs
+
+**Previous: v0.53.0** - SignalSystem v1.1 with Python bindings, subscription filters, <100μs latency
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -51,7 +53,77 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🎯 SignalSystem Quick Start (NEW in v0.53.0):
+### 🌐 Gateway v2.0 Quick Start (NEW in v0.54.0):
+
+**Setup:**
+
+```bash
+# Gateway v2.0 is pure Python - no build needed!
+# Just ensure you're in the project directory
+cd /path/to/neurograph-os-mvp
+```
+
+**Usage - Gateway v2.0:**
+
+```python
+from src.gateway import SignalGateway, EncoderType
+
+# Initialize Gateway
+gateway = SignalGateway()
+gateway.initialize()  # Registers built-in sensors
+
+# Push text signal
+event = gateway.push_text(
+    text="Hello, NeuroGraph!",
+    priority=200,
+    sequence_id="conv_001"  # For conversation tracking
+)
+
+print(f"Event: {event.event_id}")
+print(f"8D Vector: {event.semantic.vector}")  # Auto-encoded via TEXT_TFIDF
+print(f"NeuroTick: {event.temporal.neuro_tick}")  # Monotonic counter
+
+# Push system metric
+metric_event = gateway.push_system(
+    metric_name="cpu_percent",
+    metric_value=45.7,
+    priority=100
+)
+
+# Register custom sensor with sentiment analysis
+gateway.register_sensor(
+    sensor_id="custom.sentiment",
+    sensor_type="sentiment_feed",
+    domain="external",
+    modality="text",
+    encoder_type=EncoderType.SENTIMENT_SIMPLE
+)
+
+# Export to JSON (for persistence/APIs)
+json_data = event.model_dump_json(indent=2)
+
+# Get statistics
+stats = gateway.get_stats()
+print(f"Total events: {stats['total_events']}")
+print(f"NeuroTick: {stats['neuro_tick']}")
+print(f"Sensors: {stats['registered_sensors']}")
+```
+
+**Run demo:**
+
+```bash
+PYTHONPATH=/path/to/neurograph-os-mvp python examples/gateway_v2_demo.py
+```
+
+**4 Built-in Encoders:**
+- `PASSTHROUGH` - Direct 8D vector pass-through
+- `TEXT_TFIDF` - TF-IDF based text encoding (hash bucketing)
+- `NUMERIC_DIRECT` - Simple numeric scaling for metrics
+- `SENTIMENT_SIMPLE` - Sentiment analysis (polarity, emotions)
+
+---
+
+### 🎯 SignalSystem Quick Start (v0.53.0):
 
 **Build Python module:**
 
