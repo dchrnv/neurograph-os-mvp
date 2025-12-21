@@ -11,8 +11,10 @@
 pub mod event;
 pub mod registry;
 pub mod result;
+pub mod filter;
 
 // Re-exports
 pub use event::{SignalEvent, SignalSource, SemanticCore, EnergyProfile, TemporalBinding, RoutingInfo};
 pub use registry::EventTypeRegistry;
 pub use result::{ProcessingResult, NeighborInfo};
+pub use filter::{SubscriptionFilter, FilterCondition, FilterLogic, FilterError};
