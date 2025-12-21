@@ -8,10 +8,12 @@ use pyo3::prelude::*;
 mod token;
 mod intuition;
 mod runtime;
+mod signal_system;
 
 use token::PyToken;
 use intuition::{PyIntuitionEngine, PyIntuitionConfig};
 use runtime::PyRuntime;
+use signal_system::PySignalSystem;
 
 /// NeuroGraph OS Python Module (_core)
 ///
@@ -32,6 +34,9 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Intuition Engine
     m.add_class::<PyIntuitionEngine>()?;
     m.add_class::<PyIntuitionConfig>()?;
+
+    // Signal System (new in v0.53.0)
+    m.add_class::<PySignalSystem>()?;
 
     Ok(())
 }
