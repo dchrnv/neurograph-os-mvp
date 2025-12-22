@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.55.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.56.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![REST API](https://img.shields.io/badge/REST%20API-34%20endpoints-brightgreen.svg)](docs/api/README.md)
@@ -23,24 +23,30 @@
 
 ---
 
-## 🚀 v0.55.0 - Subscription Filters & First Sensors 🎯
+## 🚀 v0.56.0 - ActionController Foundation 🎯
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.55.0** - Complete sensory pipeline with filters, adapters, and working Telegram bot!
+**Текущая версия: v0.56.0** - Complete signal processing pipeline with action execution!
 
-### Ключевые возможности v0.55.0:
+### Ключевые возможности v0.56.0:
 
-- 🎯 **Subscription Filters** - MongoDB-style event filtering (13 operators, 18μs/match)
-- 🔌 **Input Adapters** - TextAdapter, SystemAdapter, TimerAdapter
-- 🤖 **Telegram Bot** - Working integration (Simple + Advanced examples)
-- 📊 **Event Subscribers** - Analytics, HighPriority, Sentiment, Logging
-- 🔄 **End-to-End Flow** - Telegram → Gateway → Filters → Subscribers → Response
-- 📝 **16 Filter Examples** - Pre-built filters for common use cases
-- 🌐 **TelegramAdapter** - Specialized adapter for Telegram Bot API
-- 📖 **Complete Guides** - Gateway User Guide + Telegram Bot Setup
+- 🎮 **ActionController** - Response generation and action execution system
+- ⚡ **Hot/Cold Path Routing** - Immediate vs background action execution
+- 🔧 **Action Executors** - Text responses, Telegram messages, logging, metrics
+- 🔄 **SignalPipeline** - End-to-end orchestration (Gateway → Core → Actions)
+- 🤖 **Telegram Bot (ActionController)** - Full integration example
+- 📊 **Action Registry** - Dynamic action management
+- 🎯 **Action Selector** - Rule-based action selection
+- 📖 **Complete Guide** - ActionController Telegram Bot setup
+
+**Flow:**
+```
+Input → Gateway → [Core] → ActionController → Hot/Cold Path → Response
+```
 
 **Previous:**
+- **v0.55.0** - Subscription Filters & First Sensors
 - **v0.54.0** - Gateway v2.0 (Pydantic models, encoders, sensors)
 - **v0.53.0** - SignalSystem v1.1 (Python bindings, <100μs latency)
 
@@ -55,9 +61,9 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🤖 Telegram Bot Quick Start (NEW in v0.55.0):
+### 🤖 Telegram Bot Quick Start (NEW in v0.56.0):
 
-**Setup (5 minutes):**
+**ActionController Bot (Recommended):**
 
 ```bash
 # 1. Install dependency
@@ -67,31 +73,32 @@ pip install python-telegram-bot
 # 3. Set environment variable
 export TELEGRAM_BOT_TOKEN="your_token_here"
 
-# 4. Run bot
-python examples/telegram_bot_simple.py
-```
-
-**Usage:**
-```
-Telegram → /start → Bot responds with welcome
-         → "Hello!" → Bot shows 8D vector, priority, encoding
-         → /stats → Bot shows Gateway statistics
+# 4. Run bot with ActionController
+python examples/telegram_bot_actioncontroller.py
 ```
 
 **Features:**
-- ✅ Full Gateway v2.0 integration
-- ✅ Conversation tracking
-- ✅ Event filtering demonstration
-- ✅ Real-time 8D vector visualization
+- ✅ Full SignalPipeline integration (Gateway → ActionController)
+- ✅ Hot/Cold path action execution
+- ✅ Automatic response generation
+- ✅ Background logging and metrics
+- ✅ End-to-end signal processing
 
-**Advanced bot with subscriptions:**
-```bash
-python examples/telegram_bot_advanced.py
+**Commands:**
+```
+/start  → Welcome message
+/stats  → Pipeline statistics
+/test   → Test full pipeline
+<text>  → Process and get response
 ```
 
-Includes: Analytics, HighPriority detection, Sentiment analysis, Logging
+**See:** [ActionController Bot Guide](docs/guides/ActionController_Telegram_Bot_Guide.md)
 
-**See:** [Telegram Bot Setup Guide](docs/guides/Telegram_Bot_Setup.md)
+**Other Bot Examples:**
+```bash
+python examples/telegram_bot_simple.py    # Gateway only
+python examples/telegram_bot_advanced.py  # With subscriptions
+```
 
 ---
 
