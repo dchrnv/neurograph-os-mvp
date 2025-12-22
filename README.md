@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.54.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.55.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![REST API](https://img.shields.io/badge/REST%20API-34%20endpoints-brightgreen.svg)](docs/api/README.md)
@@ -23,24 +23,26 @@
 
 ---
 
-## 🚀 v0.54.0 - Gateway v2.0: Sensory Interface Layer
+## 🚀 v0.55.0 - Subscription Filters & First Sensors 🎯
 
 **Статус:** Production Ready ✅
 
-**Текущая версия: v0.54.0** - Complete Python sensory layer with signal encoding and routing
+**Текущая версия: v0.55.0** - Complete sensory pipeline with filters, adapters, and working Telegram bot!
 
-### Ключевые возможности v0.54.0:
+### Ключевые возможности v0.55.0:
 
-- 🌐 **Gateway v2.0** - Unified sensory interface for all external signals
-- 🎨 **Pydantic Models** - Complete SignalEvent schema v2.0 with 8 nested structures
-- 🔧 **Sensor Registry** - Dynamic sensor management with built-in & custom sensors
-- 🧬 **4 MVP Encoders** - TEXT_TFIDF, NUMERIC_DIRECT, SENTIMENT_SIMPLE, PASSTHROUGH
-- 🎯 **8D Encoding** - Automatic transformation to semantic space
-- 📊 **Signal Tracking** - NeuroTick counter, sequence IDs, conversation threading
-- 🔌 **Modular Architecture** - Easy encoder/sensor extensibility
-- 📝 **JSON Serialization** - Full event export/import for persistence & APIs
+- 🎯 **Subscription Filters** - MongoDB-style event filtering (13 operators, 18μs/match)
+- 🔌 **Input Adapters** - TextAdapter, SystemAdapter, TimerAdapter
+- 🤖 **Telegram Bot** - Working integration (Simple + Advanced examples)
+- 📊 **Event Subscribers** - Analytics, HighPriority, Sentiment, Logging
+- 🔄 **End-to-End Flow** - Telegram → Gateway → Filters → Subscribers → Response
+- 📝 **16 Filter Examples** - Pre-built filters for common use cases
+- 🌐 **TelegramAdapter** - Specialized adapter for Telegram Bot API
+- 📖 **Complete Guides** - Gateway User Guide + Telegram Bot Setup
 
-**Previous: v0.53.0** - SignalSystem v1.1 with Python bindings, subscription filters, <100μs latency
+**Previous:**
+- **v0.54.0** - Gateway v2.0 (Pydantic models, encoders, sensors)
+- **v0.53.0** - SignalSystem v1.1 (Python bindings, <100μs latency)
 
 ### 📊 Production Performance (актуально для v0.45.0):
 
@@ -53,7 +55,47 @@
 | **Guardian Quotas** | <1% | ✅ Minimal | v0.41.0 |
 | **Total Production** | **~22%** | ✅ **Production-Ready** | ✅ |
 
-### 🌐 Gateway v2.0 Quick Start (NEW in v0.54.0):
+### 🤖 Telegram Bot Quick Start (NEW in v0.55.0):
+
+**Setup (5 minutes):**
+
+```bash
+# 1. Install dependency
+pip install python-telegram-bot
+
+# 2. Get token from @BotFather on Telegram
+# 3. Set environment variable
+export TELEGRAM_BOT_TOKEN="your_token_here"
+
+# 4. Run bot
+python examples/telegram_bot_simple.py
+```
+
+**Usage:**
+```
+Telegram → /start → Bot responds with welcome
+         → "Hello!" → Bot shows 8D vector, priority, encoding
+         → /stats → Bot shows Gateway statistics
+```
+
+**Features:**
+- ✅ Full Gateway v2.0 integration
+- ✅ Conversation tracking
+- ✅ Event filtering demonstration
+- ✅ Real-time 8D vector visualization
+
+**Advanced bot with subscriptions:**
+```bash
+python examples/telegram_bot_advanced.py
+```
+
+Includes: Analytics, HighPriority detection, Sentiment analysis, Logging
+
+**See:** [Telegram Bot Setup Guide](docs/guides/Telegram_Bot_Setup.md)
+
+---
+
+### 🌐 Gateway v2.0 Quick Start:
 
 **Setup:**
 
