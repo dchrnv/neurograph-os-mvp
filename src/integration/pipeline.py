@@ -176,19 +176,12 @@ class SignalPipeline:
         try:
             start_time = datetime.now()
 
-            # Convert SignalEvent to dict for Core
-            event_dict = {
-                "event_type": signal_event.event_type,
-                "vector": signal_event.semantic.vector,
-                "priority": signal_event.routing.priority,
-                "metadata": {
-                    "event_id": str(signal_event.event_id),
-                    "sensor_id": signal_event.source.sensor_id,
-                }
-            }
-
-            # Call Rust Core
-            result = self.core_system.emit(event_dict)
+            # Call Rust Core with correct API
+            result = self.core_system.emit(
+                event_type=signal_event.event_type,
+                vector=list(signal_event.semantic.vector),  # Convert to list
+                priority=signal_event.routing.priority
+            )
 
             core_time = (datetime.now() - start_time).total_seconds() * 1000
 
