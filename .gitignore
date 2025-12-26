@@ -34,11 +34,10 @@ data/
 *.db
 *.sqlite3
 
-# Tests (Python only - allow Rust integration tests)
-tests/
-!src/core_rust/tests/
+# Test coverage
 .coverage
 htmlcov/
+.pytest_cache/
 
 # Build artifacts
 build/
