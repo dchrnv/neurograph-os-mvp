@@ -211,10 +211,13 @@ docker-compose up -d
 - ✅ v0.52.0 - Observability & Monitoring
 - ✅ v0.51.0 - REST API + RuntimeStorage
 
-**Next:**
-- 🎯 v0.58.0 - Authentication & Security (JWT, RBAC)
-- ⏳ v0.59.0 - Web Dashboard (React)
-- ⏳ v0.60.0 - Jupyter Integration
+**Next (см. [MASTER_PLAN v3.0](docs/MASTER_PLAN_v3.0.md)):**
+- 🎯 v0.58.0 - Authentication & Security (JWT, RBAC, Rate Limiting)
+- 🐍 v0.59.0 - Python Library (PyPI package)
+- 🔄 v0.60.0 - WebSocket & Real-time Events
+- 📊 v0.61.0 - Jupyter Integration (Magic commands)
+- 🎨 v0.62.0 - Web Dashboard (React SPA)
+- 🎥 v0.63.0 - Enhanced Sensors (Audio & Vision)
 
 ---
 
