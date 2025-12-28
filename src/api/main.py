@@ -42,8 +42,15 @@ from .middleware import (
     RequestLoggingMiddleware,
     ErrorLoggingMiddleware
 )
-# v0.58.0: Rate limiting
-from .middleware.rate_limit import RateLimitMiddleware
+# v0.58.0: Rate limiting and error handling
+from .middlewares.rate_limit import RateLimitMiddleware
+from .exceptions import NeuroGraphException
+from .error_handlers import (
+    neurograph_exception_handler,
+    validation_exception_handler,
+    generic_exception_handler
+)
+from fastapi.exceptions import RequestValidationError
 
 # Configure structured logging
 setup_logging(
@@ -62,6 +69,11 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+# v0.58.0: Register exception handlers (order matters - specific to general)
+app.add_exception_handler(NeuroGraphException, neurograph_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+# Note: Generic handler registered separately at the bottom as @app.exception_handler decorator
 
 # v0.52.0 + v0.58.0: Observability and security middlewares (order matters!)
 # 1. Error logging (outermost - catches everything)

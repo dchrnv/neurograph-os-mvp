@@ -32,7 +32,7 @@ class TestJWTAuthFlow:
         """Test login with invalid credentials."""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "admin", "password": "wrong"}
+            json={"username": "admin", "password": "wrongpass123"}
         )
 
         assert response.status_code == 401
@@ -42,7 +42,7 @@ class TestJWTAuthFlow:
         """Test login with non-existent user."""
         response = client.post(
             "/api/v1/auth/login",
-            json={"username": "nonexistent", "password": "password"}
+            json={"username": "nonexistent", "password": "password123"}
         )
 
         assert response.status_code == 401
