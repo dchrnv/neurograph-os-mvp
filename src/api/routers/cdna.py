@@ -27,8 +27,11 @@ from ..models.cdna import (
     CDNAExportResponse,
     CDNAResetResponse,
 )
+from ..models.auth import User
 from ..dependencies import get_cdna_storage
 from ..config import settings
+from ..auth.dependencies import get_current_active_user
+from ..auth.permissions import Permission
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -67,13 +70,23 @@ def profile_to_info(profile: Dict[str, Any]) -> ProfileInfo:
 
 @router.get("/cdna/status", response_model=ApiResponse)
 async def get_cdna_status(
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get current CDNA status.
 
+    **Requires:** `cdna:read` permission
+
     Returns current configuration, quarantine state, and history count.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -116,14 +129,24 @@ async def get_cdna_status(
 @router.put("/cdna/config", response_model=ApiResponse)
 async def update_cdna_config(
     request: CDNAUpdateRequest,
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Update CDNA configuration.
 
+    **Requires:** `cdna:write` permission
+
     Can switch profiles or set custom dimension scales.
     Optionally validates configuration before applying.
     """
+    # Check permission
+    if Permission.WRITE_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -212,13 +235,23 @@ async def update_cdna_config(
 
 @router.get("/cdna/profiles", response_model=ApiResponse)
 async def list_profiles(
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     List all available CDNA profiles.
 
+    **Requires:** `cdna:read` permission
+
     Returns predefined profiles (explorer, analyzer, creative, quarantine).
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -259,13 +292,23 @@ async def list_profiles(
 @router.get("/cdna/profiles/{profile_id}", response_model=ApiResponse)
 async def get_profile(
     profile_id: str,
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get specific CDNA profile.
 
+    **Requires:** `cdna:read` permission
+
     Returns detailed information about a single profile.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -303,13 +346,23 @@ async def get_profile(
 @router.post("/cdna/profiles/{profile_id}/switch", response_model=ApiResponse)
 async def switch_profile(
     profile_id: str,
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Switch to different CDNA profile.
 
+    **Requires:** `cdna:write` permission
+
     Changes active profile and applies its dimension scales.
     """
+    # Check permission
+    if Permission.WRITE_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -377,14 +430,24 @@ async def switch_profile(
 @router.post("/cdna/validate", response_model=ApiResponse)
 async def validate_scales(
     request: ValidateRequest,
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Validate dimension scales.
 
+    **Requires:** `cdna:read` permission
+
     Checks if scales are within safe operating ranges.
     Returns validation result with warnings and errors.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -417,13 +480,23 @@ async def validate_scales(
 
 @router.get("/cdna/quarantine/status", response_model=ApiResponse)
 async def get_quarantine_status(
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get quarantine mode status.
 
+    **Requires:** `cdna:read` permission
+
     Returns whether quarantine is active and remaining time.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -457,14 +530,24 @@ async def get_quarantine_status(
 @router.post("/cdna/quarantine/start", response_model=ApiResponse)
 async def start_quarantine(
     duration: int = Query(300, ge=60, le=3600, description="Quarantine duration in seconds"),
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Start quarantine mode.
 
+    **Requires:** `cdna:write` permission
+
     Switches to quarantine profile with restricted changes.
     Duration is in seconds (default 300, max 3600).
     """
+    # Check permission
+    if Permission.WRITE_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -523,14 +606,24 @@ async def start_quarantine(
 @router.post("/cdna/quarantine/stop", response_model=ApiResponse)
 async def stop_quarantine(
     apply: bool = Query(False, description="Apply quarantine changes"),
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Stop quarantine mode.
 
+    **Requires:** `cdna:write` permission
+
     Optionally applies changes made during quarantine.
     If not applied, reverts to pre-quarantine state.
     """
+    # Check permission
+    if Permission.WRITE_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -589,13 +682,23 @@ async def stop_quarantine(
 @router.get("/cdna/history", response_model=ApiResponse)
 async def get_history(
     limit: int = Query(10, ge=1, le=100, description="Maximum number of entries"),
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get CDNA configuration history.
 
+    **Requires:** `cdna:read` permission
+
     Returns recent configuration changes and profile switches.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -628,13 +731,23 @@ async def get_history(
 
 @router.post("/cdna/export", response_model=ApiResponse)
 async def export_config(
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Export current CDNA configuration.
 
+    **Requires:** `cdna:read` permission
+
     Returns full configuration in exportable format.
     """
+    # Check permission
+    if Permission.READ_CDNA.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_CDNA.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -676,14 +789,24 @@ async def export_config(
 
 @router.post("/cdna/reset", response_model=ApiResponse)
 async def reset_config(
-    storage=Depends(get_cdna_storage)
+    storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Reset CDNA to default configuration.
 
+    **Requires:** `admin:config` permission
+
     Resets to explorer profile and clears history.
     Use with caution!
     """
+    # Check permission
+    if Permission.ADMIN_CONFIG.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.ADMIN_CONFIG.value} required"
+        )
+
     if not settings.ENABLE_NEW_CDNA_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
