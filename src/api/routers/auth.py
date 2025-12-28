@@ -10,6 +10,7 @@ Provides:
 
 import hashlib
 import secrets
+import time
 from datetime import datetime
 from typing import Dict
 
@@ -30,6 +31,14 @@ from ..models.response import SuccessResponse, ErrorResponse
 from ..auth.jwt import jwt_manager
 from ..auth.dependencies import get_current_user, get_current_active_user
 from ..auth.rbac import get_user_role, get_permissions_for_role
+from ..metrics_prometheus import (
+    track_auth_login,
+    track_auth_token_operation,
+    track_auth_password_change
+)
+from ..logging_config import get_logger
+
+logger = get_logger(__name__, component="auth")
 
 
 router = APIRouter(
@@ -121,9 +130,17 @@ async def login(request: LoginRequest) -> LoginResponse:
     - `developer` / `developer123` - Read/Write access
     - `viewer` / `viewer123` - Read-only access
     """
+    start_time = time.perf_counter()
+
     # Authenticate user
     user = authenticate_user(request.username, request.password)
     if not user:
+        duration = time.perf_counter() - start_time
+        track_auth_login("invalid_credentials", duration)
+        logger.warning(
+            f"Failed login attempt for user: {request.username}",
+            extra={"event": "login_failed", "username": request.username}
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -132,6 +149,8 @@ async def login(request: LoginRequest) -> LoginResponse:
 
     # Check if user disabled
     if user.disabled:
+        duration = time.perf_counter() - start_time
+        track_auth_login("user_disabled", duration)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User account is disabled",
@@ -142,12 +161,21 @@ async def login(request: LoginRequest) -> LoginResponse:
     scopes = get_permissions_for_role(role)
 
     # Generate tokens
+    track_auth_token_operation("generate")
     access_token = jwt_manager.create_access_token(
         user_id=user.user_id,
         scopes=scopes,
     )
     refresh_token = jwt_manager.create_refresh_token(
         user_id=user.user_id,
+    )
+
+    # Track successful login
+    duration = time.perf_counter() - start_time
+    track_auth_login("success", duration)
+    logger.info(
+        f"Successful login for user: {user.username}",
+        extra={"event": "login_success", "user_id": user.user_id, "role": role.value}
     )
 
     # Create user response (without password)

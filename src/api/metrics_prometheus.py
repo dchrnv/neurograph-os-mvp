@@ -137,6 +137,71 @@ cdna_operation_duration_seconds = Histogram(
 )
 
 # ============================================================================
+# Authentication Metrics (v0.58.0)
+# ============================================================================
+
+auth_login_attempts_total = Counter(
+    'neurograph_auth_login_attempts_total',
+    'Total login attempts by status',
+    ['status'],  # success, failed, invalid_credentials, user_not_found
+    registry=registry
+)
+
+auth_login_duration_seconds = Histogram(
+    'neurograph_auth_login_duration_seconds',
+    'Login operation duration in seconds',
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
+    registry=registry
+)
+
+auth_token_operations_total = Counter(
+    'neurograph_auth_token_operations_total',
+    'Total JWT token operations by type',
+    ['operation'],  # generate, refresh, validate, revoke
+    registry=registry
+)
+
+auth_token_validation_duration_seconds = Histogram(
+    'neurograph_auth_token_validation_duration_seconds',
+    'Token validation duration in seconds',
+    buckets=(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
+    registry=registry
+)
+
+auth_active_sessions_gauge = Gauge(
+    'neurograph_auth_active_sessions',
+    'Current number of active user sessions',
+    registry=registry
+)
+
+auth_api_key_operations_total = Counter(
+    'neurograph_auth_api_key_operations_total',
+    'Total API key operations by type',
+    ['operation'],  # create, revoke, validate, delete
+    registry=registry
+)
+
+auth_api_keys_active_gauge = Gauge(
+    'neurograph_auth_api_keys_active',
+    'Current number of active API keys',
+    registry=registry
+)
+
+auth_permission_denials_total = Counter(
+    'neurograph_auth_permission_denials_total',
+    'Total permission denials by endpoint and role',
+    ['endpoint', 'role', 'permission'],
+    registry=registry
+)
+
+auth_password_change_attempts_total = Counter(
+    'neurograph_auth_password_change_attempts_total',
+    'Total password change attempts by status',
+    ['status'],  # success, failed, weak_password
+    registry=registry
+)
+
+# ============================================================================
 # FFI Operation Metrics
 # ============================================================================
 
@@ -287,6 +352,80 @@ def update_system_metrics(token_count: int, connection_count: int, memory_bytes:
     tokens_active_count.set(token_count)
     connections_active_count.set(connection_count)
     runtime_memory_bytes.set(memory_bytes)
+
+
+def track_auth_login(status: str, duration: float):
+    """
+    Track login attempt metrics (v0.58.0).
+
+    Args:
+        status: Login status (success, failed, invalid_credentials, user_not_found)
+        duration: Login operation duration in seconds
+    """
+    auth_login_attempts_total.labels(status=status).inc()
+    auth_login_duration_seconds.observe(duration)
+
+
+def track_auth_token_operation(operation: str, duration: Optional[float] = None):
+    """
+    Track JWT token operation metrics (v0.58.0).
+
+    Args:
+        operation: Operation type (generate, refresh, validate, revoke)
+        duration: Operation duration in seconds (optional)
+    """
+    auth_token_operations_total.labels(operation=operation).inc()
+
+    if duration is not None:
+        auth_token_validation_duration_seconds.observe(duration)
+
+
+def track_auth_api_key_operation(operation: str):
+    """
+    Track API key operation metrics (v0.58.0).
+
+    Args:
+        operation: Operation type (create, revoke, validate, delete)
+    """
+    auth_api_key_operations_total.labels(operation=operation).inc()
+
+
+def track_auth_permission_denial(endpoint: str, role: str, permission: str):
+    """
+    Track permission denial metrics (v0.58.0).
+
+    Args:
+        endpoint: Endpoint that was denied access
+        role: User role that was denied
+        permission: Permission that was required
+    """
+    auth_permission_denials_total.labels(
+        endpoint=endpoint,
+        role=role,
+        permission=permission
+    ).inc()
+
+
+def track_auth_password_change(status: str):
+    """
+    Track password change attempt metrics (v0.58.0).
+
+    Args:
+        status: Password change status (success, failed, weak_password)
+    """
+    auth_password_change_attempts_total.labels(status=status).inc()
+
+
+def update_auth_metrics(active_sessions: int, active_api_keys: int):
+    """
+    Update authentication gauge metrics (v0.58.0).
+
+    Args:
+        active_sessions: Current number of active user sessions
+        active_api_keys: Current number of active API keys
+    """
+    auth_active_sessions_gauge.set(active_sessions)
+    auth_api_keys_active_gauge.set(active_api_keys)
 
 
 def get_metrics_response() -> Response:
