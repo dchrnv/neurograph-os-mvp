@@ -42,6 +42,8 @@ from .middleware import (
     RequestLoggingMiddleware,
     ErrorLoggingMiddleware
 )
+# v0.58.0: Rate limiting
+from .middleware.rate_limit import RateLimitMiddleware
 
 # Configure structured logging
 setup_logging(
@@ -61,7 +63,7 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# v0.52.0: Observability middlewares (order matters!)
+# v0.52.0 + v0.58.0: Observability and security middlewares (order matters!)
 # 1. Error logging (outermost - catches everything)
 app.add_middleware(ErrorLoggingMiddleware, debug=settings.DEBUG)
 
@@ -73,10 +75,17 @@ app.add_middleware(
     log_response_body=settings.LOG_RESPONSE_BODY
 )
 
-# 3. Correlation ID (sets context for logging)
+# 3. Rate limiting (v0.58.0 - before auth to prevent abuse)
+app.add_middleware(
+    RateLimitMiddleware,
+    default_rate_limit=100,  # 100 requests/minute default
+    cleanup_interval=600  # Cleanup every 10 minutes
+)
+
+# 4. Correlation ID (sets context for logging)
 app.add_middleware(CorrelationIDMiddleware)
 
-# 4. CORS (innermost - before route handlers)
+# 5. CORS (innermost - before route handlers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
