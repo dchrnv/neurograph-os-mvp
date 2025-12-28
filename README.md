@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.57.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.58.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,19 +22,28 @@
 
 ---
 
-## 🚀 Текущая версия: v0.57.0
+## 🚀 Текущая версия: v0.58.0
 
-**Gateway-Core Integration** — полная интеграция сенсорного слоя с Rust Core
+**Authentication & Security** — Полная система безопасности с JWT, API Keys, RBAC и Rate Limiting
 
-### Архитектура v0.57.0
+### Новое в v0.58.0
+
+- 🔐 **JWT Authentication** - Stateless auth с access (15min) и refresh (7 days) токенами
+- 🔑 **API Keys** - Долгоживущие ключи для интеграций (ng_live_, ng_test_)
+- 👥 **RBAC** - 4 роли (admin, developer, viewer, bot) + 20+ разрешений
+- ⏱️ **Rate Limiting** - Token bucket (100 req/min default) для защиты от злоупотреблений
+- 🛡️ **38 Protected Endpoints** - Все API endpoints защищены authentication
+
+### Архитектура v0.58.0
 
 ```
-Input → Gateway (8D encoding) → Rust Core (pattern matching) → ActionController → Response
+HTTP Request → Rate Limiter → Auth (JWT/API Key) → RBAC → Gateway → Rust Core
 ```
 
 ### Ключевые возможности
 
 - ⚙️ **Rust Core Integration** - Реальная обработка сигналов через SignalSystem
+- 🔐 **Enterprise Security** - JWT + API Keys + RBAC + Rate Limiting
 - 🎯 **Pattern Matching** - Детекция новизны, поиск соседей
 - ⚡ **High Performance** - 5,601 msg/sec end-to-end, 0.39μs Core latency
 - 🔄 **Complete Pipeline** - Полный цикл обработки
