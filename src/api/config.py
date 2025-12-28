@@ -46,23 +46,34 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "NeuroGraph API"
     VERSION: str = "1.0.0"
 
-    # CORS
+    # CORS (v0.58.0 - improved security)
+    # In production, set CORS_ORIGINS env var to your actual domains
+    # Example: CORS_ORIGINS='["https://app.example.com", "https://admin.example.com"]'
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8000",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8000",
     ]
+    # Production warning: Wildcard CORS is a security risk!
+    CORS_ALLOW_ALL_ORIGINS: bool = False  # Set to False in production!
 
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     WORKERS: int = 4
 
-    # Security
+    # Security (v0.58.0 - JWT authentication)
     SECRET_KEY: str = "dev-secret-key-change-in-production"
+    JWT_SECRET_KEY: str = "dev-jwt-secret-CHANGE-THIS-IN-PRODUCTION"
+    JWT_REFRESH_SECRET_KEY: str = "dev-refresh-secret-CHANGE-THIS-IN-PRODUCTION"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes for access tokens
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days for refresh tokens
+
+    # Password validation (v0.58.0)
+    PASSWORD_MIN_LENGTH: int = 8
+    PASSWORD_MAX_LENGTH: int = 128
 
     # Rate Limiting
     RATE_LIMIT_ENABLED: bool = True

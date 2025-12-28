@@ -14,10 +14,18 @@ from ..middleware import (
 
 # New middleware from this package
 from .rate_limit import RateLimitMiddleware
+from .security import (
+    SecurityHeadersMiddleware,
+    RequestSizeLimitMiddleware,
+    InputSanitizationMiddleware
+)
 
 __all__ = [
     "CorrelationIDMiddleware",
     "RequestLoggingMiddleware",
     "ErrorLoggingMiddleware",
     "RateLimitMiddleware",
+    "SecurityHeadersMiddleware",
+    "RequestSizeLimitMiddleware",
+    "InputSanitizationMiddleware",
 ]

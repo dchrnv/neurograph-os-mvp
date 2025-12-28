@@ -42,8 +42,13 @@ from .middleware import (
     RequestLoggingMiddleware,
     ErrorLoggingMiddleware
 )
-# v0.58.0: Rate limiting and error handling
+# v0.58.0: Rate limiting, error handling, and security
 from .middlewares.rate_limit import RateLimitMiddleware
+from .middlewares.security import (
+    SecurityHeadersMiddleware,
+    RequestSizeLimitMiddleware,
+    InputSanitizationMiddleware
+)
 from .exceptions import NeuroGraphException
 from .error_handlers import (
     neurograph_exception_handler,
@@ -79,7 +84,26 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 # 1. Error logging (outermost - catches everything)
 app.add_middleware(ErrorLoggingMiddleware, debug=settings.DEBUG)
 
-# 2. Request logging (logs all requests/responses)
+# 2. Security headers (v0.58.0 - add security headers to all responses)
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    enable_hsts=(settings.ENVIRONMENT == "production"),  # HSTS only in production
+    enable_csp=True
+)
+
+# 3. Request size limit (v0.58.0 - prevent large payload DoS)
+app.add_middleware(
+    RequestSizeLimitMiddleware,
+    max_body_size=1024 * 1024  # 1MB limit
+)
+
+# 4. Input sanitization (v0.58.0 - basic input validation)
+app.add_middleware(
+    InputSanitizationMiddleware,
+    enable_strict_validation=settings.DEBUG
+)
+
+# 5. Request logging (logs all requests/responses)
 app.add_middleware(
     RequestLoggingMiddleware,
     skip_paths=["/health", "/api/v1/health", "/api/v1/health/ready"],
@@ -87,17 +111,17 @@ app.add_middleware(
     log_response_body=settings.LOG_RESPONSE_BODY
 )
 
-# 3. Rate limiting (v0.58.0 - before auth to prevent abuse)
+# 6. Rate limiting (v0.58.0 - before auth to prevent abuse)
 app.add_middleware(
     RateLimitMiddleware,
     default_rate_limit=100,  # 100 requests/minute default
     cleanup_interval=600  # Cleanup every 10 minutes
 )
 
-# 4. Correlation ID (sets context for logging)
+# 7. Correlation ID (sets context for logging)
 app.add_middleware(CorrelationIDMiddleware)
 
-# 5. CORS (innermost - before route handlers)
+# 8. CORS (innermost - before route handlers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
