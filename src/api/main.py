@@ -32,7 +32,7 @@ from datetime import datetime
 
 from .config import settings
 from .routers import health, query, status, modules, metrics
-from .routers import tokens, grid, cdna, auth, api_keys
+from .routers import tokens, grid, cdna, auth, api_keys, cache_stats
 from .models.response import ErrorResponse
 
 # v0.52.0: Structured logging and middleware
@@ -140,6 +140,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(status.router, prefix="/api/v1", tags=["Status"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
 app.include_router(modules.router, prefix="/api/v1", tags=["Modules"])
+app.include_router(cache_stats.router, prefix="/api/v1", tags=["Cache"])
 
 # Core functionality routers (Phase 2)
 app.include_router(tokens.router, prefix="/api/v1", tags=["Tokens"])

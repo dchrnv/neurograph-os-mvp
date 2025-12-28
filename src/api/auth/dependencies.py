@@ -2,6 +2,7 @@
 FastAPI dependencies for authentication and authorization.
 """
 
+import time
 from typing import Optional, Union
 from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -10,6 +11,12 @@ from ..models.auth import User
 from .jwt import jwt_manager
 from .rbac import get_user_role, get_permissions_for_role
 from ..storage.api_keys import get_api_key_storage
+from ..cache import (
+    get_cached_permissions,
+    cache_permissions,
+    token_validation_cache
+)
+from ..metrics_prometheus import track_auth_token_operation
 
 
 # Security scheme for Swagger UI
@@ -26,6 +33,10 @@ async def get_current_user(
     """
     Dependency to get current authenticated user from JWT token.
 
+    Uses caching for performance:
+    - Token validation results cached for 60s
+    - User permissions cached for 5min
+
     Args:
         credentials: HTTP Authorization credentials
 
@@ -41,15 +52,29 @@ async def get_current_user(
         >>>     return {"user_id": user.user_id}
     """
     token = credentials.credentials
+    start_time = time.perf_counter()
+
+    # Check token validation cache
+    cache_key = f"token:{token[:32]}"  # Use token prefix as key
+    cached_user = token_validation_cache.get(cache_key)
+    if cached_user is not None:
+        track_auth_token_operation("validate_cached", time.perf_counter() - start_time)
+        return cached_user
 
     try:
         # Verify token
         payload = jwt_manager.verify_token(token, expected_type="access")
-
-        # Get user role and permissions
         user_id = payload.sub
+
+        # Get role
         role = get_user_role(user_id)
-        scopes = get_permissions_for_role(role)
+
+        # Try to get cached permissions
+        scopes = get_cached_permissions(user_id)
+        if scopes is None:
+            # Cache miss - compute and cache
+            scopes = get_permissions_for_role(role)
+            cache_permissions(user_id, scopes, ttl=300)  # 5 minutes
 
         # Create user object
         user = User(
@@ -60,9 +85,17 @@ async def get_current_user(
             disabled=False,
         )
 
+        # Cache the user object for this token
+        token_validation_cache.set(cache_key, user, ttl=60)  # 1 minute
+
+        duration = time.perf_counter() - start_time
+        track_auth_token_operation("validate", duration)
+
         return user
 
     except Exception as e:
+        duration = time.perf_counter() - start_time
+        track_auth_token_operation("validate_failed", duration)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid authentication credentials: {str(e)}",
