@@ -31,8 +31,11 @@ from ..models.token import (
     TokenClearResponse,
     CoordinatesRequest,
 )
+from ..models.auth import User
 from ..dependencies import get_token_storage
 from ..config import settings
+from ..auth.dependencies import get_current_active_user
+from ..auth.permissions import Permission, require_permission
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -133,10 +136,13 @@ def update_request_to_dict(request: TokenUpdateRequest) -> Dict[str, Any]:
 @router.post("/tokens", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def create_token(
     request: TokenCreateRequest,
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Create a new token.
+
+    **Requires:** `tokens:write` permission
 
     Tokens are 64-byte atomic units with 8-dimensional coordinate spaces:
     - L1: Physical space
@@ -148,6 +154,13 @@ async def create_token(
     - L7: Temporal location
     - L8: Abstract/semantic
     """
+    # Check permission
+    if Permission.WRITE_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -183,13 +196,23 @@ async def create_token(
 async def list_tokens(
     limit: int = Query(10, ge=1, le=100, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     List tokens with pagination.
 
+    **Requires:** `tokens:read` permission
+
     Returns paginated list of all tokens in storage.
     """
+    # Check permission
+    if Permission.READ_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -229,13 +252,23 @@ async def list_tokens(
 @router.get("/tokens/{token_id}", response_model=ApiResponse)
 async def get_token(
     token_id: int,
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get specific token by ID.
 
+    **Requires:** `tokens:read` permission
+
     Returns detailed information about a single token.
     """
+    # Check permission
+    if Permission.READ_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -274,13 +307,23 @@ async def get_token(
 async def update_token(
     token_id: int,
     request: TokenUpdateRequest,
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Update existing token.
 
+    **Requires:** `tokens:write` permission
+
     Allows updating weight, field parameters, and coordinates.
     """
+    # Check permission
+    if Permission.WRITE_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -330,13 +373,23 @@ async def update_token(
 @router.delete("/tokens/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_token(
     token_id: int,
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Delete token.
 
+    **Requires:** `tokens:delete` permission
+
     Permanently removes token from storage.
     """
+    # Check permission
+    if Permission.DELETE_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.DELETE_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -366,15 +419,25 @@ async def delete_token(
 
 @router.post("/tokens/examples/create", response_model=ApiResponse)
 async def create_examples(
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Create example tokens for testing.
+
+    **Requires:** `tokens:write` permission
 
     Creates two example tokens:
     - Physical object (entity_type=1) with L1 coordinates
     - Emotional concept (entity_type=5) with L4 coordinates
     """
+    # Check permission
+    if Permission.WRITE_TOKENS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.WRITE_TOKENS.value} required"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -427,14 +490,24 @@ async def create_examples(
 
 @router.delete("/tokens/admin/clear", response_model=ApiResponse)
 async def clear_all_tokens(
-    storage=Depends(get_token_storage)
+    storage=Depends(get_token_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Clear all tokens (admin only).
 
+    **Requires:** `config:admin` permission
+
     Deletes all tokens from storage and resets ID counter.
     Use with caution!
     """
+    # Check admin permission
+    if Permission.ADMIN_CONFIG.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.ADMIN_CONFIG.value} required (admin only)"
+        )
+
     if not settings.ENABLE_NEW_TOKEN_API:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
