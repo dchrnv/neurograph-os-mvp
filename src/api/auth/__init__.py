@@ -11,7 +11,12 @@ Provides:
 from .jwt import JWTManager, TokenPayload
 from .permissions import Permission, require_permission
 from .rbac import Role, get_user_role
-from .dependencies import get_current_user, get_current_active_user
+from .dependencies import (
+    get_current_user,
+    get_current_active_user,
+    get_user_from_api_key,
+    get_user_jwt_or_api_key
+)
 
 __all__ = [
     "JWTManager",
@@ -22,4 +27,6 @@ __all__ = [
     "get_user_role",
     "get_current_user",
     "get_current_active_user",
+    "get_user_from_api_key",
+    "get_user_jwt_or_api_key",
 ]
