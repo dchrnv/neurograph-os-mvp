@@ -32,6 +32,14 @@ class ErrorResponse(BaseModel):
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
 
 
+class SuccessResponse(BaseModel):
+    """Simple success response structure."""
+
+    success: bool = Field(True, description="Success status")
+    message: str = Field(..., description="Success message")
+    data: Optional[Dict[str, Any]] = Field(None, description="Optional data")
+
+
 class ApiResponse(BaseModel):
     """Standard API response wrapper."""
 

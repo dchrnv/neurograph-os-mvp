@@ -10,9 +10,11 @@ pydantic-settings==2.1.0
 python-multipart==0.0.6
 python-dotenv==1.0.0
 
-# Security (for future auth)
+# Security & Authentication (v0.58.0)
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+PyJWT==2.8.0
+email-validator==2.3.0
 
 # Monitoring & Logging
 python-json-logger==2.0.7
