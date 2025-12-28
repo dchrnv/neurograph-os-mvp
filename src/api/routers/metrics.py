@@ -6,9 +6,12 @@ Prometheus-compatible metrics for monitoring NeuroGraph API.
 Version: v0.52.0 - Enhanced with prometheus_client
 """
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, HTTPException, status
 from ..models.response import ApiResponse
+from ..models.auth import User
 from ..dependencies import get_runtime
+from ..auth.dependencies import get_current_active_user
+from ..auth.permissions import Permission
 from ..metrics_prometheus import (
     get_metrics_response,
     update_system_metrics
@@ -22,9 +25,14 @@ logger = get_logger(__name__, component="metrics")
 
 
 @router.get("/metrics", response_class=Response)
-async def get_prometheus_metrics(runtime=Depends(get_runtime)):
+async def get_prometheus_metrics(
+    runtime=Depends(get_runtime),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Get Prometheus-compatible metrics.
+
+    **Requires:** `metrics:read` permission
 
     Returns comprehensive metrics in Prometheus text format including:
     - HTTP request counts and latencies
@@ -36,6 +44,13 @@ async def get_prometheus_metrics(runtime=Depends(get_runtime)):
 
     This endpoint is designed for Prometheus scraping.
     """
+    # Check permission
+    if Permission.READ_METRICS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_METRICS.value} required"
+        )
+
     try:
         # Update system metrics from RuntimeStorage
         token_count = runtime.tokens.count()
@@ -65,15 +80,27 @@ async def get_prometheus_metrics(runtime=Depends(get_runtime)):
 
 
 @router.get("/metrics/json", response_model=ApiResponse)
-async def get_metrics_json(runtime=Depends(get_runtime)):
+async def get_metrics_json(
+    runtime=Depends(get_runtime),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Get metrics in JSON format (human-readable alternative to /metrics).
+
+    **Requires:** `metrics:read` permission
 
     Returns key system metrics in JSON format for easy consumption
     by dashboards or monitoring tools that prefer JSON over Prometheus format.
 
     Note: For Prometheus scraping, use /metrics endpoint instead.
     """
+    # Check permission
+    if Permission.READ_METRICS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_METRICS.value} required"
+        )
+
     try:
         uptime = time.time() - _start_time
 

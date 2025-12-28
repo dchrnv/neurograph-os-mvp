@@ -11,10 +11,13 @@ Performance optimizations:
 Version: v0.52.0
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from ..models.response import ApiResponse
 from ..models.status import StatusResponse
+from ..models.auth import User
 from ..dependencies import get_runtime, get_token_storage, get_cdna_storage
+from ..auth.dependencies import get_current_active_user
+from ..auth.permissions import Permission
 from ..logging_config import get_logger
 import time
 import psutil
@@ -74,15 +77,25 @@ def get_cached_system_metrics() -> tuple[float, float]:
 async def get_status(
     runtime=Depends(get_runtime),
     token_storage=Depends(get_token_storage),
-    cdna_storage=Depends(get_cdna_storage)
+    cdna_storage=Depends(get_cdna_storage),
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Get full system status (v0.52.0 - Optimized).
+
+    **Requires:** `status:read` permission
 
     Returns detailed information about system state, RuntimeStorage metrics, and components.
 
     Performance: <5ms (optimized from 108ms by caching CPU metrics)
     """
+    # Check permission
+    if Permission.READ_STATUS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_STATUS.value} required"
+        )
+
     uptime = time.time() - _start_time
 
     # Get metrics from RuntimeStorage (fast path)
@@ -150,12 +163,24 @@ async def get_status(
 
 
 @router.get("/stats", response_model=ApiResponse)
-async def get_stats(runtime=Depends(get_runtime)):
+async def get_stats(
+    runtime=Depends(get_runtime),
+    current_user: User = Depends(get_current_active_user)
+):
     """
     Get system statistics.
 
+    **Requires:** `status:read` permission
+
     Returns statistics about queries, feedbacks, cache, and intuition engine.
     """
+    # Check permission
+    if Permission.READ_STATUS.value not in current_user.scopes:
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=f"Permission denied: {Permission.READ_STATUS.value} required"
+        )
+
     # TODO: Get actual stats from runtime
     data = {
         "queries": {
