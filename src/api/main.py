@@ -32,8 +32,10 @@ from datetime import datetime
 
 from .config import settings
 from .routers import health, query, status, modules, metrics
-from .routers import tokens, grid, cdna, auth, api_keys, cache_stats
+from .routers import tokens, grid, cdna, auth, api_keys, cache_stats, websocket
 from .models.response import ErrorResponse
+from .websocket.connection import websocket_endpoint
+from .websocket.integrations import ws_integration
 
 # v0.52.0: Structured logging and middleware
 from .logging_config import setup_logging, get_logger
@@ -141,6 +143,7 @@ app.include_router(status.router, prefix="/api/v1", tags=["Status"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
 app.include_router(modules.router, prefix="/api/v1", tags=["Modules"])
 app.include_router(cache_stats.router, prefix="/api/v1", tags=["Cache"])
+app.include_router(websocket.router, prefix="/api/v1", tags=["WebSocket"])
 
 # Core functionality routers (Phase 2)
 app.include_router(tokens.router, prefix="/api/v1", tags=["Tokens"])
@@ -149,6 +152,9 @@ app.include_router(cdna.router, prefix="/api/v1", tags=["CDNA"])
 
 # Query router (will be enhanced in Phase 4)
 app.include_router(query.router, prefix="/api/v1", tags=["Query"])
+
+# WebSocket endpoint (v0.60.0)
+app.websocket("/ws")(websocket_endpoint)
 
 # Global exception handler (fallback - middleware should catch most)
 @app.exception_handler(Exception)
@@ -178,10 +184,19 @@ async def startup_event():
     logger.info(f"CORS origins: {settings.CORS_ORIGINS}")
     # TODO: Initialize neurograph runtime here
 
+    # Start WebSocket integration (v0.60.0)
+    await ws_integration.start()
+    logger.info("WebSocket integration started")
+
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("NeuroGraph API shutting down...")
+
+    # Stop WebSocket integration (v0.60.0)
+    await ws_integration.stop()
+    logger.info("WebSocket integration stopped")
+
     # TODO: Cleanup neurograph runtime here
 
 # Root endpoint

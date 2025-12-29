@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.58.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.60.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,32 +22,36 @@
 
 ---
 
-## 🚀 Текущая версия: v0.58.0
+## 🚀 Текущая версия: v0.60.0
 
-**Authentication & Security** — Полная система безопасности с JWT, API Keys, RBAC и Rate Limiting
+**WebSocket & Real-time Events** — Полноценная поддержка real-time коммуникации для live мониторинга и событийного стриминга
 
-### Новое в v0.58.0
+### Новое в v0.60.0
 
-- 🔐 **JWT Authentication** - Stateless auth с access (15min) и refresh (7 days) токенами
-- 🔑 **API Keys** - Долгоживущие ключи для интеграций (ng_live_, ng_test_)
-- 👥 **RBAC** - 4 роли (admin, developer, viewer, bot) + 20+ разрешений
-- ⏱️ **Rate Limiting** - Token bucket (100 req/min default) для защиты от злоупотреблений
-- 🛡️ **38 Protected Endpoints** - Все API endpoints защищены authentication
+- 🔄 **WebSocket Support** - Endpoint `/ws` для real-time двусторонней связи
+- 📡 **6 Event Channels** - metrics, signals, actions, logs, status, connections
+- 🔌 **Client Libraries** - TypeScript/JavaScript и Python клиенты с auto-reconnect
+- 📊 **Live Metrics** - Автоматический broadcasting метрик каждые 5 секунд
+- 💓 **Heartbeat System** - Ping-pong механизм (30s) для отслеживания живых соединений
+- 📦 **Event Buffering** - До 1000 событий на клиента для offline режима
 
-### Архитектура v0.58.0
+### Архитектура v0.60.0
 
 ```
-HTTP Request → Rate Limiter → Auth (JWT/API Key) → RBAC → Gateway → Rust Core
+WebSocket Client ←→ /ws Endpoint ←→ Channel System ←→ Core Integration
+                                          ↓
+                        [metrics, signals, actions, logs, status, connections]
 ```
 
 ### Ключевые возможности
 
 - ⚙️ **Rust Core Integration** - Реальная обработка сигналов через SignalSystem
 - 🔐 **Enterprise Security** - JWT + API Keys + RBAC + Rate Limiting
+- 🔄 **Real-time Events** - WebSocket broadcasting с ~5ms latency
 - 🎯 **Pattern Matching** - Детекция новизны, поиск соседей
 - ⚡ **High Performance** - 5,601 msg/sec end-to-end, 0.39μs Core latency
-- 🔄 **Complete Pipeline** - Полный цикл обработки
-- 🤖 **Production Ready** - Готовые примеры (Telegram бот)
+- 📚 **Client SDKs** - TypeScript и Python клиенты из коробки
+- 🤖 **Production Ready** - Готовые примеры (Telegram бот, WebSocket demo)
 
 ### Performance
 
@@ -55,6 +59,7 @@ HTTP Request → Rate Limiter → Auth (JWT/API Key) → RBAC → Gateway → Ru
 |--------|-------|
 | **Core throughput** | 304,553 events/sec |
 | **Core latency** | 0.39μs average |
+| **WebSocket latency** | ~5ms event delivery |
 | **Full pipeline** | 5,601 messages/sec |
 | **End-to-end latency** | 0.18ms total |
 
@@ -88,7 +93,48 @@ python examples/telegram_bot_with_core.py
 - `/core` - Информация о Rust Core
 - `/test` - Тест полного pipeline с метриками
 
-### 2. Python API
+### 2. WebSocket Real-time Demo (NEW in v0.60.0)
+
+Демонстрация real-time событий через WebSocket:
+
+```bash
+# Запустить API сервер
+python -m src.api.main
+
+# В другом терминале - запустить WebSocket клиент
+python examples/websocket_demo.py
+```
+
+**Python WebSocket Client:**
+```python
+from neurograph_ws_client import NeurographWSClient, Channel
+
+# Создать клиент
+client = NeurographWSClient(url="ws://localhost:8000/ws")
+await client.connect()
+
+# Подписаться на события
+client.subscribe(Channel.METRICS, lambda data: print(f"Metrics: {data}"))
+client.subscribe(Channel.SIGNALS, lambda data: print(f"Signal: {data}"))
+
+# Запустить forever
+await client.run_forever()
+```
+
+**TypeScript WebSocket Client:**
+```typescript
+import NeurographWSClient from "./neurograph-ws-client";
+
+const client = new NeurographWSClient({
+  url: "ws://localhost:8000/ws",
+  autoReconnect: true
+});
+
+await client.connect();
+client.subscribe("metrics", (data) => console.log("Metrics:", data));
+```
+
+### 3. Python API
 
 ```python
 from src.integration import SignalPipeline
