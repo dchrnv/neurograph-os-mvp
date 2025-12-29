@@ -123,7 +123,7 @@ class TestWebSocketSubscriptions:
             # Skip connection message
             websocket.receive_json()
 
-            # Subscribe to multiple channels
+            # Subscribe to multiple channels (anonymous can only access metrics and status)
             channels = ["metrics", "signals", "actions"]
             websocket.send_json({
                 "type": "subscribe",
@@ -133,7 +133,12 @@ class TestWebSocketSubscriptions:
             # Should receive subscription confirmation
             response = websocket.receive_json()
             assert response["type"] == "subscribed"
-            assert set(response["channels"]) == set(channels)
+            # Anonymous user can only subscribe to metrics (signals and actions are denied)
+            assert "metrics" in response["channels"]
+            # Check that denied channels are reported
+            if "denied" in response:
+                assert "signals" in response["denied"]
+                assert "actions" in response["denied"]
 
     def test_unsubscribe_from_channel(self, client):
         """Test unsubscribing from a channel."""
@@ -165,7 +170,7 @@ class TestWebSocketSubscriptions:
             # Skip connection message
             websocket.receive_json()
 
-            # Subscribe to channels
+            # Subscribe to channels (anonymous can only subscribe to metrics)
             websocket.send_json({
                 "type": "subscribe",
                 "channels": ["metrics", "signals"]
@@ -175,10 +180,12 @@ class TestWebSocketSubscriptions:
             # Get subscriptions
             websocket.send_json({"type": "get_subscriptions"})
 
-            # Should receive subscriptions list
+            # Should receive subscriptions list (only allowed channels)
             response = websocket.receive_json()
             assert response["type"] == "subscriptions"
-            assert set(response["channels"]) == {"metrics", "signals"}
+            # Anonymous user can only subscribe to metrics (signals is denied)
+            assert "metrics" in response["channels"]
+            assert "signals" not in response["channels"]
 
     def test_subscribe_invalid_channels(self, client):
         """Test subscribing with invalid channels parameter."""
