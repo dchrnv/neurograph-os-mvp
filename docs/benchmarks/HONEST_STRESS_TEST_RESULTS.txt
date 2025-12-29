@@ -1,0 +1,548 @@
+
+[1m[95m================================================================================[0m
+[1m[95m              NeuroGraph WebSocket Stress & Load Testing Benchmark              [0m
+[1m[95m================================================================================[0m
+
+[1mConfiguration:[0m
+  Maximum Operations: [92m9,900,000[0m
+  Load Levels: [92m8[0m
+  Test Categories: [92m6[0m (Connection, Message, Subscription, Broadcast, Permission, Compression)
+
+[1m[95m================================================================================[0m
+[1m[95m            Load Level: Minimal - Development environment simulation            [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m1,000[0m
+  Connections: [96m10[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m5[0m
+
+[1m[96mConnection Stress Test - Minimal (1,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mConnections                   [0m              10 conn       [91m[0m
+  [1mDuration                      [0m            0.03 ms         [91m[0m
+  [1mThroughput                    [0m         366,421 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.87 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.37 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Minimal (1,000 ops)[0m
+[96m-----------------------------------------------[0m
+  [1mMessages                      [0m           1,000 msg        [91m[0m
+  [1mDuration                      [0m           10.16 ms         [91m[0m
+  [1mThroughput                    [0m          98,459 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.70 μs         [91m[0m
+  [1mLatency (P95)                 [0m           10.36 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Minimal (1,000 ops)[0m
+[96m-----------------------------------------[0m
+  [1mOperations                    [0m             100 ops        [91m[0m
+  [1mDuration                      [0m            2.41 ms         [91m[0m
+  [1mThroughput                    [0m          41,483 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m           23.68 μs         [91m[0m
+  [1mLatency (P95)                 [0m           24.75 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Minimal (1,000 ops)[0m
+[96m--------------------------------------[0m
+  [1mBroadcasts                    [0m             200 msg        [91m[0m
+  [1mSubscribers                   [0m               5 subs       [91m[0m
+  [1mActual Serializations         [0m           1,000 ops        [91m[0m
+  [1mDuration                      [0m            0.01 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         184,113 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m           26.80 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Minimal (1,000 ops)[0m
+[96m---------------------------------------------[0m
+  [1mChecks                        [0m           1,000 checks     [91m[0m
+  [1mDuration                      [0m            1.95 ms         [91m[0m
+  [1mThroughput                    [0m         512,937 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.63 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.90 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Minimal (1,000 ops)[0m
+[96m----------------------------------------[0m
+  [1mCompressions                  [0m              10 ops        [91m[0m
+  [1mOriginal Size                 [0m          121.35 KB         [91m[0m
+  [1mCompressed Size               [0m            3.52 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,232 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          202.08 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m              Load Level: Light - Small application with few users              [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m10,000[0m
+  Connections: [96m100[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m20[0m
+
+[1m[96mConnection Stress Test - Light (10,000 ops)[0m
+[96m-------------------------------------------[0m
+  [1mConnections                   [0m             100 conn       [91m[0m
+  [1mDuration                      [0m            0.14 ms         [91m[0m
+  [1mThroughput                    [0m         697,360 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.08 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.36 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Light (10,000 ops)[0m
+[96m----------------------------------------------[0m
+  [1mMessages                      [0m          10,000 msg        [91m[0m
+  [1mDuration                      [0m           72.86 ms         [91m[0m
+  [1mThroughput                    [0m         137,246 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            6.99 μs         [91m[0m
+  [1mLatency (P95)                 [0m            7.54 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Light (10,000 ops)[0m
+[96m----------------------------------------[0m
+  [1mOperations                    [0m           1,000 ops        [91m[0m
+  [1mDuration                      [0m            9.52 ms         [91m[0m
+  [1mThroughput                    [0m         105,063 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.17 μs         [91m[0m
+  [1mLatency (P95)                 [0m           15.20 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Light (10,000 ops)[0m
+[96m-------------------------------------[0m
+  [1mBroadcasts                    [0m             500 msg        [91m[0m
+  [1mSubscribers                   [0m              20 subs       [91m[0m
+  [1mActual Serializations         [0m          10,000 ops        [91m[0m
+  [1mDuration                      [0m            0.05 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         211,078 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m           94.38 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Light (10,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mChecks                        [0m          10,000 checks     [91m[0m
+  [1mDuration                      [0m           18.34 ms         [91m[0m
+  [1mThroughput                    [0m         545,375 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.54 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.76 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Light (10,000 ops)[0m
+[96m---------------------------------------[0m
+  [1mCompressions                  [0m             100 ops        [91m[0m
+  [1mOriginal Size                 [0m         1213.48 KB         [91m[0m
+  [1mCompressed Size               [0m           35.16 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,471 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          180.11 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                     Load Level: Low - Growing application                      [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m50,000[0m
+  Connections: [96m500[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m50[0m
+
+[1m[96mConnection Stress Test - Low (50,000 ops)[0m
+[96m-----------------------------------------[0m
+  [1mConnections                   [0m             500 conn       [91m[0m
+  [1mDuration                      [0m            0.68 ms         [91m[0m
+  [1mThroughput                    [0m         732,121 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.06 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.17 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Low (50,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mMessages                      [0m          50,000 msg        [91m[0m
+  [1mDuration                      [0m          380.36 ms         [91m[0m
+  [1mThroughput                    [0m         131,455 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            7.30 μs         [91m[0m
+  [1mLatency (P95)                 [0m            8.95 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Low (50,000 ops)[0m
+[96m--------------------------------------[0m
+  [1mOperations                    [0m           5,000 ops        [91m[0m
+  [1mDuration                      [0m           48.21 ms         [91m[0m
+  [1mThroughput                    [0m         103,702 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.26 μs         [91m[0m
+  [1mLatency (P95)                 [0m           16.16 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Low (50,000 ops)[0m
+[96m-----------------------------------[0m
+  [1mBroadcasts                    [0m           1,000 msg        [91m[0m
+  [1mSubscribers                   [0m              50 subs       [91m[0m
+  [1mActual Serializations         [0m          50,000 ops        [91m[0m
+  [1mDuration                      [0m            0.24 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         208,907 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m          238.82 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Low (50,000 ops)[0m
+[96m------------------------------------------[0m
+  [1mChecks                        [0m          50,000 checks     [91m[0m
+  [1mDuration                      [0m           97.05 ms         [91m[0m
+  [1mThroughput                    [0m         515,202 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.62 μs         [91m[0m
+  [1mLatency (P95)                 [0m            3.35 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Low (50,000 ops)[0m
+[96m-------------------------------------[0m
+  [1mCompressions                  [0m             500 ops        [91m[0m
+  [1mOriginal Size                 [0m         6067.38 KB         [91m[0m
+  [1mCompressed Size               [0m          175.78 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,332 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          188.86 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                  Load Level: Medium - Typical production load                  [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m100,000[0m
+  Connections: [96m1,000[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m100[0m
+
+[1m[96mConnection Stress Test - Medium (100,000 ops)[0m
+[96m---------------------------------------------[0m
+  [1mConnections                   [0m           1,000 conn       [91m[0m
+  [1mDuration                      [0m            1.34 ms         [91m[0m
+  [1mThroughput                    [0m         748,857 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.02 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.11 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Medium (100,000 ops)[0m
+[96m------------------------------------------------[0m
+  [1mMessages                      [0m         100,000 msg        [91m[0m
+  [1mDuration                      [0m          736.91 ms         [91m[0m
+  [1mThroughput                    [0m         135,702 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            7.07 μs         [91m[0m
+  [1mLatency (P95)                 [0m            7.97 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Medium (100,000 ops)[0m
+[96m------------------------------------------[0m
+  [1mOperations                    [0m          10,000 ops        [91m[0m
+  [1mDuration                      [0m           94.35 ms         [91m[0m
+  [1mThroughput                    [0m         105,988 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.07 μs         [91m[0m
+  [1mLatency (P95)                 [0m           15.17 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Medium (100,000 ops)[0m
+[96m---------------------------------------[0m
+  [1mBroadcasts                    [0m           1,000 msg        [91m[0m
+  [1mSubscribers                   [0m             100 subs       [91m[0m
+  [1mActual Serializations         [0m         100,000 ops        [91m[0m
+  [1mDuration                      [0m            0.47 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         214,427 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m          465.84 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Medium (100,000 ops)[0m
+[96m----------------------------------------------[0m
+  [1mChecks                        [0m         100,000 checks     [91m[0m
+  [1mDuration                      [0m          175.43 ms         [91m[0m
+  [1mThroughput                    [0m         570,015 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.47 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.64 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Medium (100,000 ops)[0m
+[96m-----------------------------------------[0m
+  [1mCompressions                  [0m           1,000 ops        [91m[0m
+  [1mOriginal Size                 [0m        12134.77 KB         [91m[0m
+  [1mCompressed Size               [0m          351.56 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,332 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          189.99 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                 Load Level: High - Busy production environment                 [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m500,000[0m
+  Connections: [96m5,000[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m200[0m
+
+[1m[96mConnection Stress Test - High (500,000 ops)[0m
+[96m-------------------------------------------[0m
+  [1mConnections                   [0m           5,000 conn       [91m[0m
+  [1mDuration                      [0m            7.31 ms         [91m[0m
+  [1mThroughput                    [0m         684,020 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.14 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.52 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - High (500,000 ops)[0m
+[96m----------------------------------------------[0m
+  [1mMessages                      [0m         500,000 msg        [91m[0m
+  [1mDuration                      [0m         3748.56 ms         [91m[0m
+  [1mThroughput                    [0m         133,384 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            7.20 μs         [91m[0m
+  [1mLatency (P95)                 [0m            8.21 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - High (500,000 ops)[0m
+[96m----------------------------------------[0m
+  [1mOperations                    [0m          50,000 ops        [91m[0m
+  [1mDuration                      [0m          481.52 ms         [91m[0m
+  [1mThroughput                    [0m         103,837 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.26 μs         [91m[0m
+  [1mLatency (P95)                 [0m           15.99 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - High (500,000 ops)[0m
+[96m-------------------------------------[0m
+  [1mBroadcasts                    [0m           2,500 msg        [91m[0m
+  [1mSubscribers                   [0m             200 subs       [91m[0m
+  [1mActual Serializations         [0m         500,000 ops        [91m[0m
+  [1mDuration                      [0m            2.26 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         221,267 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m          903.39 μs         [91m[0m
+
+[1m[96mPermission Check Stress - High (500,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mChecks                        [0m         500,000 checks     [91m[0m
+  [1mDuration                      [0m          884.20 ms         [91m[0m
+  [1mThroughput                    [0m         565,481 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.47 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.71 μs         [92m✅[0m
+
+[1m[96mCompression Stress - High (500,000 ops)[0m
+[96m---------------------------------------[0m
+  [1mCompressions                  [0m           5,000 ops        [91m[0m
+  [1mOriginal Size                 [0m        60673.83 KB         [91m[0m
+  [1mCompressed Size               [0m         1757.81 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,527 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          178.77 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                   Load Level: Very High - Peak hours traffic                   [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m1,000,000[0m
+  Connections: [96m10,000[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m500[0m
+
+[1m[96mConnection Stress Test - Very High (1,000,000 ops)[0m
+[96m--------------------------------------------------[0m
+  [1mConnections                   [0m          10,000 conn       [91m[0m
+  [1mDuration                      [0m           13.79 ms         [91m[0m
+  [1mThroughput                    [0m         725,012 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.07 μs         [91m[0m
+  [1mLatency (P95)                 [0m            1.13 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Very High (1,000,000 ops)[0m
+[96m-----------------------------------------------------[0m
+  [1mMessages                      [0m       1,000,000 msg        [91m[0m
+  [1mDuration                      [0m         7413.85 ms         [91m[0m
+  [1mThroughput                    [0m         134,883 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            7.12 μs         [91m[0m
+  [1mLatency (P95)                 [0m            8.18 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Very High (1,000,000 ops)[0m
+[96m-----------------------------------------------[0m
+  [1mOperations                    [0m         100,000 ops        [91m[0m
+  [1mDuration                      [0m          958.57 ms         [91m[0m
+  [1mThroughput                    [0m         104,323 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.21 μs         [91m[0m
+  [1mLatency (P95)                 [0m           15.89 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Very High (1,000,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mBroadcasts                    [0m           2,000 msg        [91m[0m
+  [1mSubscribers                   [0m             500 subs       [91m[0m
+  [1mActual Serializations         [0m       1,000,000 ops        [91m[0m
+  [1mDuration                      [0m            4.69 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         213,328 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m         2343.08 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Very High (1,000,000 ops)[0m
+[96m---------------------------------------------------[0m
+  [1mChecks                        [0m       1,000,000 checks     [91m[0m
+  [1mDuration                      [0m         1737.94 ms         [91m[0m
+  [1mThroughput                    [0m         575,395 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.44 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.65 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Very High (1,000,000 ops)[0m
+[96m----------------------------------------------[0m
+  [1mCompressions                  [0m          10,000 ops        [91m[0m
+  [1mOriginal Size                 [0m       121347.66 KB         [91m[0m
+  [1mCompressed Size               [0m         3515.62 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,492 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          181.19 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                   Load Level: Extreme - Stress testing limit                   [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m5,000,000[0m
+  Connections: [96m50,000[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m1,000[0m
+
+[1m[96mConnection Stress Test - Extreme (5,000,000 ops)[0m
+[96m------------------------------------------------[0m
+  [1mConnections                   [0m          50,000 conn       [91m[0m
+  [1mDuration                      [0m          111.02 ms         [91m[0m
+  [1mThroughput                    [0m         450,351 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.35 μs         [91m[0m
+  [1mLatency (P95)                 [0m            2.98 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Extreme (5,000,000 ops)[0m
+[96m---------------------------------------------------[0m
+  [1mMessages                      [0m       5,000,000 msg        [91m[0m
+  [1mDuration                      [0m        39145.86 ms         [91m[0m
+  [1mThroughput                    [0m         127,727 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            7.52 μs         [91m[0m
+  [1mLatency (P95)                 [0m           10.20 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Extreme (5,000,000 ops)[0m
+[96m---------------------------------------------[0m
+  [1mOperations                    [0m         100,000 ops        [91m[0m
+  [1mDuration                      [0m         1038.50 ms         [91m[0m
+  [1mThroughput                    [0m          96,293 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            9.98 μs         [91m[0m
+  [1mLatency (P95)                 [0m           17.29 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Extreme (5,000,000 ops)[0m
+[96m------------------------------------------[0m
+  [1mBroadcasts                    [0m           5,000 msg        [91m[0m
+  [1mSubscribers                   [0m           1,000 subs       [91m[0m
+  [1mActual Serializations         [0m       5,000,000 ops        [91m[0m
+  [1mDuration                      [0m           24.97 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         200,234 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m         4992.51 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Extreme (5,000,000 ops)[0m
+[96m-------------------------------------------------[0m
+  [1mChecks                        [0m       1,000,000 checks     [91m[0m
+  [1mDuration                      [0m         1940.41 ms         [91m[0m
+  [1mThroughput                    [0m         515,355 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.61 μs         [91m[0m
+  [1mLatency (P95)                 [0m            3.04 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Extreme (5,000,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mCompressions                  [0m          10,000 ops        [91m[0m
+  [1mOriginal Size                 [0m       121347.66 KB         [91m[0m
+  [1mCompressed Size               [0m         3515.62 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           3,072 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          205.04 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m          Load Level: Maximum - Maximum stress test (9.9M operations)           [0m
+[1m[95m================================================================================[0m
+
+[1mParameters:[0m
+  Operations: [96m9,900,000[0m
+  Connections: [96m99,000[0m
+  Messages/Conn: [96m100[0m
+  Subscribers: [96m5,000[0m
+
+[1m[96mConnection Stress Test - Maximum (9,900,000 ops)[0m
+[96m------------------------------------------------[0m
+  [1mConnections                   [0m          99,000 conn       [91m[0m
+  [1mDuration                      [0m          190.38 ms         [91m[0m
+  [1mThroughput                    [0m         520,021 conn/sec   [92m✅[0m
+  [1mLatency (avg)                 [0m            1.56 μs         [91m[0m
+  [1mLatency (P95)                 [0m            3.34 μs         [92m✅[0m
+
+[1m[96mMessage Processing Stress - Maximum (9,900,000 ops)[0m
+[96m---------------------------------------------------[0m
+  [1mMessages                      [0m       9,900,000 msg        [91m[0m
+  [1mDuration                      [0m        91809.99 ms         [91m[0m
+  [1mThroughput                    [0m         107,831 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m            8.90 μs         [91m[0m
+  [1mLatency (P95)                 [0m           13.20 μs         [92m✅[0m
+
+[1m[96mSubscription Stress - Maximum (9,900,000 ops)[0m
+[96m---------------------------------------------[0m
+  [1mOperations                    [0m         100,000 ops        [91m[0m
+  [1mDuration                      [0m         1356.42 ms         [91m[0m
+  [1mThroughput                    [0m          73,724 ops/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m           13.04 μs         [91m[0m
+  [1mLatency (P95)                 [0m           24.67 μs         [92m✅[0m
+
+[1m[96mBroadcast Stress - Maximum (9,900,000 ops)[0m
+[96m------------------------------------------[0m
+  [1mBroadcasts                    [0m           9,900 msg        [91m[0m
+  [1mSubscribers                   [0m           1,000 subs       [91m[0m
+  [1mActual Serializations         [0m       9,900,000 ops        [91m[0m
+  [1mDuration                      [0m           57.43 sec        [91m[0m
+  [1mThroughput (HONEST)           [0m         172,374 msg/sec    [92m✅[0m
+  [1mLatency (avg)                 [0m         5799.01 μs         [91m[0m
+
+[1m[96mPermission Check Stress - Maximum (9,900,000 ops)[0m
+[96m-------------------------------------------------[0m
+  [1mChecks                        [0m       1,000,000 checks     [91m[0m
+  [1mDuration                      [0m         2068.42 ms         [91m[0m
+  [1mThroughput                    [0m         483,462 checks/sec [92m✅[0m
+  [1mLatency (avg)                 [0m            1.71 μs         [91m[0m
+  [1mLatency (P95)                 [0m            3.50 μs         [92m✅[0m
+
+[1m[96mCompression Stress - Maximum (9,900,000 ops)[0m
+[96m--------------------------------------------[0m
+  [1mCompressions                  [0m          10,000 ops        [91m[0m
+  [1mOriginal Size                 [0m       121347.66 KB         [91m[0m
+  [1mCompressed Size               [0m         3515.62 KB         [91m[0m
+  [1mSavings                       [0m            97.1 %          [92m✅[0m
+  [1mThroughput                    [0m           2,946 ops/sec    [91m[0m
+  [1mLatency (avg)                 [0m          214.99 μs         [91m[0m
+
+[1m[95m================================================================================[0m
+[1m[95m                      Benchmark Summary - All Load Levels                       [0m
+[1m[95m================================================================================[0m
+
+
+[1mPerformance Summary Across Load Levels[0m
+
+[1m[96mConnection Throughput (conn/sec):[0m
+  Minimal                 366,421 conn/sec  ✅
+  Light                   697,360 conn/sec  ✅
+  Low                     732,121 conn/sec  ✅
+  Medium                  748,857 conn/sec  ✅
+  High                    684,020 conn/sec  ✅
+  Very High               725,012 conn/sec  ✅
+  Extreme                 450,351 conn/sec  ✅
+  Maximum                 520,021 conn/sec  ✅
+
+[1m[96mMessage Processing (msg/sec):[0m
+  Minimal                  98,459 msg/sec   ⚠️
+  Light                   137,246 msg/sec   ✅
+  Low                     131,455 msg/sec   ✅
+  Medium                  135,702 msg/sec   ✅
+  High                    133,384 msg/sec   ✅
+  Very High               134,883 msg/sec   ✅
+  Extreme                 127,727 msg/sec   ✅
+  Maximum                 107,831 msg/sec   ✅
+
+[1m[96mBroadcast Performance (msg/sec):[0m
+  Minimal                 184,113 msg/sec   ✅
+  Light                   211,078 msg/sec   ✅
+  Low                     208,907 msg/sec   ✅
+  Medium                  214,427 msg/sec   ✅
+  High                    221,267 msg/sec   ✅
+  Very High               213,328 msg/sec   ✅
+  Extreme                 200,234 msg/sec   ✅
+  Maximum                 172,374 msg/sec   ✅
+
+[1m[96mLatency P95 Comparison (μs):[0m
+  Minimal                   10.36 μs       ✅
+  Light                      7.54 μs       ✅
+  Low                        8.95 μs       ✅
+  Medium                     7.97 μs       ✅
+  High                       8.21 μs       ✅
+  Very High                  8.18 μs       ✅
+  Extreme                   10.20 μs       ✅
+  Maximum                   13.20 μs       ✅
+
+[1m[96mPerformance Degradation Analysis:[0m
+  Connection:  -41.9% degradation from Minimal to Maximum
+  Message:      -9.5% degradation from Minimal to Maximum
+  [91m❌ Poor scalability - significant degradation[0m
+
+[1m[96mRecommendations:[0m
+  [92m✅ System handles extreme load well[0m
+  [92m✅ Latency remains acceptable under stress[0m
+
+[1m[92m✅ Stress testing completed![0m
+
