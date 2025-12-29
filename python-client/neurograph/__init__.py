@@ -53,6 +53,8 @@ from .models import (
     APIKeyCreate,
     User,
 )
+from .retry import RetryConfig, retry_with_backoff, async_retry_with_backoff
+from .logging import setup_logging, get_logger, enable_debug_logging
 
 __version__ = "0.59.0"
 __author__ = "Chernov Denys"
@@ -77,4 +79,12 @@ __all__ = [
     "APIKey",
     "APIKeyCreate",
     "User",
+    # Retry
+    "RetryConfig",
+    "retry_with_backoff",
+    "async_retry_with_backoff",
+    # Logging
+    "setup_logging",
+    "get_logger",
+    "enable_debug_logging",
 ]
