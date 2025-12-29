@@ -360,24 +360,25 @@ class WebSocketStressBenchmark:
         )
 
     def benchmark_broadcast_stress(self, level: LoadLevel) -> BenchmarkResult:
-        """Benchmark broadcast operations under load."""
+        """Benchmark broadcast operations under load (HONEST METRICS)."""
         self.print_section(f"Broadcast Stress - {level.name} ({level.operations:,} ops)")
 
         manager = ConnectionManager()
 
         # Simulate subscribers
-        num_subscribers = min(level.subscribers, 10000)
+        num_subscribers = min(level.subscribers, 1000)  # Reduced for realistic testing
         channel = "metrics"
 
         for i in range(num_subscribers):
             client_id = f"subscriber_{i}"
             manager.subscribe(client_id, [channel])
 
-        # Calculate total deliveries
-        num_broadcasts = min(level.operations // num_subscribers, 100000)
+        # Calculate realistic number of broadcasts
+        num_broadcasts = min(level.operations // num_subscribers, 10000)
         total_deliveries = num_broadcasts * num_subscribers
 
         latencies = []
+        total_serializations = 0
 
         start = time.perf_counter()
 
@@ -390,15 +391,22 @@ class WebSocketStressBenchmark:
                 "data": "x" * 100
             }
 
-            # Simulate broadcast to all subscribers
+            # HONEST SIMULATION: Actually serialize and "send" to each subscriber
             subscribers = manager._subscriptions.get(channel, set())
-            _ = len(subscribers)  # Count operation
+
+            for subscriber_id in subscribers:
+                # Serialize message for each subscriber (real cost)
+                serialized = json.dumps(message)
+                # Simulate send operation (memory copy)
+                _ = len(serialized)
+                total_serializations += 1
 
             broadcast_end = time.perf_counter()
             latencies.append((broadcast_end - broadcast_start) * 1_000_000)  # μs
 
         duration = time.perf_counter() - start
-        throughput = total_deliveries / duration if duration > 0 else 0
+        # Throughput based on ACTUAL serializations, not virtual deliveries
+        throughput = total_serializations / duration if duration > 0 else 0
 
         latency_avg = statistics.mean(latencies) if latencies else 0
         latency_p50 = statistics.median(latencies) if latencies else 0
@@ -407,9 +415,9 @@ class WebSocketStressBenchmark:
 
         self.print_metric("Broadcasts", f"{num_broadcasts:,}", "msg")
         self.print_metric("Subscribers", f"{num_subscribers:,}", "subs")
-        self.print_metric("Total Deliveries", f"{total_deliveries:,}", "msg")
-        self.print_metric("Duration", f"{duration*1000:.2f}", "ms")
-        self.print_metric("Throughput", f"{throughput:,.0f}", "msg/sec", "✅" if throughput > 100_000 else "⚠️")
+        self.print_metric("Actual Serializations", f"{total_serializations:,}", "ops")
+        self.print_metric("Duration", f"{duration:.2f}", "sec")
+        self.print_metric("Throughput (HONEST)", f"{throughput:,.0f}", "msg/sec", "✅" if throughput > 10_000 else "⚠️")
         self.print_metric("Latency (avg)", f"{latency_avg:.2f}", "μs")
 
         return BenchmarkResult(
