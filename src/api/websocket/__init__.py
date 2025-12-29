@@ -18,11 +18,50 @@
 """
 WebSocket module for NeuroGraph API
 
-Version: v0.60.0
-Provides real-time communication for live updates
+Version: v0.60.1
+Provides real-time communication for live updates with advanced features
 """
 
 from .manager import ConnectionManager
 from .connection import websocket_endpoint
+from .channels import Channel
+from .metrics import metrics, WebSocketMetricsCollector
+from .permissions import can_subscribe, can_broadcast, get_accessible_channels
+from .rate_limit import rate_limiter, WebSocketRateLimiter
+from .reconnection import reconnection_manager, ReconnectionManager
+from .binary import binary_handler, BinaryMessageHandler, BinaryMessageType
+from .compression import default_compressor, adaptive_compressor, MessageCompressor
 
-__all__ = ["ConnectionManager", "websocket_endpoint"]
+__all__ = [
+    # Core
+    "ConnectionManager",
+    "websocket_endpoint",
+    "Channel",
+
+    # Metrics
+    "metrics",
+    "WebSocketMetricsCollector",
+
+    # Permissions
+    "can_subscribe",
+    "can_broadcast",
+    "get_accessible_channels",
+
+    # Rate Limiting
+    "rate_limiter",
+    "WebSocketRateLimiter",
+
+    # Reconnection
+    "reconnection_manager",
+    "ReconnectionManager",
+
+    # Binary Messages
+    "binary_handler",
+    "BinaryMessageHandler",
+    "BinaryMessageType",
+
+    # Compression
+    "default_compressor",
+    "adaptive_compressor",
+    "MessageCompressor",
+]
