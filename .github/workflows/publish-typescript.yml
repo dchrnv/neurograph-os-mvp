@@ -1,0 +1,66 @@
+name: Publish TypeScript Client to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.59.3)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/typescript-') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      working-directory: ./typescript-client
+      run: npm ci
+
+    - name: Build package
+      working-directory: ./typescript-client
+      run: npm run build
+
+    - name: Run tests
+      working-directory: ./typescript-client
+      run: npm test
+
+    - name: Publish to npm (dry-run)
+      if: github.event_name == 'workflow_dispatch'
+      working-directory: ./typescript-client
+      run: npm publish --dry-run
+
+    - name: Publish to npm
+      if: github.event_name == 'release'
+      working-directory: ./typescript-client
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm publish --access public
+
+    - name: Create GitHub Release
+      if: github.event_name == 'workflow_dispatch'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: typescript-${{ github.event.inputs.version }}
+        name: TypeScript Client v${{ github.event.inputs.version }}
+        body: |
+          TypeScript/JavaScript client library release v${{ github.event.inputs.version }}
+
+          ## Installation
+          ```bash
+          npm install @neurograph/client@${{ github.event.inputs.version }}
+          ```
+
+          See [CHANGELOG](./typescript-client/CHANGELOG.md) for details.
+        files: |
+          typescript-client/dist/*

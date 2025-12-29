@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # NeuroGraph API
+  neurograph-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: neurograph-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://neurograph:password@postgres:5432/neurograph
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=your-secret-key-change-in-production
+      - ENVIRONMENT=development
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../src:/app/src:ro
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - neurograph-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: neurograph-postgres
+    environment:
+      - POSTGRES_USER=neurograph
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=neurograph
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - neurograph-network
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: neurograph-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - neurograph-network
+
+  # Example Express.js service
+  express-example:
+    build:
+      context: ../examples/express-api
+      dockerfile: Dockerfile
+    container_name: neurograph-express
+    ports:
+      - "3001:3001"
+    environment:
+      - NEUROGRAPH_API_URL=http://neurograph-api:8000
+      - NEUROGRAPH_USERNAME=developer
+      - NEUROGRAPH_PASSWORD=developer123
+      - PORT=3001
+    depends_on:
+      - neurograph-api
+    networks:
+      - neurograph-network
+
+  # Example FastAPI service
+  fastapi-example:
+    build:
+      context: ../examples/fastapi-service
+      dockerfile: Dockerfile
+    container_name: neurograph-fastapi
+    ports:
+      - "8001:8001"
+    environment:
+      - NEUROGRAPH_API_URL=http://neurograph-api:8000
+      - NEUROGRAPH_USERNAME=developer
+      - NEUROGRAPH_PASSWORD=developer123
+    depends_on:
+      - neurograph-api
+    networks:
+      - neurograph-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  neurograph-network:
+    driver: bridge
