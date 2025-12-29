@@ -2,7 +2,7 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.60.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.60.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -22,9 +22,19 @@
 
 ---
 
-## 🚀 Текущая версия: v0.60.0
+## 🚀 Текущая версия: v0.60.1
 
-**WebSocket & Real-time Events** — Полноценная поддержка real-time коммуникации для live мониторинга и событийного стриминга
+**WebSocket Advanced Features** — Production-ready WebSocket с метриками, RBAC, rate limiting, reconnection и compression
+
+### Новое в v0.60.1
+
+- 📊 **Prometheus Metrics** - 15 метрик для мониторинга (connections, messages, latency, errors)
+- 🔐 **RBAC Permissions** - Role-based доступ к каналам (admin, developer, viewer, bot, anonymous)
+- ⏱️ **Rate Limiting** - Token bucket алгоритм с разными лимитами на тип сообщения
+- 🔄 **Reconnection Tokens** - Бесшовное восстановление сессии с сохранением подписок
+- 📦 **Binary Messages** - Поддержка бинарных данных (images, audio, video) со структурированным форматом
+- 🗜️ **Message Compression** - GZIP/ZLIB/DEFLATE с адаптивным выбором алгоритма (60-80% экономии)
+- 🛠️ **CLI Tool** - Полнофункциональный инструмент для тестирования WebSocket
 
 ### Новое в v0.60.0
 
@@ -35,12 +45,14 @@
 - 💓 **Heartbeat System** - Ping-pong механизм (30s) для отслеживания живых соединений
 - 📦 **Event Buffering** - До 1000 событий на клиента для offline режима
 
-### Архитектура v0.60.0
+### Архитектура v0.60.1
 
 ```
-WebSocket Client ←→ /ws Endpoint ←→ Channel System ←→ Core Integration
-                                          ↓
-                        [metrics, signals, actions, logs, status, connections]
+WebSocket Client ←→ /ws Endpoint ←→ [ Metrics | Rate Limit | Permissions ] ←→ Channel System
+                         ↓                                                            ↓
+              Reconnection Manager                        [metrics, signals, actions, logs, status, connections]
+                         ↓                                                            ↓
+              Binary/Compression                                            Core Integration
 ```
 
 ### Ключевые возможности
@@ -134,7 +146,32 @@ await client.connect();
 client.subscribe("metrics", (data) => console.log("Metrics:", data));
 ```
 
-### 3. Python API
+### 3. WebSocket CLI Tool (NEW in v0.60.1)
+
+Тестирование WebSocket без написания кода:
+
+```bash
+# Базовое подключение
+python -m src.api.websocket.cli --url ws://localhost:8000/ws
+
+# С подпиской на каналы
+python -m src.api.websocket.cli --url ws://localhost:8000/ws --subscribe metrics,signals
+
+# С аутентификацией
+python -m src.api.websocket.cli --url ws://localhost:8000/ws --token YOUR_JWT_TOKEN
+
+# JSON output
+python -m src.api.websocket.cli --url ws://localhost:8000/ws --format json
+```
+
+**Возможности CLI:**
+- Цветной вывод событий в real-time
+- Автоматическая подписка на каналы
+- Поддержка JWT аутентификации
+- Форматы вывода: pretty, json, compact
+- Показывает типы событий и метаданные
+
+### 4. Python API
 
 ```python
 from src.integration import SignalPipeline
@@ -182,6 +219,95 @@ print(f"Processing: {result['processing_time_us']}μs")
 
 ---
 
+## WebSocket Advanced Features (v0.60.1)
+
+### Reconnection Tokens
+
+Бесшовное восстановление сессии после разрыва:
+
+```python
+# Запросить reconnection token перед отключением
+await client.send({"type": "get_reconnection_token"})
+# Ответ: {"type": "reconnection_token", "token": "...", "expires_in": 300}
+
+# Переподключение с восстановлением сессии
+client = NeurographWSClient(
+    url="ws://localhost:8000/ws",
+    reconnection_token="your_token"
+)
+await client.connect()
+# Все подписки автоматически восстановлены!
+```
+
+### Permissions & RBAC
+
+Контроль доступа к каналам по ролям:
+
+| Channel | Admin | Developer | Viewer | Bot | Anonymous |
+|---------|-------|-----------|--------|-----|-----------|
+| metrics | ✅ Sub+Broadcast | ✅ Subscribe | ✅ Subscribe | ✅ Subscribe | ✅ Subscribe |
+| signals | ✅ Sub+Broadcast | ✅ Subscribe | ❌ | ✅ Subscribe | ❌ |
+| actions | ✅ Sub+Broadcast | ✅ Subscribe | ❌ | ❌ | ❌ |
+| logs | ✅ Sub+Broadcast | ✅ Subscribe | ❌ | ❌ | ❌ |
+| status | ✅ Sub+Broadcast | ✅ Subscribe | ✅ Subscribe | ✅ Subscribe | ✅ Subscribe |
+| connections | ✅ Sub+Broadcast | ❌ | ❌ | ❌ | ❌ |
+
+### Rate Limiting
+
+Token bucket алгоритм с разными лимитами:
+
+| Message Type | Capacity | Refill Rate |
+|-------------|----------|-------------|
+| ping | 120 | 2/sec |
+| subscribe | 30 | 1/sec |
+| unsubscribe | 30 | 1/sec |
+| default | 60 | 10/sec |
+
+### Prometheus Metrics
+
+15 метрик для production мониторинга:
+
+```python
+# Доступны на /metrics endpoint
+neurograph_ws_connections_total          # Активные соединения
+neurograph_ws_connections_opened_total   # Всего открыто
+neurograph_ws_connections_closed_total   # Всего закрыто
+neurograph_ws_connection_duration_seconds  # Длительность соединений
+neurograph_ws_messages_sent_total        # Отправлено сообщений
+neurograph_ws_messages_received_total    # Получено сообщений
+neurograph_ws_message_size_bytes         # Размер сообщений
+neurograph_ws_message_latency_seconds    # Latency
+neurograph_ws_subscriptions_total        # Подписки
+neurograph_ws_channel_subscribers        # Подписчики по каналам
+neurograph_ws_buffered_events            # Буферизованные события
+neurograph_ws_errors_total               # Ошибки
+```
+
+### Binary Messages & Compression
+
+Эффективная передача больших данных:
+
+```python
+from src.api.websocket.binary import binary_handler
+from src.api.websocket.compression import default_compressor
+
+# Отправить изображение
+image_bytes = open("photo.jpg", "rb").read()
+binary_msg = binary_handler.create_image_message(
+    image_bytes,
+    format="jpeg",
+    width=1920,
+    height=1080
+)
+
+# Сжатие больших JSON (60-80% экономии)
+large_data = {"key": "value" * 1000}
+compressed, was_compressed = default_compressor.compress_json(large_data)
+# compressed size: ~2KB vs ~10KB original
+```
+
+---
+
 ## Документация
 
 ### Руководства
@@ -194,9 +320,11 @@ print(f"Processing: {result['processing_time_us']}μs")
 
 ### Changelogs
 
-- **[CHANGELOG v0.57.0](docs/changelogs/CHANGELOG_v0.57.0.md)** - Gateway-Core Integration ← **LATEST**
+- **[CHANGELOG v0.60.1](docs/changelogs/CHANGELOG_v0.60.1.md)** - WebSocket Advanced Features ← **LATEST**
+- **[CHANGELOG v0.60.0](docs/changelogs/CHANGELOG_v0.60.0.md)** - WebSocket & Real-time Events
+- **[CHANGELOG v0.58.0](docs/changelogs/CHANGELOG_v0.58.0.md)** - Authentication & Security
+- **[CHANGELOG v0.57.0](docs/changelogs/CHANGELOG_v0.57.0.md)** - Gateway-Core Integration
 - **[CHANGELOG v0.56.0](docs/changelogs/CHANGELOG_v0.56.0.md)** - ActionController Foundation
-- **[CHANGELOG v0.55.0](docs/changelogs/CHANGELOG_v0.55.0.md)** - Subscription Filters & Sensors
 - **[All Changelogs](docs/changelogs/)** - Полная история версий
 
 ### Спецификации
@@ -258,7 +386,10 @@ docker-compose up -d
 ## Roadmap
 
 **Completed:**
-- ✅ v0.57.0 - Gateway-Core Integration (Dec 2024)
+- ✅ v0.60.1 - WebSocket Advanced Features (Dec 2024)
+- ✅ v0.60.0 - WebSocket & Real-time Events
+- ✅ v0.58.0 - Authentication & Security
+- ✅ v0.57.0 - Gateway-Core Integration
 - ✅ v0.56.0 - ActionController Foundation
 - ✅ v0.55.0 - Subscription Filters & Sensors
 - ✅ v0.54.0 - Gateway v2.0 (Pydantic models)
@@ -267,9 +398,6 @@ docker-compose up -d
 - ✅ v0.51.0 - REST API + RuntimeStorage
 
 **Next (см. [MASTER_PLAN v3.0](docs/MASTER_PLAN_v3.0.md)):**
-- 🎯 v0.58.0 - Authentication & Security (JWT, RBAC, Rate Limiting)
-- 🐍 v0.59.0 - Python Library (PyPI package)
-- 🔄 v0.60.0 - WebSocket & Real-time Events
 - 📊 v0.61.0 - Jupyter Integration (Magic commands)
 - 🎨 v0.62.0 - Web Dashboard (React SPA)
 - 🎥 v0.63.0 - Enhanced Sensors (Audio & Vision)
