@@ -30,6 +30,7 @@ from fastapi import WebSocket
 from collections import defaultdict
 
 from ..logging_config import get_logger
+from .metrics import metrics
 
 logger = get_logger(__name__, service="websocket")
 
@@ -89,6 +90,9 @@ class ConnectionManager:
         }
         self._last_heartbeat[client_id] = time.time()
 
+        # Track metrics
+        metrics.track_connection_opened(user_id=user_id)
+
         logger.info(
             f"Client connected: {client_id}",
             extra={
@@ -114,12 +118,27 @@ class ConnectionManager:
 
         if client_id in self._metadata:
             metadata = self._metadata.pop(client_id)
+            user_id = metadata.get("user_id")
+
+            # Track connection duration
+            connected_at_str = metadata.get("connected_at")
+            if connected_at_str:
+                try:
+                    connected_at = datetime.fromisoformat(connected_at_str)
+                    duration = (datetime.utcnow() - connected_at).total_seconds()
+                    metrics.track_connection_duration(duration)
+                except:
+                    pass
+
+            # Track metrics
+            metrics.track_connection_closed(user_id=user_id, reason="normal")
+
             logger.info(
                 f"Client disconnected: {client_id}",
                 extra={
                     "event": "client_disconnected",
                     "client_id": client_id,
-                    "user_id": metadata.get("user_id"),
+                    "user_id": user_id,
                     "total_connections": len(self._connections)
                 }
             )
@@ -150,16 +169,27 @@ class ConnectionManager:
         if client_id in self._connections:
             websocket = self._connections[client_id]
             try:
+                # Calculate message size
+                message_str = json.dumps(message)
+                message_size = len(message_str.encode('utf-8'))
+
                 await websocket.send_json(message)
+
+                # Track metrics
+                channel = message.get("channel", "system")
+                message_type = message.get("type", message.get("event_type", "unknown"))
+                metrics.track_message_sent(channel, message_type, message_size)
+
                 logger.debug(
                     f"Message sent to {client_id}",
                     extra={
                         "event": "message_sent",
                         "client_id": client_id,
-                        "message_type": message.get("type")
+                        "message_type": message_type
                     }
                 )
             except Exception as e:
+                metrics.track_error("send_failed")
                 logger.error(
                     f"Failed to send message to {client_id}: {e}",
                     extra={
@@ -275,6 +305,10 @@ class ConnectionManager:
             self._subscriptions[channel].add(client_id)
             self._client_channels[client_id].add(channel)
 
+            # Track metrics
+            metrics.track_subscription(channel)
+            metrics.update_channel_subscribers(channel, len(self._subscriptions[channel]))
+
         logger.info(
             f"Client {client_id} subscribed to {len(channels)} channel(s)",
             extra={
@@ -296,8 +330,15 @@ class ConnectionManager:
         for channel in channels:
             if channel in self._subscriptions:
                 self._subscriptions[channel].discard(client_id)
+
+                # Track metrics
+                metrics.track_unsubscription(channel)
+
                 if not self._subscriptions[channel]:
                     del self._subscriptions[channel]
+                    metrics.update_channel_subscribers(channel, 0)
+                else:
+                    metrics.update_channel_subscribers(channel, len(self._subscriptions[channel]))
 
             if client_id in self._client_channels:
                 self._client_channels[client_id].discard(channel)
@@ -385,6 +426,10 @@ class ConnectionManager:
         }
         buffer.append(buffered_event)
 
+        # Update metrics
+        total_buffered = sum(len(buf) for buf in self._event_buffers.values())
+        metrics.update_buffered_events(total_buffered)
+
         # Trim buffer if too large (keep most recent events)
         if len(buffer) > self._max_buffer_size:
             self._event_buffers[client_id] = buffer[-self._max_buffer_size:]
@@ -396,6 +441,9 @@ class ConnectionManager:
                     "buffer_size": self._max_buffer_size
                 }
             )
+            # Update metrics again after trimming
+            total_buffered = sum(len(buf) for buf in self._event_buffers.values())
+            metrics.update_buffered_events(total_buffered)
 
     async def _flush_buffer(self, client_id: str):
         """
@@ -422,6 +470,10 @@ class ConnectionManager:
 
             # Clear buffer
             self._event_buffers[client_id] = []
+
+            # Update metrics
+            total_buffered = sum(len(buf) for buf in self._event_buffers.values())
+            metrics.update_buffered_events(total_buffered)
 
     def clear_buffer(self, client_id: str):
         """
