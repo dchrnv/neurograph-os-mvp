@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurograph-python"
+version = "0.59.0"
+description = "Official Python client for NeuroGraph - semantic knowledge system"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "AGPLv3"}
+authors = [
+    {name = "Chernov Denys", email = "chernov@neurograph.dev"}
+]
+maintainers = [
+    {name = "Chernov Denys", email = "chernov@neurograph.dev"}
+]
+keywords = [
+    "neurograph",
+    "semantic",
+    "knowledge-graph",
+    "nlp",
+    "embeddings",
+    "ai",
+    "vector-database"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+    "mkdocstrings[python]>=0.23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dchrnv/neurograph-os"
+Documentation = "https://neurograph.dev/docs"
+Repository = "https://github.com/dchrnv/neurograph-os"
+Issues = "https://github.com/dchrnv/neurograph-os/issues"
+Changelog = "https://github.com/dchrnv/neurograph-os/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["neurograph*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
