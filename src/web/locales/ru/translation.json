@@ -101,6 +101,48 @@
     "themeLight": "Светлая",
     "downloadSuccess": "Лог терминала успешно скачан"
   },
+  "admin": {
+    "title": "Администрирование",
+    "cdna": {
+      "title": "CDNA Конфигурация",
+      "dimensionScales": "Измерения Шкал",
+      "apply": "Применить Изменения",
+      "saveSuccess": "CDNA шкалы успешно обновлены",
+      "saveError": "Не удалось обновить CDNA шкалы",
+      "resetInfo": "CDNA шкалы сброшены на сбалансированный профиль"
+    },
+    "operations": {
+      "title": "Системные Операции",
+      "exportData": "Экспорт Данных",
+      "importData": "Импорт Данных",
+      "createBackup": "Создать Backup",
+      "exportSuccess": "Данные успешно экспортированы",
+      "exportError": "Не удалось экспортировать данные",
+      "importSuccess": "Данные успешно импортированы",
+      "importError": "Не удалось импортировать данные",
+      "backupSuccess": "Backup успешно создан",
+      "backupError": "Не удалось создать backup"
+    },
+    "dangerZone": {
+      "title": "Опасная Зона",
+      "description": "Эти операции необратимы и не могут быть отменены. Действуйте осторожно.",
+      "clearTokens": "Очистить Все Токены",
+      "resetSystem": "Сбросить Систему",
+      "clearTokensConfirm": "Очистить все токены?",
+      "clearTokensWarning": "Это навсегда удалит все токены из системы. Это действие нельзя отменить.",
+      "clearTokensSuccess": "Все токены успешно очищены",
+      "clearTokensError": "Не удалось очистить токены",
+      "resetSystemConfirm": "Сбросить всю систему?",
+      "resetSystemWarning": "Это сбросит всю систему в начальное состояние, включая конфигурацию, данные и токены.",
+      "resetSystemFinalWarning": "ЭТО ДЕЙСТВИЕ НЕЛЬЗЯ ОТМЕНИТЬ!",
+      "resetSystemConfirmText": "Да, сбросить систему",
+      "resetSystemDoubleConfirm": "Вы абсолютно уверены?",
+      "resetSystemDoubleConfirmText": "Введите 'RESET' чтобы подтвердить, что понимаете - это удалит ВСЕ данные.",
+      "resetSystemFinalConfirmText": "СБРОСИТЬ СИСТЕМУ",
+      "resetSystemSuccess": "Система успешно сброшена. Перезагрузка...",
+      "resetSystemError": "Не удалось сбросить систему"
+    }
+  },
   "common": {
     "loading": "Загрузка...",
     "error": "Ошибка",

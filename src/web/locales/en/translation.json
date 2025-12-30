@@ -101,6 +101,48 @@
     "themeLight": "Light",
     "downloadSuccess": "Terminal log downloaded successfully"
   },
+  "admin": {
+    "title": "Administration",
+    "cdna": {
+      "title": "CDNA Configuration",
+      "dimensionScales": "Dimension Scales",
+      "apply": "Apply Changes",
+      "saveSuccess": "CDNA scales updated successfully",
+      "saveError": "Failed to update CDNA scales",
+      "resetInfo": "CDNA scales reset to balanced profile"
+    },
+    "operations": {
+      "title": "System Operations",
+      "exportData": "Export Data",
+      "importData": "Import Data",
+      "createBackup": "Create Backup",
+      "exportSuccess": "Data exported successfully",
+      "exportError": "Failed to export data",
+      "importSuccess": "Data imported successfully",
+      "importError": "Failed to import data",
+      "backupSuccess": "Backup created successfully",
+      "backupError": "Failed to create backup"
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "These operations are destructive and cannot be undone. Proceed with caution.",
+      "clearTokens": "Clear All Tokens",
+      "resetSystem": "Reset System",
+      "clearTokensConfirm": "Clear all tokens?",
+      "clearTokensWarning": "This will permanently delete all tokens from the system. This action cannot be undone.",
+      "clearTokensSuccess": "All tokens cleared successfully",
+      "clearTokensError": "Failed to clear tokens",
+      "resetSystemConfirm": "Reset entire system?",
+      "resetSystemWarning": "This will reset the entire system to its initial state, including all configuration, data, and tokens.",
+      "resetSystemFinalWarning": "THIS ACTION CANNOT BE UNDONE!",
+      "resetSystemConfirmText": "Yes, reset system",
+      "resetSystemDoubleConfirm": "Are you absolutely sure?",
+      "resetSystemDoubleConfirmText": "Type 'RESET' to confirm you understand this will delete ALL data.",
+      "resetSystemFinalConfirmText": "RESET SYSTEM",
+      "resetSystemSuccess": "System reset successfully. Reloading...",
+      "resetSystemError": "Failed to reset system"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -108,6 +150,7 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "refresh": "Refresh",
-    "close": "Close"
+    "close": "Close",
+    "reset": "Reset"
   }
 }

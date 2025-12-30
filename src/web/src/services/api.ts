@@ -79,6 +79,29 @@ class ApiService {
   async updateCDNAScales(scales: Record<string, number>): Promise<void> {
     await this.client.put('/cdna/scales', { scales });
   }
+
+  // Admin operations
+  async exportData(): Promise<any> {
+    const { data } = await this.client.post('/admin/export');
+    return data;
+  }
+
+  async importData(importData: any): Promise<void> {
+    await this.client.post('/admin/import', importData);
+  }
+
+  async createBackup(): Promise<any> {
+    const { data } = await this.client.post('/admin/backup');
+    return data;
+  }
+
+  async clearTokens(): Promise<void> {
+    await this.client.delete('/admin/tokens');
+  }
+
+  async resetSystem(): Promise<void> {
+    await this.client.post('/admin/reset');
+  }
 }
 
 export const api = new ApiService();

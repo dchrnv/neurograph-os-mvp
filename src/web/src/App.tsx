@@ -11,15 +11,8 @@ import Config from './pages/Config';
 import Bootstrap from './pages/Bootstrap';
 import Chat from './pages/Chat';
 import Terminal from './pages/Terminal';
+import Admin from './pages/Admin';
 import './i18n';
-
-// Placeholder pages
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div style={{ padding: 24 }}>
-    <h1>{title}</h1>
-    <p>Coming soon...</p>
-  </div>
-);
 
 function App() {
   const appTheme = useAppStore((state) => state.theme);
@@ -54,7 +47,7 @@ function App() {
             <Route path={ROUTES.BOOTSTRAP} element={<Bootstrap />} />
             <Route path={ROUTES.CHAT} element={<Chat />} />
             <Route path={ROUTES.TERMINAL} element={<Terminal />} />
-            <Route path={ROUTES.ADMIN} element={<PlaceholderPage title="Admin" />} />
+            <Route path={ROUTES.ADMIN} element={<Admin />} />
           </Route>
         </Routes>
       </BrowserRouter>
