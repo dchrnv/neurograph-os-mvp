@@ -80,6 +80,16 @@
     "saveError": "Failed to save configuration",
     "resetInfo": "Configuration reset"
   },
+  "chat": {
+    "title": "Chat",
+    "newChat": "New Chat",
+    "sessions": "Sessions",
+    "clear": "Clear",
+    "send": "Send",
+    "placeholder": "Type your message... (Shift+Enter for new line)",
+    "noMessages": "No messages yet. Start a conversation!",
+    "messageCount": "messages"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
