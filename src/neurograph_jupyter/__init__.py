@@ -60,5 +60,5 @@ def unload_ipython_extension(ipython):
     print("NeuroGraph Jupyter extension unloaded")
 
 
-__version__ = "0.61.0"
+__version__ = "0.61.1"
 __all__ = ["NeuroGraphMagics", "load_ipython_extension", "unload_ipython_extension"]
