@@ -2,9 +2,10 @@
 
 > **Экспериментальная когнитивная архитектура для эмерджентного формирования структур знаний**
 
-[![Version](https://img.shields.io/badge/version-v0.60.1-blue.svg)](https://github.com/dchrnv/neurograph-os)
+[![Version](https://img.shields.io/badge/version-v0.61.0-blue.svg)](https://github.com/dchrnv/neurograph-os)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![Jupyter](https://img.shields.io/badge/jupyter-ready-orange.svg)](https://jupyter.org/)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
 ---
@@ -22,9 +23,19 @@
 
 ---
 
-## 🚀 Текущая версия: v0.60.1
+## 🚀 Текущая версия: v0.61.0
 
-**WebSocket Advanced Features** — Production-ready WebSocket с метриками, RBAC, rate limiting, reconnection и compression
+**Jupyter Integration** — Полноценная интеграция с Jupyter notebooks через IPython magic commands
+
+### Новое в v0.61.0
+
+- 🪄 **Magic Commands** - `%neurograph` для быстрых операций (init, status, query, subscribe, emit)
+- 📊 **Rich Display** - Красивые HTML таблицы для результатов запросов с градиентными заголовками
+- 📡 **Real-time Signals** - Подписка на каналы и обработка событий прямо в notebook
+- 🎨 **Graph Visualization** - NetworkX визуализация с 3 layout алгоритмами (spring, circular, kamada_kawai)
+- ⚡ **Cell Magic** - `%%signal` для определения обработчиков сигналов
+- 📈 **DataFrame Export** - Конвертация результатов в pandas для анализа
+- 📚 **Tutorial Notebook** - 15 полных примеров использования
 
 ### Новое в v0.60.1
 
@@ -79,7 +90,39 @@ WebSocket Client ←→ /ws Endpoint ←→ [ Metrics | Rate Limit | Permissions
 
 ## Быстрый старт
 
-### 1. Telegram Bot (рекомендуется)
+### 1. Jupyter Notebook (рекомендуется для исследований)
+
+Интерактивная работа с графом прямо в notebook:
+
+```bash
+# Установка с Jupyter поддержкой
+pip install neurograph[jupyter]
+
+# Запуск Jupyter
+jupyter notebook
+```
+
+В notebook:
+
+```python
+# Загрузка расширения
+%load_ext neurograph_jupyter
+
+# Инициализация
+%neurograph init --path ./my_graph.db
+
+# Запрос с красивым отображением
+%neurograph query "find all nodes where type='user'"
+
+# Визуализация графа
+from neurograph_jupyter.display import render_graph_visualization
+result = neurograph_db.query("find all nodes")
+render_graph_visualization(result, layout="spring")
+```
+
+📚 **[Полный туториал](notebooks/jupyter_integration_tutorial.ipynb)** с 15 примерами
+
+### 2. Telegram Bot
 
 Полный пример с реальной обработкой через Rust Core:
 

@@ -39,6 +39,12 @@ data/
 htmlcov/
 .pytest_cache/
 
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.jupyter/
+jupyter_notebook_config.py
+
 # Build artifacts
 build/
 dist/
