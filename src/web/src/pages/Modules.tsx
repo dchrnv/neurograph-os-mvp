@@ -3,13 +3,12 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Row, Col, Button, Space, message, Spin } from 'antd';
-import { ReloadOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Row, Col, Button, Space, message, Spin, Modal } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import ModuleCard from '../components/ModuleCard';
 import ModuleDetailsDrawer from '../components/ModuleDetailsDrawer';
 import { useModuleStore } from '../stores/moduleStore';
-import { api } from '../services/api';
 import { ws } from '../services/websocket';
 import { WS_CHANNELS } from '../utils/constants';
 import type { Module } from '../types/modules';
@@ -35,8 +34,9 @@ export default function Modules() {
   const loadModules = async () => {
     setLoading(true);
     try {
-      const data = await api.getModules();
-      setModules(data);
+      const response = await fetch('/api/v1/modules');
+      const data = await response.json();
+      setModules(data.modules || []);
     } catch (error) {
       message.error('Failed to load modules');
       console.error('Load modules error:', error);
@@ -49,43 +49,52 @@ export default function Modules() {
     updateModule(data.id, data);
   };
 
-  const handleStart = async (id: string) => {
-    setActionLoading(id);
-    try {
-      await api.startModule(id);
-      updateModule(id, { status: 'starting' });
-      message.success(t('modules.startSuccess', `Starting module ${id}`));
-    } catch (error) {
-      message.error(t('modules.startError', 'Failed to start module'));
-      console.error('Start module error:', error);
-    } finally {
-      setActionLoading(null);
+  const handleToggleEnabled = async (id: string, enabled: boolean) => {
+    const module = modules.find((m) => m.id === id);
+    if (!module) return;
+
+    // Показываем предупреждение, если оно есть
+    if (!enabled && module.disable_warning) {
+      Modal.confirm({
+        title: t('common.confirm'),
+        content: module.disable_warning,
+        okText: t('common.confirm'),
+        okType: 'danger',
+        cancelText: t('common.cancel'),
+        onOk: async () => {
+          await toggleModule(id, enabled);
+        },
+      });
+    } else {
+      await toggleModule(id, enabled);
     }
   };
 
-  const handleStop = async (id: string) => {
+  const toggleModule = async (id: string, enabled: boolean) => {
     setActionLoading(id);
     try {
-      await api.stopModule(id);
-      updateModule(id, { status: 'stopped' });
-      message.success(t('modules.stopSuccess', `Stopping module ${id}`));
-    } catch (error) {
-      message.error(t('modules.stopError', 'Failed to stop module'));
-      console.error('Stop module error:', error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
+      const response = await fetch(`/api/v1/modules/${id}/enabled`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
 
-  const handleRestart = async (id: string) => {
-    setActionLoading(id);
-    try {
-      await api.restartModule(id);
-      updateModule(id, { status: 'restarting' });
-      message.success(t('modules.restartSuccess', `Restarting module ${id}`));
-    } catch (error) {
-      message.error(t('modules.restartError', 'Failed to restart module'));
-      console.error('Restart module error:', error);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to update module');
+      }
+
+      const result = await response.json();
+      message.success(result.message);
+
+      // Обновляем локальное состояние
+      updateModule(id, { enabled });
+
+      // Перезагружаем данные модулей
+      await loadModules();
+    } catch (error: any) {
+      message.error(error.message || 'Failed to update module');
+      console.error('Toggle module error:', error);
     } finally {
       setActionLoading(null);
     }
@@ -108,20 +117,6 @@ export default function Modules() {
     setDetailsOpen(true);
   };
 
-  const handleStartAll = async () => {
-    const stoppedModules = modules.filter((m) => m.status === 'stopped');
-    for (const module of stoppedModules) {
-      await handleStart(module.id);
-    }
-  };
-
-  const handleStopAll = async () => {
-    const runningModules = modules.filter((m) => m.status === 'running');
-    for (const module of runningModules) {
-      await handleStop(module.id);
-    }
-  };
-
   const selectedModuleData = modules.find((m) => m.id === selectedModule);
 
   if (loading && modules.length === 0) {
@@ -138,12 +133,6 @@ export default function Modules() {
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>{t('modules.title')}</h1>
         <Space>
-          <Button icon={<PlayCircleOutlined />} onClick={handleStartAll}>
-            Start All
-          </Button>
-          <Button icon={<PauseCircleOutlined />} onClick={handleStopAll}>
-            Stop All
-          </Button>
           <Button icon={<ReloadOutlined />} onClick={loadModules}>
             {t('common.refresh')}
           </Button>
@@ -160,9 +149,7 @@ export default function Modules() {
             <Col xs={24} sm={12} lg={8} xl={6} key={module.id}>
               <ModuleCard
                 module={module}
-                onStart={handleStart}
-                onStop={handleStop}
-                onRestart={handleRestart}
+                onToggleEnabled={handleToggleEnabled}
                 onConfigure={handleConfigure}
                 onViewLogs={handleViewLogs}
                 onViewDetails={handleViewDetails}

@@ -9,6 +9,7 @@ mod token;
 mod intuition;
 mod runtime;
 mod signal_system;
+pub mod modules;
 
 use token::PyToken;
 use intuition::{PyIntuitionEngine, PyIntuitionConfig};
@@ -37,6 +38,9 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Signal System (new in v0.53.0)
     m.add_class::<PySignalSystem>()?;
+
+    // Module Registry (new in v0.63.0)
+    modules::register_module(m.py(), m)?;
 
     Ok(())
 }

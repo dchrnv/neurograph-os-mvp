@@ -40,8 +40,8 @@ Start/Stop (невозможно):        Enable/Disable (реализуемо):
 |----------|-----------|
 | Disable IntuitionEngine | Запросы идут напрямую, без интуитивной обработки |
 | Disable SignalSystem | События не обрабатываются |
-| Disable Guardian | Валидация отключена (опасно!) |
 | Disable Gateway | Входные сигналы не принимаются |
+| Disable ActionController | Выходные действия не выполняются |
 | Configure CDNA scales | Изменение весов измерений на лету |
 
 ---
@@ -140,7 +140,7 @@ src/
 | `signal_system` | SignalSystem | Обработка и маршрутизация сигналов | ✅ Да |
 | `gateway` | Gateway | Входные сенсоры и энкодеры | ✅ Да |
 | `action_controller` | ActionController | Выходные действия | ✅ Да |
-| `guardian` | Guardian | Валидация и защита (CDNA) | ⚠️ Да (опасно) |
+| `guardian` | Guardian | Валидация и защита (CDNA) | ❌ Нет (критично!) |
 | `cdna` | CDNA | Конституция системы | ❌ Нет (core) |
 | `bootstrap` | Bootstrap | Загрузка embeddings | ❌ Нет (статус only) |
 
@@ -151,12 +151,12 @@ Core (нельзя отключить):
 ├── TokenManager
 ├── ConnectionManager
 ├── Grid
-└── CDNA
+├── CDNA
+└── Guardian (критично для безопасности!)
 
 Processing (можно отключить):
 ├── IntuitionEngine
-├── SignalSystem
-└── Guardian ⚠️
+└── SignalSystem
 
 I/O (можно отключить):
 ├── Gateway
@@ -251,7 +251,7 @@ impl ModuleId {
             Self::SignalSystem => true,
             Self::Gateway => true,
             Self::ActionController => true,
-            Self::Guardian => true,  // Опасно, но можно
+            Self::Guardian => false,  // Критично для безопасности!
             Self::Cdna => false,
             Self::Bootstrap => false,
         }
@@ -272,8 +272,8 @@ impl ModuleId {
     /// Требует ли предупреждения при отключении?
     pub fn disable_warning(&self) -> Option<&'static str> {
         match self {
-            Self::Guardian => Some("Отключение Guardian снимает все проверки безопасности!"),
             Self::SignalSystem => Some("Отключение SignalSystem остановит обработку всех событий"),
+            Self::Gateway => Some("Отключение Gateway блокирует все входящие сигналы"),
             _ => None,
         }
     }
@@ -782,7 +782,7 @@ impl IntuitionEngine {
             // Модуль выключен — пропускаем обработку
             return None;
         }
-        
+
         // Обычная логика обработки
         // ...
     }
@@ -793,7 +793,7 @@ impl IntuitionEngine {
 - `SignalSystem::emit()` — проверка перед обработкой
 - `Gateway::push()` — проверка перед приёмом сигнала
 - `ActionController::execute()` — проверка перед выполнением
-- `Guardian::validate()` — проверка перед валидацией
+- ~~`Guardian::validate()`~~ — **НЕ проверяем**, Guardian всегда активен!
 
 ---
 
@@ -1238,7 +1238,6 @@ export const modulesApi = {
   - [ ] SignalSystem
   - [ ] Gateway
   - [ ] ActionController
-  - [ ] Guardian
 - [ ] Тесты для ModuleRegistry
 
 ### Phase 2: Python Layer (1 день)
@@ -1304,9 +1303,9 @@ export const modulesApi = {
 
 ### Предупреждения
 
-1. **Guardian** — отключение снимает все проверки безопасности
-2. **SignalSystem** — отключение останавливает обработку событий
-3. **Core modules** — TokenManager, ConnectionManager, Grid, CDNA нельзя отключить
+1. **SignalSystem** — отключение останавливает обработку событий
+2. **Gateway** — отключение блокирует все входящие сигналы
+3. **Core modules** — TokenManager, ConnectionManager, Grid, CDNA, Guardian нельзя отключить
 
 ### Будущие улучшения
 

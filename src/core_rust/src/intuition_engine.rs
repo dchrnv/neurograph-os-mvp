@@ -49,6 +49,8 @@ use crate::reflex_layer::{
     ShiftConfig, AssociativeMemory, FastPathConfig, FastPathResult,
     IntuitionStats as ReflexStats, compute_grid_hash,
 };
+use crate::module_id::ModuleId;
+use crate::module_registry::REGISTRY;
 
 /// Configuration for IntuitionEngine v3.0
 #[derive(Debug, Clone)]
@@ -177,6 +179,11 @@ impl IntuitionEngine {
     /// - Target: <50ns
     /// - Actual: ~30-40ns (hash + lookup + similarity check)
     pub fn try_fast_path(&self, state: &Token) -> Option<FastPathResult> {
+        // Проверяем, включен ли модуль
+        if !REGISTRY.is_enabled(ModuleId::IntuitionEngine) {
+            return None;
+        }
+
         if !self.config.enable_fast_path {
             return None;
         }

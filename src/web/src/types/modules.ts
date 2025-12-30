@@ -2,20 +2,33 @@
  * Module types for NeuroGraph Dashboard
  */
 
-export type ModuleStatus = 'running' | 'starting' | 'stopped' | 'error' | 'restarting';
+export type ModuleStatus = 'active' | 'disabled' | 'error';
+
+export interface ModuleMetrics {
+  operations: number;
+  ops_per_sec: number;
+  avg_latency_us: number;
+  p95_latency_us: number;
+  errors: number;
+  custom?: Record<string, number>;
+}
 
 export interface Module {
   id: string;
   name: string;
+  description: string;
   version: string;
   status: ModuleStatus;
-  metrics?: Record<string, number | string>;
+  enabled: boolean;
+  can_disable: boolean;
+  configurable: boolean;
+  disable_warning?: string;
+  metrics: ModuleMetrics;
   config?: Record<string, any>;
   logs?: string[];
-  restarts?: number;
 }
 
 export interface ModuleAction {
   moduleId: string;
-  action: 'start' | 'stop' | 'restart';
+  action: 'enable' | 'disable';
 }

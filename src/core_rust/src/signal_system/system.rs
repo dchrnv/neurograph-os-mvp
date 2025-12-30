@@ -2,6 +2,8 @@ use crate::signal_system::{
     EventTypeRegistry, SignalEvent, ProcessingResult, Subscriber, SubscriberId,
     ProcessedEvent, DeliveryMeta,
 };
+use crate::module_id::ModuleId;
+use crate::module_registry::REGISTRY;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -146,6 +148,12 @@ impl SignalSystem {
     ///
     /// Performance target: <100μs
     pub fn emit(&self, event: SignalEvent) -> ProcessingResult {
+        // Проверяем, включен ли модуль
+        if !REGISTRY.is_enabled(ModuleId::SignalSystem) {
+            // Модуль выключен — возвращаем пустой результат
+            return ProcessingResult::default();
+        }
+
         let start_us = current_time_us();
 
         // 1. Базовая обработка (пока без Grid/Graph)

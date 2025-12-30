@@ -26,6 +26,8 @@
 use crate::action_executor::{ActionExecutor, ActionResult, ActionError};
 use crate::adna::{ADNAReader, Intent, ActionPolicy};
 use crate::experience_stream::{ExperienceWriter, ExperienceEvent};
+use crate::module_id::ModuleId;
+use crate::module_registry::REGISTRY;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -365,6 +367,12 @@ impl ActionController {
     /// 4. Executes action with timeout
     /// 5. Logs action_finished event with result
     pub async fn execute_intent(&self, intent: Intent) -> Result<ActionResult, ActionError> {
+        // Проверяем, включен ли модуль
+        if !REGISTRY.is_enabled(ModuleId::ActionController) {
+            // Модуль выключен — возвращаем ошибку
+            return Err(ActionError::ExecutorNotFound("ActionController module is disabled".to_string()));
+        }
+
         let start = Instant::now();
 
         // 1. Get policy from ADNA

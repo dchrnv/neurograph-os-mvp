@@ -6,6 +6,8 @@ pub mod stats;
 
 use crate::action_executor::ActionResult;
 use crate::bootstrap::BootstrapLibrary;
+use crate::module_id::ModuleId;
+use crate::module_registry::REGISTRY;
 use channels::{create_result_channel, PendingRequests, ResultReceiver, SignalReceipt};
 use config::GatewayConfig;
 use normalizer::{NormalizationError, Normalizer};
@@ -105,6 +107,12 @@ impl Gateway {
         &self,
         signal: InputSignal,
     ) -> Result<(SignalReceipt, ResultReceiver), GatewayError> {
+        // Проверяем, включен ли модуль
+        if !REGISTRY.is_enabled(ModuleId::Gateway) {
+            // Модуль выключен — возвращаем ошибку
+            return Err(GatewayError::NotImplemented("Gateway module is disabled".to_string()));
+        }
+
         let start = std::time::Instant::now();
 
         // Generate signal ID

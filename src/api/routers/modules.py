@@ -4,66 +4,156 @@ Modules Endpoints
 Endpoints for module management and information.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from ..models.response import ApiResponse
-from ..dependencies import get_runtime
-from typing import List, Dict, Any
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status
+
+from ..models.modules import (
+    ModuleInfo,
+    ModuleListResponse,
+    ModuleResponse,
+    SetEnabledRequest,
+    SetConfigRequest,
+    SuccessResponse,
+)
+from ..services.modules import module_service
+
 
 router = APIRouter()
 
 
-@router.get("/modules", response_model=ApiResponse)
-async def list_modules(runtime=Depends(get_runtime)):
-    """
-    List all system modules.
-
-    Returns information about all available modules and their status.
-    """
-    # TODO: Get actual module list from runtime
-    modules = [
-        {
-            "name": "Runtime",
-            "status": "running" if runtime is not None else "stopped",
-            "version": "0.47.0",
-            "stats": {
-                "tokens_managed": 0,
-                "operations_per_sec": 0
-            }
-        }
-    ]
-
-    return ApiResponse.success_response({"modules": modules})
+@router.get(
+    "",
+    response_model=ModuleListResponse,
+    summary="Список модулей",
+    description="Получить список всех модулей системы с их статусами и метриками",
+)
+async def list_modules():
+    """Получить список всех модулей"""
+    modules = module_service.list_modules()
+    return ModuleListResponse(modules=modules, total=len(modules))
 
 
-@router.get("/modules/{name}", response_model=ApiResponse)
-async def get_module(name: str, runtime=Depends(get_runtime)):
-    """
-    Get detailed information about a specific module.
+@router.get(
+    "/{module_id}",
+    response_model=ModuleResponse,
+    summary="Информация о модуле",
+    description="Получить детальную информацию о конкретном модуле",
+)
+async def get_module(module_id: str):
+    """Получить информацию о модуле"""
+    module = module_service.get_module(module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Модуль '{module_id}' не найден",
+        )
+    return ModuleResponse(module=module)
 
-    Args:
-        name: Module name
 
-    Returns:
-        Module details
+@router.put(
+    "/{module_id}/enabled",
+    response_model=SuccessResponse,
+    summary="Включить/выключить модуль",
+    description="Включить или выключить функциональность модуля",
+)
+async def set_module_enabled(module_id: str, request: SetEnabledRequest):
+    """Включить/выключить модуль"""
+    module = module_service.get_module(module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Модуль '{module_id}' не найден",
+        )
 
-    Raises:
-        HTTPException: If module not found
-    """
-    # TODO: Implement actual module lookup
-    if name.lower() == "runtime":
-        module_info = {
-            "name": "Runtime",
-            "status": "running" if runtime is not None else "stopped",
-            "version": "0.47.0",
-            "description": "Core runtime manager",
-            "stats": {
-                "tokens_managed": 0,
-                "operations_per_sec": 0
-            }
-        }
-        return ApiResponse.success_response(module_info)
+    if not request.enabled and not module.can_disable:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Модуль '{module_id}' нельзя отключить (core module)",
+        )
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Module '{name}' not found"
-    )
+    try:
+        module_service.set_enabled(module_id, request.enabled)
+        action = "включен" if request.enabled else "выключен"
+        return SuccessResponse(
+            success=True,
+            message=f"Модуль '{module.name}' {action}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+
+
+@router.get(
+    "/{module_id}/metrics",
+    summary="Метрики модуля",
+    description="Получить текущие метрики модуля",
+)
+async def get_module_metrics(module_id: str):
+    """Получить метрики модуля"""
+    module = module_service.get_module(module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Модуль '{module_id}' не найден",
+        )
+    return {"metrics": module.metrics}
+
+
+@router.get(
+    "/{module_id}/config",
+    summary="Конфигурация модуля",
+    description="Получить текущую конфигурацию модуля",
+)
+async def get_module_config(module_id: str):
+    """Получить конфигурацию модуля"""
+    module = module_service.get_module(module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Модуль '{module_id}' не найден",
+        )
+
+    if not module.configurable:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Модуль '{module_id}' не поддерживает конфигурацию",
+        )
+
+    config = module_service.get_config(module_id)
+    return {"config": config or {}}
+
+
+@router.put(
+    "/{module_id}/config",
+    response_model=SuccessResponse,
+    summary="Обновить конфигурацию",
+    description="Обновить конфигурацию модуля",
+)
+async def set_module_config(module_id: str, request: SetConfigRequest):
+    """Обновить конфигурацию модуля"""
+    module = module_service.get_module(module_id)
+    if module is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Модуль '{module_id}' не найден",
+        )
+
+    if not module.configurable:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Модуль '{module_id}' не поддерживает конфигурацию",
+        )
+
+    try:
+        module_service.set_config(module_id, request.config)
+        return SuccessResponse(
+            success=True,
+            message=f"Конфигурация модуля '{module.name}' обновлена",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )

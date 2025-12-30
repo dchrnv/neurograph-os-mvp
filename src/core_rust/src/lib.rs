@@ -80,6 +80,8 @@ pub mod tracing_otel;        // NEW: v1.0 OpenTelemetry Distributed Tracing (v0.
 pub mod tracing_sampling;    // NEW: v1.0 Adaptive Tracing Sampling (v0.44.3)
 pub mod runtime_storage;     // NEW: v1.0 Runtime Storage (v0.50.0)
 pub mod signal_system;       // NEW: v1.1 Signal System - Event Processing (v0.53.0)
+pub mod module_id;           // NEW: v1.0 Module ID Enum (v0.63.0)
+pub mod module_registry;     // NEW: v1.0 Module Registry (v0.63.0)
 
 // Python bindings v1.0 (v0.40.0) - PyO3 FFI
 #[cfg(feature = "python-bindings")]

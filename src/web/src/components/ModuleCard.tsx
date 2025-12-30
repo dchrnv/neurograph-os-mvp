@@ -2,35 +2,34 @@
  * Module card component for displaying module status and controls
  */
 
-import { Card, Tag, Button, Space, Tooltip, Badge } from 'antd';
+import { Card, Tag, Button, Space, Tooltip, Badge, Switch, Alert } from 'antd';
 import {
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  ReloadOutlined,
   SettingOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { Module } from '../types/modules';
-import { MODULE_STATUS_COLORS } from '../utils/constants';
 
 interface ModuleCardProps {
   module: Module;
-  onStart: (id: string) => void;
-  onStop: (id: string) => void;
-  onRestart: (id: string) => void;
+  onToggleEnabled: (id: string, enabled: boolean) => void;
   onConfigure: (id: string) => void;
   onViewLogs: (id: string) => void;
   onViewDetails: (id: string) => void;
   loading?: boolean;
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  active: 'success',
+  disabled: 'default',
+  error: 'error',
+};
+
 export default function ModuleCard({
   module,
-  onStart,
-  onStop,
-  onRestart,
+  onToggleEnabled,
   onConfigure,
   onViewLogs,
   onViewDetails,
@@ -39,7 +38,7 @@ export default function ModuleCard({
   const { t } = useTranslation();
 
   const getStatusTag = () => {
-    const color = MODULE_STATUS_COLORS[module.status];
+    const color = STATUS_COLORS[module.status];
     return (
       <Tag color={color}>
         {t(`modules.status.${module.status}`, module.status.toUpperCase())}
@@ -47,14 +46,10 @@ export default function ModuleCard({
     );
   };
 
-  const canStart = module.status === 'stopped' || module.status === 'error';
-  const canStop = module.status === 'running' || module.status === 'starting';
-  const canRestart = module.status === 'running';
-
   return (
     <Badge.Ribbon
-      text={module.status === 'running' ? '●' : '○'}
-      color={MODULE_STATUS_COLORS[module.status]}
+      text={module.enabled ? '●' : '○'}
+      color={module.enabled ? '#52c41a' : '#d9d9d9'}
     >
       <Card
         loading={loading}
@@ -74,33 +69,6 @@ export default function ModuleCard({
           </Tooltip>
         }
         actions={[
-          <Tooltip key="start" title={t('modules.start')}>
-            <Button
-              type="text"
-              icon={<PlayCircleOutlined />}
-              disabled={!canStart || loading}
-              onClick={() => onStart(module.id)}
-              style={{ color: canStart ? '#52c41a' : undefined }}
-            />
-          </Tooltip>,
-          <Tooltip key="stop" title={t('modules.stop')}>
-            <Button
-              type="text"
-              icon={<PauseCircleOutlined />}
-              disabled={!canStop || loading}
-              onClick={() => onStop(module.id)}
-              style={{ color: canStop ? '#ff4d4f' : undefined }}
-            />
-          </Tooltip>,
-          <Tooltip key="restart" title={t('modules.restart')}>
-            <Button
-              type="text"
-              icon={<ReloadOutlined />}
-              disabled={!canRestart || loading}
-              onClick={() => onRestart(module.id)}
-              style={{ color: canRestart ? '#faad14' : undefined }}
-            />
-          </Tooltip>,
           <Tooltip key="logs" title={t('modules.viewLogs')}>
             <Button
               type="text"
@@ -113,31 +81,68 @@ export default function ModuleCard({
               type="text"
               icon={<SettingOutlined />}
               onClick={() => onConfigure(module.id)}
+              disabled={!module.configurable}
             />
           </Tooltip>,
         ]}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <div>
             <strong>{t('modules.version')}:</strong> {module.version}
           </div>
 
-          {module.metrics && Object.keys(module.metrics).length > 0 && (
-            <div>
-              <strong>Metrics:</strong>
-              <div style={{ marginTop: 8, fontSize: 12 }}>
-                {Object.entries(module.metrics).map(([key, value]) => (
-                  <div key={key}>
-                    {key}: <Tag>{String(value)}</Tag>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div>
+            <p style={{ marginBottom: 8, fontSize: 12, color: '#666' }}>
+              {module.description}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>
+              <strong>Enabled:</strong>
+            </span>
+            <Switch
+              checked={module.enabled}
+              disabled={!module.can_disable || loading}
+              onChange={(checked) => onToggleEnabled(module.id, checked)}
+              checkedChildren="ON"
+              unCheckedChildren="OFF"
+            />
+          </div>
+
+          {!module.can_disable && (
+            <Alert
+              message="Core Module"
+              description="This module cannot be disabled"
+              type="info"
+              showIcon
+              icon={<InfoCircleOutlined />}
+              style={{ fontSize: 12 }}
+            />
           )}
 
-          {module.restarts && module.restarts > 0 && (
+          {module.disable_warning && !module.enabled && (
+            <Alert
+              message="Warning"
+              description={module.disable_warning}
+              type="warning"
+              showIcon
+              icon={<WarningOutlined />}
+              style={{ fontSize: 12 }}
+            />
+          )}
+
+          {module.metrics && (
             <div>
-              <Tag color="warning">Restarts: {module.restarts}</Tag>
+              <strong style={{ fontSize: 12 }}>Metrics:</strong>
+              <div style={{ marginTop: 4, fontSize: 11 }}>
+                <div>Operations: <Tag>{module.metrics.operations}</Tag></div>
+                <div>Ops/sec: <Tag>{module.metrics.ops_per_sec.toFixed(2)}</Tag></div>
+                <div>Avg Latency: <Tag>{module.metrics.avg_latency_us.toFixed(2)}μs</Tag></div>
+                {module.metrics.errors > 0 && (
+                  <div>Errors: <Tag color="error">{module.metrics.errors}</Tag></div>
+                )}
+              </div>
             </div>
           )}
         </Space>
