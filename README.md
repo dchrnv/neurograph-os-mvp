@@ -90,6 +90,28 @@ WebSocket Client ←→ /ws Endpoint ←→ [ Metrics | Rate Limit | Permissions
 
 ## Быстрый старт
 
+### 0. Web Dashboard (NEW in v0.62.0) - Рекомендуется
+
+Полноценный React UI с real-time мониторингом:
+
+```bash
+# Первый раз - установить зависимости
+./setup-dependencies.sh
+
+# Запустить Frontend + Backend
+./start-all.sh
+
+# Доступ к приложению:
+# - Dashboard: http://localhost:5173
+# - API:       http://localhost:8000/docs
+# - WebSocket: ws://localhost:8000/ws
+
+# Остановить все сервисы
+./stop-all.sh
+```
+
+📚 **Подробнее:** [SCRIPTS.md](SCRIPTS.md) | [src/web/README.md](src/web/README.md)
+
 ### 1. Jupyter Notebook (рекомендуется для исследований)
 
 Интерактивная работа с графом прямо в notebook:

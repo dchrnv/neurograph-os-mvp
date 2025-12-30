@@ -44,11 +44,43 @@ src/web/
 ```bash
 cd src/web
 pnpm install
+# or
+npm install
 ```
 
 ## Development
 
+### 🚀 Quick Start with Automated Scripts (Recommended)
+
+From project root directory:
+
 ```bash
+# First time only - install Python dependencies
+./setup-dependencies.sh
+
+# Start both frontend and backend together
+./start-all.sh
+
+# Or start services individually:
+./start-frontend.sh  # Frontend only (port 5173)
+./start-backend.sh   # Backend only (port 8000)
+
+# Stop all services
+./stop-all.sh
+```
+
+**✨ Scripts automatically:**
+- Detect Flatpak environment and use `flatpak-spawn --host`
+- Create virtual environment if missing
+- Kill processes on occupied ports
+- Support both tmux and background modes
+
+### Quick Start (Manual - Standard Environment)
+
+```bash
+# Frontend only
+npm run dev
+# or
 pnpm dev
 ```
 
@@ -56,9 +88,92 @@ Opens on http://localhost:5173
 
 API proxy configured to http://localhost:8000/api
 
+### Running in VSCodium Flatpak Environment
+
+If you're running VSCodium in a Flatpak container, Node.js may not be accessible directly. Use `flatpak-spawn --host`:
+
+```bash
+# Frontend (from project root)
+flatpak-spawn --host /bin/bash -c 'cd /home/chrnv/neurograph-os-mvp/src/web && ./node_modules/.bin/vite'
+```
+
+### Full Stack Development (Frontend + Backend)
+
+**1. Start Backend API (port 8000):**
+
+```bash
+# From project root
+cd /home/chrnv/neurograph-os-mvp
+
+# Standard environment
+source .venv/bin/activate
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+
+# OR in Flatpak environment
+flatpak-spawn --host /bin/bash -c 'source .venv/bin/activate && uvicorn src.api.main:app --host 0.0.0.0 --port 8000'
+```
+
+**2. Start Frontend (port 5173):**
+
+```bash
+# Standard environment
+cd src/web
+npm run dev
+
+# OR in Flatpak environment
+flatpak-spawn --host /bin/bash -c 'cd /home/chrnv/neurograph-os-mvp/src/web && ./node_modules/.bin/vite'
+```
+
+**3. Access the application:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- WebSocket: ws://localhost:8000/ws
+
+### Backend Dependencies Setup (First Time Only)
+
+If running the backend for the first time, install Python dependencies:
+
+```bash
+# Standard environment
+source .venv/bin/activate
+pip install --upgrade pydantic pydantic-settings pydantic-core
+pip install fastapi uvicorn[standard] python-multipart python-jose[cryptography] \
+    passlib[bcrypt] PyJWT email-validator python-json-logger httpx \
+    pytest pytest-asyncio pytest-cov numpy scipy scikit-learn \
+    prometheus-client psutil
+
+# OR in Flatpak environment
+flatpak-spawn --host /bin/bash -c 'source .venv/bin/activate && \
+    pip install --upgrade pydantic pydantic-settings pydantic-core && \
+    pip install fastapi uvicorn[standard] python-multipart python-jose[cryptography] \
+    passlib[bcrypt] PyJWT email-validator python-json-logger httpx \
+    pytest pytest-asyncio pytest-cov numpy scipy scikit-learn \
+    prometheus-client psutil'
+```
+
+### Troubleshooting
+
+**Port 8000 already in use:**
+```bash
+# Standard
+lsof -ti:8000 | xargs kill -9
+
+# Flatpak
+flatpak-spawn --host pkill -f "uvicorn src.api.main"
+```
+
+**Node.js not found in Flatpak:**
+Use `flatpak-spawn --host` to run commands on the host system instead of inside the container.
+
+**Module not found errors:**
+Make sure all dependencies are installed (see Backend Dependencies Setup above).
+
 ## Build
 
 ```bash
+npm run build
+# or
 pnpm build
 ```
 

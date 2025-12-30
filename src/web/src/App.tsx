@@ -13,6 +13,7 @@ import Bootstrap from './pages/Bootstrap';
 import Chat from './pages/Chat';
 import Terminal from './pages/Terminal';
 import Admin from './pages/Admin';
+import NotFound from './pages/NotFound';
 import './i18n';
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
               <Route path={ROUTES.CHAT} element={<Chat />} />
               <Route path={ROUTES.TERMINAL} element={<Terminal />} />
               <Route path={ROUTES.ADMIN} element={<Admin />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>

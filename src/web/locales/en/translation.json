@@ -148,6 +148,10 @@
     "disconnected": "Disconnected from server",
     "reconnecting": "Reconnecting..."
   },
+  "notFound": {
+    "subtitle": "Sorry, the page you visited does not exist.",
+    "backHome": "Back Home"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
