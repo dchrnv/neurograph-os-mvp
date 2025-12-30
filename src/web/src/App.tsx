@@ -7,6 +7,7 @@ import { ROUTES } from './utils/constants';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Modules from './pages/Modules';
+import Config from './pages/Config';
 import './i18n';
 
 // Placeholder pages
@@ -46,7 +47,7 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
             <Route path={ROUTES.MODULES} element={<Modules />} />
-            <Route path={ROUTES.CONFIG} element={<PlaceholderPage title="Configuration" />} />
+            <Route path={ROUTES.CONFIG} element={<Config />} />
             <Route path={ROUTES.BOOTSTRAP} element={<PlaceholderPage title="Bootstrap" />} />
             <Route path={ROUTES.CHAT} element={<PlaceholderPage title="Chat" />} />
             <Route path={ROUTES.TERMINAL} element={<PlaceholderPage title="Terminal" />} />

@@ -75,7 +75,10 @@
     "cdna": "CDNA Scales",
     "modules": "Modules",
     "save": "Save Changes",
-    "reset": "Reset to Default"
+    "reset": "Reset",
+    "saveSuccess": "Configuration saved successfully",
+    "saveError": "Failed to save configuration",
+    "resetInfo": "Configuration reset"
   },
   "common": {
     "loading": "Loading...",
