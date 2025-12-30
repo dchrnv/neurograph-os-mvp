@@ -85,6 +85,10 @@ class WebSocketService {
     }
   }
 
+  isConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
+
   disconnect() {
     if (this.ws) {
       this.ws.close();

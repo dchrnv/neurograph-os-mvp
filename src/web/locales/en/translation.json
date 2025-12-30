@@ -143,6 +143,11 @@
       "resetSystemError": "Failed to reset system"
     }
   },
+  "connection": {
+    "connected": "Connected to server",
+    "disconnected": "Disconnected from server",
+    "reconnecting": "Reconnecting..."
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

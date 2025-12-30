@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAppStore } from './stores/appStore';
 import { ws } from './services/websocket';
 import { ROUTES } from './utils/constants';
+import ErrorBoundary from './components/ErrorBoundary';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Modules from './pages/Modules';
@@ -30,28 +31,30 @@ function App() {
   }, []);
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#1890ff',
-        },
-      }}
-    >
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path={ROUTES.MODULES} element={<Modules />} />
-            <Route path={ROUTES.CONFIG} element={<Config />} />
-            <Route path={ROUTES.BOOTSTRAP} element={<Bootstrap />} />
-            <Route path={ROUTES.CHAT} element={<Chat />} />
-            <Route path={ROUTES.TERMINAL} element={<Terminal />} />
-            <Route path={ROUTES.ADMIN} element={<Admin />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </ConfigProvider>
+    <ErrorBoundary>
+      <ConfigProvider
+        theme={{
+          algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+          token: {
+            colorPrimary: '#1890ff',
+          },
+        }}
+      >
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path={ROUTES.MODULES} element={<Modules />} />
+              <Route path={ROUTES.CONFIG} element={<Config />} />
+              <Route path={ROUTES.BOOTSTRAP} element={<Bootstrap />} />
+              <Route path={ROUTES.CHAT} element={<Chat />} />
+              <Route path={ROUTES.TERMINAL} element={<Terminal />} />
+              <Route path={ROUTES.ADMIN} element={<Admin />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ConfigProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { Switch, Dropdown } from 'antd';
 import { useAppStore } from '../stores/appStore';
 import { ROUTES } from '../utils/constants';
+import ConnectionIndicator from '../components/ConnectionIndicator';
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -102,6 +103,7 @@ export default function MainLayout() {
         <div onClick={() => navigate(item.path || '/')}>{dom}</div>
       )}
       actionsRender={() => [
+        <ConnectionIndicator key="connection" />,
         <Switch
           key="theme"
           checked={theme === 'dark'}
