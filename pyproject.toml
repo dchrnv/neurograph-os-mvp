@@ -4,12 +4,19 @@ build-backend = "maturin"
 
 [project]
 name = "neurograph"
-version = "0.40.0"
+version = "0.61.0"
 description = "NeuroGraph OS - High-performance spatial computing system with 8D semantic space"
 authors = [{name = "Chernov Denys"}]
 license = {text = "AGPL-3.0"}
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+    "pandas>=1.3.0",
+    "networkx>=2.6.0",
+    "matplotlib>=3.5.0",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -23,8 +30,22 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Framework :: IPython",
+    "Framework :: Jupyter",
 ]
-keywords = ["neurograph", "cognitive-architecture", "spatial-computing", "ai", "ml"]
+keywords = ["neurograph", "cognitive-architecture", "spatial-computing", "ai", "ml", "jupyter"]
+
+[project.optional-dependencies]
+jupyter = [
+    "ipython>=8.0.0",
+    "jupyter>=1.0.0",
+    "notebook>=6.4.0",
+    "jupyterlab>=3.0.0",
+    "pandas>=1.3.0",
+    "networkx>=2.6.0",
+    "matplotlib>=3.5.0",
+    "plotly>=5.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/chrnv/neurograph-os"

@@ -745,30 +745,30 @@ fn main() {
 
 #### CDNA Operations
 
-| Operation | Latency | Throughput |
-|-----------|---------|------------|
-| `CDNA::new()` | 45ns | 22M ops/sec |
-| `compute_checksum()` | 120ns | 8.3M ops/sec |
-| `validate()` | 85ns | 11.7M ops/sec |
-| `touch()` | 12ns | 83M ops/sec |
+| Operation              | Latency | Throughput    |
+| ---------------------- | ------- | ------------- |
+| `CDNA::new()`        | 45ns    | 22M ops/sec   |
+| `compute_checksum()` | 120ns   | 8.3M ops/sec  |
+| `validate()`         | 85ns    | 11.7M ops/sec |
+| `touch()`            | 12ns    | 83M ops/sec   |
 
 #### Guardian Operations
 
-| Operation | Latency | Throughput |
-|-----------|---------|------------|
-| `validate_token()` | 95ns | 10.5M ops/sec |
-| `validate_connection()` | 110ns | 9M ops/sec |
-| `update_cdna()` | 250ns | 4M ops/sec |
-| `rollback_cdna()` | 180ns | 5.5M ops/sec |
+| Operation                 | Latency | Throughput    |
+| ------------------------- | ------- | ------------- |
+| `validate_token()`      | 95ns    | 10.5M ops/sec |
+| `validate_connection()` | 110ns   | 9M ops/sec    |
+| `update_cdna()`         | 250ns   | 4M ops/sec    |
+| `rollback_cdna()`       | 180ns   | 5.5M ops/sec  |
 
 #### Event System
 
-| Operation | Latency | Throughput |
-|-----------|---------|------------|
-| `emit_event()` | 55ns | 18M ops/sec |
-| `poll_events(10)` | 180ns | 5.5M ops/sec |
-| `subscribe()` | 125ns | 8M ops/sec |
-| End-to-end delivery | 280ns | 3.5M events/sec |
+| Operation           | Latency | Throughput      |
+| ------------------- | ------- | --------------- |
+| `emit_event()`    | 55ns    | 18M ops/sec     |
+| `poll_events(10)` | 180ns   | 5.5M ops/sec    |
+| `subscribe()`     | 125ns   | 8M ops/sec      |
+| End-to-end delivery | 280ns   | 3.5M events/sec |
 
 ### Memory Footprint
 
@@ -910,6 +910,7 @@ Guardian & CDNA provide the constitutional foundation for NeuroGraph OS:
 - **Evolution**: CDNA versioning with rollback for safe experimentation
 
 **Next Steps**:
+
 - v0.18.0: System integration and optimization
 - v0.19.0: Advanced evolution algorithms
 - v1.0.0: Production release with full test coverage
@@ -918,4 +919,4 @@ Guardian & CDNA provide the constitutional foundation for NeuroGraph OS:
 
 **Documentation**: NeuroGraph OS Team
 **Last Updated**: v0.17.0
-**License**: MIT
+**License**: GPLv3
