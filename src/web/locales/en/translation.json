@@ -1,0 +1,75 @@
+{
+  "app": {
+    "title": "NeuroGraph Dashboard",
+    "subtitle": "Cognitive Architecture Monitoring"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "modules": "Modules",
+    "config": "Configuration",
+    "bootstrap": "Bootstrap",
+    "chat": "Chat",
+    "terminal": "Terminal",
+    "admin": "Admin"
+  },
+  "dashboard": {
+    "title": "System Dashboard",
+    "metrics": {
+      "tokens": "Total Tokens",
+      "connections": "Active Connections",
+      "queriesPerHour": "Queries/Hour",
+      "eventsPerSec": "Events/sec"
+    },
+    "performance": {
+      "title": "Performance Metrics",
+      "latency": "Avg Latency",
+      "fastPath": "Fast Path",
+      "cacheHit": "Cache Hit",
+      "cpu": "CPU Usage",
+      "memory": "Memory Usage",
+      "disk": "Disk Usage"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "time": "Time",
+      "event": "Event",
+      "details": "Details",
+      "duration": "Duration",
+      "empty": "No recent activity"
+    },
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "error": "Error",
+      "uptime": "Uptime"
+    }
+  },
+  "modules": {
+    "title": "Module Management",
+    "status": "Status",
+    "version": "Version",
+    "actions": "Actions",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "viewLogs": "View Logs",
+    "configure": "Configure"
+  },
+  "config": {
+    "title": "Configuration",
+    "system": "System",
+    "cdna": "CDNA Scales",
+    "modules": "Modules",
+    "save": "Save Changes",
+    "reset": "Reset to Default"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "refresh": "Refresh",
+    "close": "Close"
+  }
+}
