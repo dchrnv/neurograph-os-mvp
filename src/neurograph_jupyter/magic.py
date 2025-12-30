@@ -40,6 +40,10 @@ class NeuroGraphMagics(Magics):
         self.signal_engine: Optional[SignalEngine] = None
         self.db_path: Optional[Path] = None
 
+        # Auto-completion support
+        self._commands = ["init", "status", "query", "subscribe", "emit"]
+        self._channels = ["metrics", "signals", "actions", "logs", "status", "connections"]
+
     @line_magic
     @magic_arguments()
     @argument("command", type=str, help="Command to execute: init, status, query, subscribe, emit")
@@ -304,3 +308,89 @@ Examples:
     %neurograph emit metrics "{'cpu': 42}"
 """
         print(help_text)
+
+    # ========================================================================
+    # Auto-completion support
+    # ========================================================================
+
+    def _get_node_types(self):
+        """Get available node types from database."""
+        if not self.graph_ops:
+            return []
+
+        try:
+            # Query to get unique node types
+            result = self.graph_ops.query("find all nodes")
+            types = set()
+            for node in result.nodes:
+                if hasattr(node, 'type') and node.type:
+                    types.add(node.type)
+            return sorted(list(types))
+        except:
+            return []
+
+    def _get_property_names(self):
+        """Get available property names from database."""
+        if not self.graph_ops:
+            return []
+
+        try:
+            result = self.graph_ops.query("find all nodes")
+            props = set()
+            for node in result.nodes:
+                if hasattr(node, 'properties') and node.properties:
+                    props.update(node.properties.keys())
+            return sorted(list(props))
+        except:
+            return []
+
+    def _neurograph_completions(self, event):
+        """
+        Provide auto-completions for %neurograph magic command.
+
+        This is called by IPython when user presses TAB.
+        """
+        # Get the line up to cursor
+        line = event.line
+        text_until_cursor = event.text_until_cursor
+
+        # Split into words
+        words = text_until_cursor.split()
+
+        if len(words) <= 1:
+            # Complete command names
+            return self._commands
+
+        command = words[1] if len(words) > 1 else ""
+
+        # Complete based on command
+        if command == "subscribe" or command == "emit":
+            # Complete channel names
+            if len(words) == 2:
+                return self._channels
+            elif len(words) > 2:
+                # Get active channels from connection manager
+                if self.connection_manager:
+                    channels = list(self.connection_manager._subscriptions.keys())
+                    return channels if channels else self._channels
+                return self._channels
+
+        elif command == "query":
+            # Complete query syntax
+            if "where type=" in text_until_cursor:
+                # Complete node types
+                return self._get_node_types()
+            elif "where " in text_until_cursor:
+                # Complete property names
+                return self._get_property_names()
+            else:
+                # Complete query keywords
+                return ["find all nodes", "find all nodes where", "find all edges"]
+
+        elif command == "init":
+            # Complete with --path flag
+            if "--" in text_until_cursor:
+                return []
+            return ["--path"]
+
+        return []

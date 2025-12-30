@@ -17,6 +17,7 @@ Cell magic for signal definitions:
 
 from .magic import NeuroGraphMagics
 from .display import install_display_formatters
+from .helpers import install_result_extensions
 
 
 def load_ipython_extension(ipython):
@@ -26,12 +27,27 @@ def load_ipython_extension(ipython):
     This is called when `%load_ext neurograph_jupyter` is executed.
     """
     # Register magic commands
-    ipython.register_magics(NeuroGraphMagics)
+    magics = NeuroGraphMagics(ipython)
+    ipython.register_magics(magics)
+
+    # Register auto-completion
+    try:
+        ipython.set_hook('complete_command', magics._neurograph_completions, str_key='%neurograph')
+    except:
+        pass  # Graceful degradation if completion not supported
 
     # Install rich display formatters
     install_display_formatters(ipython)
 
-    print("✅ NeuroGraph Jupyter extension loaded")
+    # Install QueryResult extension methods
+    if install_result_extensions():
+        print("✅ NeuroGraph Jupyter extension loaded")
+        print("💡 Auto-completion enabled (press TAB after %neurograph)")
+        print("💡 DataFrame helpers: result.to_dataframe(), result.export_csv(), result.plot_distribution()")
+    else:
+        print("✅ NeuroGraph Jupyter extension loaded")
+        print("💡 Auto-completion enabled (press TAB after %neurograph)")
+
     print("Try: %neurograph init --path ./my_graph.db")
 
 
