@@ -46,14 +46,28 @@
   },
   "modules": {
     "title": "Module Management",
-    "status": "Status",
+    "name": "Name",
+    "status": {
+      "running": "Running",
+      "starting": "Starting",
+      "stopped": "Stopped",
+      "error": "Error",
+      "restarting": "Restarting"
+    },
     "version": "Version",
     "actions": "Actions",
     "start": "Start",
     "stop": "Stop",
     "restart": "Restart",
     "viewLogs": "View Logs",
-    "configure": "Configure"
+    "viewDetails": "View Details",
+    "configure": "Configure",
+    "startSuccess": "Module started successfully",
+    "stopSuccess": "Module stopped successfully",
+    "restartSuccess": "Module restarted successfully",
+    "startError": "Failed to start module",
+    "stopError": "Failed to stop module",
+    "restartError": "Failed to restart module"
   },
   "config": {
     "title": "Configuration",

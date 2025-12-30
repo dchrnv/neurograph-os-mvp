@@ -6,6 +6,7 @@ import { ws } from './services/websocket';
 import { ROUTES } from './utils/constants';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
+import Modules from './pages/Modules';
 import './i18n';
 
 // Placeholder pages
@@ -44,7 +45,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path={ROUTES.MODULES} element={<PlaceholderPage title="Modules" />} />
+            <Route path={ROUTES.MODULES} element={<Modules />} />
             <Route path={ROUTES.CONFIG} element={<PlaceholderPage title="Configuration" />} />
             <Route path={ROUTES.BOOTSTRAP} element={<PlaceholderPage title="Bootstrap" />} />
             <Route path={ROUTES.CHAT} element={<PlaceholderPage title="Chat" />} />
