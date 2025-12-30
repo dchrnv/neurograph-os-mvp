@@ -227,6 +227,53 @@ class QueryResultExtensions:
 
         return summary
 
+    @staticmethod
+    def plot_interactive(result, layout: str = "spring", **kwargs):
+        """
+        Create interactive Plotly graph visualization.
+
+        Args:
+            result: QueryResult object
+            layout: Layout algorithm (spring, circular, kamada_kawai, hierarchical)
+            **kwargs: Additional arguments for render_interactive_graph
+
+        Returns:
+            Plotly Figure object
+
+        Example:
+            result = %neurograph query "find all nodes"
+            fig = result.plot_interactive(layout="spring")
+            fig.show()
+        """
+        try:
+            from .plotly_viz import render_interactive_graph
+            return render_interactive_graph(result, layout=layout, **kwargs)
+        except ImportError as e:
+            raise ImportError(f"Plotly visualization requires additional packages: {e}")
+
+    @staticmethod
+    def plot_3d(result, **kwargs):
+        """
+        Create interactive 3D Plotly graph visualization.
+
+        Args:
+            result: QueryResult object
+            **kwargs: Additional arguments for render_3d_graph
+
+        Returns:
+            Plotly 3D Figure object
+
+        Example:
+            result = %neurograph query "find all nodes"
+            fig = result.plot_3d()
+            fig.show()
+        """
+        try:
+            from .plotly_viz import render_3d_graph
+            return render_3d_graph(result, **kwargs)
+        except ImportError as e:
+            raise ImportError(f"3D visualization requires additional packages: {e}")
+
 
 def install_result_extensions():
     """
@@ -244,6 +291,8 @@ def install_result_extensions():
         QueryResult.export_json = lambda self, *args, **kwargs: QueryResultExtensions.export_json(self, *args, **kwargs)
         QueryResult.plot_distribution = lambda self, *args, **kwargs: QueryResultExtensions.plot_distribution(self, *args, **kwargs)
         QueryResult.summary = lambda self: QueryResultExtensions.summary(self)
+        QueryResult.plot_interactive = lambda self, *args, **kwargs: QueryResultExtensions.plot_interactive(self, *args, **kwargs)
+        QueryResult.plot_3d = lambda self, *args, **kwargs: QueryResultExtensions.plot_3d(self, *args, **kwargs)
 
         return True
     except ImportError:
