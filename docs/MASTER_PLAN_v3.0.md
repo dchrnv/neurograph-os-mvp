@@ -1,9 +1,10 @@
-# NeuroGraph OS - Master Plan v3.0
+# NeuroGraph OS - Master Plan v3.1
 
-**Версия:** 3.0
-**Дата:** 2024-12-26
+**Версия:** 3.1
+**Дата:** 2024-12-30
 **Статус:** Active Development Plan
 **Предыдущие версии:**
+- [MASTER_PLAN v3.0](archive/MASTER_PLAN_v3.0.md) - Full Platform Vision (2024-12-26)
 - [MASTER_PLAN_v2.1.md](archive/MASTER_PLAN_v2.1.md) - Signal Processing Focus
 - [IMPLEMENTATION_ROADMAP.md](archive/IMPLEMENTATION_ROADMAP.md) - Full Stack Focus
 
@@ -19,870 +20,315 @@
 ├─────────────────────────────────────────────────────────────┤
 │  ТРЕК A: Core Intelligence (Signal Processing) ✅           │
 │  ТРЕК B: Developer Experience (Python Library, Jupyter)     │
-│  ТРЕК C: User Interfaces (Web Dashboard, APIs)              │
+│  ТРЕК C: User Interfaces (Web Dashboard, APIs) ✅           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 Текущее состояние (2024-12-26)
+## 📊 Текущее состояние (2024-12-30)
 
-### ✅ Что работает (v0.57.0 - PRODUCTION READY)
+### ✅ Что работает
 
-#### ТРЕК A: Core Intelligence ✅ ЗАВЕРШЁН
+#### ТРЕК A: Core Intelligence ✅ ЗАВЕРШЁН (v0.57.0)
 
-**Gateway v2.0 (Python Sensory Interface):**
-- ✅ Pydantic models (SignalEvent, SemanticData, RoutingData, etc.)
-- ✅ SensorRegistry с динамической регистрацией
-- ✅ 4 built-in encoders:
-  - PASSTHROUGH (прямая передача 8D)
-  - TEXT_TFIDF (TF-IDF text encoding)
-  - NUMERIC_DIRECT (simple numeric scaling)
-  - SENTIMENT_SIMPLE (basic sentiment analysis)
-- ✅ Built-in sensors: text, system, user_input, external_feed
-- ✅ push_text(), push_system(), push_raw() API
-
-**SignalSystem v1.1 (Rust Core Event Processing):**
-- ✅ PyO3 bindings (zero-copy FFI)
-- ✅ emit() - event processing pipeline
-- ✅ subscribe() - event subscriptions с filters
-- ✅ Subscription Filters (JSON DSL):
-  - Operators: $eq, $ne, $gt, $gte, $lt, $lte, $in, $wildcard
-  - Event type wildcards (signal.input.*)
-  - Numeric/bitmap/hash conditions
-- ✅ Pattern matching:
-  - Novelty detection (is_novel)
-  - Neighbor finding (similar patterns)
-  - Resonance scoring
+**Gateway v2.0 + SignalSystem v1.1 + ActionController**
+- ✅ Полный pipeline: Input → Gateway → Core → ActionController → Output
 - ✅ Performance: 304,553 events/sec, 0.39μs avg latency
+- ✅ Rust core с PyO3 bindings
+- ✅ Subscription filters, novelty detection, pattern matching
+- ✅ Production infrastructure (REST API, Prometheus, OpenTelemetry, Docker)
 
-**ActionController (Response Generation):**
-- ✅ Action registration system
-- ✅ Hot/Cold path routing
-- ✅ Built-in actions:
-  - TextResponseAction
-  - LoggingAction
-  - MetricsAction
-- ✅ Execution prioritization
-- ✅ Background task queuing
+#### ТРЕК C: User Interfaces ✅ ЗАВЕРШЁН (v0.62.0)
 
-**SignalPipeline (End-to-end Integration):**
-- ✅ Full flow: Input → Gateway → Core → ActionController → Output
-- ✅ process_text() orchestration
-- ✅ Performance: 5,601 msg/sec, 0.18ms total latency
-- ✅ Statistics tracking
+**Web Dashboard (React SPA)**
+- ✅ 7 функциональных страниц (Dashboard, Modules, Config, Bootstrap, Chat, Terminal, Admin)
+- ✅ 35+ файлов, 3,512+ строк TypeScript/TSX кода
+- ✅ 15+ переиспользуемых компонентов
+- ✅ 4 Zustand stores с localStorage persistence
+- ✅ Real-time WebSocket communication
+- ✅ Полная интернационализация EN/RU (160+ ключей)
+- ✅ Dark/Light темы
+- ✅ Error boundaries и 404 обработка
+- ✅ Connection status monitoring
+- ✅ Responsive design для всех экранов
+- ✅ Automation scripts (./start-all.sh, ./stop-all.sh)
 
-**Examples & Integration:**
-- ✅ Telegram bot с full Core integration
-- ✅ Gateway v2.0 demos
-- ✅ Performance benchmarks
-
-**Production Infrastructure (v0.52.0):**
-- ✅ REST API (30+ endpoints)
-- ✅ Prometheus metrics (12 types)
-- ✅ Distributed tracing (OpenTelemetry + Jaeger)
-- ✅ Structured logging (JSON with correlation IDs)
-- ✅ Health checks (live/ready/startup)
-- ✅ Docker deployment
-- ✅ Kubernetes ready
-
-**Rust Core (v0.47.0):**
-- ✅ Token V2.0 (64 bytes, 8D coordinates)
-- ✅ Connection V3.0 (weighted edges)
-- ✅ Grid V2.0 (spatial indexing, 8D)
-- ✅ Graph (topology, spreading activation)
-- ✅ RuntimeStorage (persistence, 10M tokens stable)
-- ✅ Guardian + CDNA V2.1 (validation, quarantine)
-- ✅ Bootstrap (semantic embeddings loader)
-
-**Performance Metrics (v0.57.0):**
-- Core throughput: 304,553 events/sec
-- Core latency: 0.39μs average
-- Full pipeline: 5,601 messages/sec
-- End-to-end: 0.18ms total
-- REST API: ~150 req/sec, <10ms latency
-- Memory: ~100MB per 1M tokens
+**Performance Metrics (v0.62.0):**
+- Load time: < 2s
+- Time to interactive: < 3s
+- Lighthouse score: > 90
+- Mobile responsive: 100%
 
 ---
 
 ## ❌ Что нужно реализовать
 
-### ТРЕК B: Developer Experience
+### ТРЕК B: Developer Experience (4 версии)
 
-**1. Python Library (neurograph package)**
-- ❌ PyPI-ready package structure
-- ❌ Unified Runtime API (высокоуровневая обёртка)
-- ❌ Query Engine для семантического поиска
-- ❌ Bootstrap loader (GloVe/Word2Vec через Python)
-- ❌ Context managers для lifecycle
-- ❌ Comprehensive documentation (Sphinx)
-- ❌ Examples & tutorials
+**v0.59.0 - Python Library (neurograph package)** - Не начато
+**v0.60.0 - WebSocket & Real-time Events** - Не начато
+**v0.61.0 - Jupyter Integration** - Не начато
 
-**2. Jupyter Integration**
-- ❌ IPython extension (magic commands)
-- ❌ Rich display для QueryResult
-- ❌ Interactive visualizations (plotly)
-- ❌ Graph rendering (networkx)
-- ❌ Tutorial notebooks
-- ❌ Export to DataFrame
+### ТРЕК C: Module Management (1 версия)
 
-### ТРЕК C: User Interfaces
+**v0.63.0 - Module Registry** - Спецификация готова
 
-**3. Web Dashboard (Tiro Control Center)**
-- ❌ React SPA (TypeScript + Ant Design Pro)
-- ❌ Dashboard page (metrics, charts, activity)
-- ❌ Modules management (start/stop/config)
-- ❌ Chat interface (message bubbles)
-- ❌ Terminal interface (xterm.js)
-- ❌ Config editor
-- ❌ Bootstrap uploader
-- ❌ System logs viewer
-- ❌ Dark/Light themes
-- ❌ Mobile responsive
+### ТРЕК A: Enhanced Capabilities (1 версия)
 
-**4. Enhanced APIs**
-- ❌ WebSocket support (real-time events)
-- ❌ JWT authentication
-- ❌ RBAC (role-based access control)
-- ❌ Rate limiting
-- ❌ API keys management
-- ❌ GraphQL endpoint (опционально)
-
-**5. Enhanced Sensors**
-- ❌ Audio input adapter
-- ❌ Vision input adapter
-- ❌ AUDIO_MEL encoder
-- ❌ IMAGE_CNN encoder
-- ❌ Multi-modal fusion
-- ❌ Custom encoder framework
-
-**6. Visualization & Monitoring**
-- ❌ Real-time signal stream display
-- ❌ Activation visualization
-- ❌ Sensor registry management UI
-- ❌ Live metrics dashboard
-- ❌ Grafana dashboards
-- ❌ Alert system
+**v0.64.0 - Enhanced Sensors (Audio & Vision)** - Не начато
 
 ---
 
-## 🗺️ Roadmap v3.0 (Next 6 Releases)
+## 🗺️ Roadmap v3.1 (Next 2 Releases)
 
 ---
 
-## v0.58.0 - Authentication & Security 🔐
+## v0.63.0 - Module Registry System 🔧
 
-**Цель:** Защитить API и добавить управление доступом
-
-**Приоритет:** 🔴 КРИТИЧЕСКИЙ (блокирует production deployment)
-
-**Длительность:** 5-7 дней
-
-### Phase 1: JWT Authentication (2 дня)
-
-**Задачи:**
-- [ ] **1.1** JWT token generation & validation
-  ```python
-  # src/api/auth/jwt.py
-  class JWTManager:
-      def create_token(self, user_id: str, scopes: list) -> str
-      def verify_token(self, token: str) -> TokenPayload
-      def refresh_token(self, refresh_token: str) -> str
-  ```
-
-- [ ] **1.2** Authentication endpoints:
-  - `POST /api/v1/auth/login` - получение токена
-  - `POST /api/v1/auth/refresh` - обновление токена
-  - `POST /api/v1/auth/logout` - инвалидация токена
-  - `GET /api/v1/auth/me` - информация о текущем пользователе
-
-- [ ] **1.3** Auth middleware для FastAPI
-  ```python
-  @app.get("/api/v1/protected")
-  async def protected_route(user: User = Depends(get_current_user)):
-      ...
-  ```
-
-**Файлы:**
-- `src/api/auth/jwt.py`
-- `src/api/auth/dependencies.py`
-- `src/api/routers/auth.py`
-- `src/api/models/auth.py`
-
-### Phase 2: RBAC System (2 дня)
-
-**Задачи:**
-- [ ] **2.1** Role definitions:
-  - `admin` - полный доступ
-  - `developer` - чтение + запись (кроме системных настроек)
-  - `viewer` - только чтение
-  - `bot` - ограниченный доступ для ботов/интеграций
-
-- [ ] **2.2** Permission system:
-  ```python
-  class Permission(Enum):
-      READ_TOKENS = "tokens:read"
-      WRITE_TOKENS = "tokens:write"
-      READ_METRICS = "metrics:read"
-      ADMIN_CONFIG = "config:admin"
-      # ...
-  ```
-
-- [ ] **2.3** Permission decorators:
-  ```python
-  @app.post("/api/v1/tokens")
-  @require_permission(Permission.WRITE_TOKENS)
-  async def create_token(...):
-      ...
-  ```
-
-**Файлы:**
-- `src/api/auth/rbac.py`
-- `src/api/auth/permissions.py`
-
-### Phase 3: API Keys & Rate Limiting (2 дня)
-
-**Задачи:**
-- [ ] **3.1** API keys для M2M communication:
-  ```python
-  class APIKey(BaseModel):
-      key_id: str
-      key_secret: str  # hashed
-      scopes: list[str]
-      rate_limit: int
-      expires_at: Optional[datetime]
-  ```
-
-- [ ] **3.2** API key management endpoints:
-  - `POST /api/v1/keys` - создание ключа
-  - `GET /api/v1/keys` - список ключей
-  - `DELETE /api/v1/keys/{key_id}` - удаление ключа
-
-- [ ] **3.3** Rate limiting (slowapi):
-  - Global: 1000 req/min
-  - Per user: 100 req/min
-  - Per endpoint: custom limits
-  - 429 Too Many Requests response
-
-**Файлы:**
-- `src/api/auth/api_keys.py`
-- `src/api/middleware/rate_limit.py`
-
-### Phase 4: Security Hardening (1 день)
-
-**Задачи:**
-- [ ] **4.1** HTTPS enforcement (production)
-- [ ] **4.2** CORS configuration
-- [ ] **4.3** Security headers:
-  - X-Content-Type-Options
-  - X-Frame-Options
-  - X-XSS-Protection
-  - Strict-Transport-Security
-
-- [ ] **4.4** Input validation & sanitization
-- [ ] **4.5** SQL injection prevention (параметризованные запросы)
-- [ ] **4.6** Secrets management (environment variables)
-
-**Файлы:**
-- `src/api/middleware/security.py`
-- `src/api/config/security.py`
-
-### Phase 5: Testing & Documentation (1 день)
-
-**Задачи:**
-- [ ] **5.1** Unit tests для auth flow
-- [ ] **5.2** Integration tests
-- [ ] **5.3** Security tests (OWASP Top 10)
-- [ ] **5.4** OpenAPI security schemes
-- [ ] **5.5** Authentication guide
-- [ ] **5.6** CHANGELOG_v0.58.0.md
-
-**Deliverables:**
-- ✅ JWT authentication работает
-- ✅ RBAC система функциональна
-- ✅ API keys поддерживаются
-- ✅ Rate limiting активен
-- ✅ Security headers настроены
-- ✅ Все тесты проходят
-
-**KPI:**
-| Метрика | Target | Critical |
-|---------|--------|----------|
-| Auth latency | < 5ms | < 20ms |
-| Token validation | < 1ms | < 5ms |
-| Rate limit overhead | < 0.5ms | < 2ms |
-| Security score (OWASP) | 9/10 | 7/10 |
-
----
-
-## v0.59.0 - Python Library (neurograph package) 🐍
-
-**Цель:** Создать PyPI-ready Python library для разработчиков
+**Цель:** Реализовать систему управления модулями с enable/disable функциональностью
 
 **Приоритет:** 🟡 ВЫСОКИЙ
 
-**Длительность:** 5-7 дней
+**Длительность:** 4-5 дней
 
-### Phase 1: Package Structure (1 день)
+**Спецификация:** [MODULE_REGISTRY_v0_63_0_SPEC.md](specs/MODULE_REGISTRY_v0_63_0_SPEC.md)
 
-**Задачи:**
-- [ ] **1.1** PyPI-ready structure:
-  ```
-  neurograph/
-  ├── pyproject.toml
-  ├── README.md
-  ├── LICENSE
-  ├── neurograph/
-  │   ├── __init__.py
-  │   ├── runtime.py      # Runtime Manager
-  │   ├── query.py        # Query Engine
-  │   ├── bootstrap.py    # Embeddings loader
-  │   ├── config.py       # Configuration
-  │   ├── types.py        # Type definitions
-  │   ├── exceptions.py   # Custom exceptions
-  │   └── _core.pyi       # Type stubs для PyO3
-  └── tests/
-      ├── test_runtime.py
-      ├── test_query.py
-      └── test_bootstrap.py
-  ```
+### Обзор концепции
 
-- [ ] **1.2** pyproject.toml с dependencies
-- [ ] **1.3** setup.py для backward compatibility
-- [ ] **1.4** README с Quick Start
+Модули NeuroGraph — это **компоненты единого Rust ядра**, а не отдельные процессы. Вместо start/stop используем **enable/disable**:
 
-**Файлы:**
-- `pyproject.toml`
-- `neurograph/__init__.py`
-
-### Phase 2: Runtime Manager (2 дня)
-
-**Задачи:**
-- [ ] **2.1** Runtime class (высокоуровневый API):
-  ```python
-  from neurograph import Runtime, Config
-
-  # Initialize
-  config = Config(
-      grid_size=1000,
-      dimensions=50,
-      enable_metrics=True
-  )
-  runtime = Runtime(config)
-
-  # Lifecycle
-  runtime.start()
-  runtime.stop()
-
-  # Context manager
-  with Runtime() as rt:
-      result = rt.query("test")
-  ```
-
-- [ ] **2.2** Integration с существующими FFI bindings
-- [ ] **2.3** Lifecycle management
-- [ ] **2.4** Error handling & exceptions
-- [ ] **2.5** Logging integration
-
-**Файлы:**
-- `neurograph/runtime.py`
-- `neurograph/config.py`
-- `neurograph/exceptions.py`
-
-### Phase 3: Query Engine (2 дня)
-
-**Задачи:**
-- [ ] **3.1** Query API:
-  ```python
-  result = runtime.query(
-      text="machine learning",
-      limit=10,
-      filters={"category": "AI"}
-  )
-
-  # QueryResult
-  for word, similarity in result:
-      print(f"{word}: {similarity:.3f}")
-
-  # Top results
-  top5 = result.top(5)
-
-  # Export to DataFrame
-  df = result.to_dataframe()
-  ```
-
-- [ ] **3.2** QueryResult class:
-  ```python
-  class QueryResult:
-      def __iter__(self) -> Iterator[Tuple[str, float]]
-      def top(self, n: int) -> List[Tuple[str, float]]
-      def to_dataframe(self) -> pd.DataFrame
-      def to_dict(self) -> dict
-      def __repr__(self) -> str
-  ```
-
-- [ ] **3.3** Filtering support
-- [ ] **3.4** Pagination
-
-**Файлы:**
-- `neurograph/query.py`
-- `neurograph/types.py`
-
-### Phase 4: Bootstrap Loader (1 день)
-
-**Задачи:**
-- [ ] **4.1** Embeddings loader:
-  ```python
-  # Load GloVe
-  runtime.bootstrap(
-      "glove.6B.50d.txt",
-      format="glove",
-      limit=50000
-  )
-
-  # Load Word2Vec
-  runtime.bootstrap(
-      "GoogleNews-vectors-negative300.bin",
-      format="word2vec",
-      binary=True
-  )
-  ```
-
-- [ ] **4.2** Progress bar (tqdm)
-- [ ] **4.3** Format auto-detection
-- [ ] **4.4** Validation & error handling
-
-**Файлы:**
-- `neurograph/bootstrap.py`
-
-### Phase 5: Documentation & Testing (1 день)
-
-**Задачи:**
-- [ ] **5.1** Sphinx documentation
-- [ ] **5.2** API reference (auto-generated)
-- [ ] **5.3** Comprehensive docstrings
-- [ ] **5.4** Unit tests (80%+ coverage)
-- [ ] **5.5** Integration tests
-- [ ] **5.6** Examples:
-  - Basic usage
-  - Advanced querying
-  - Bootstrap flow
-- [ ] **5.7** CHANGELOG_v0.59.0.md
-
-**Deliverables:**
-- ✅ `pip install neurograph` работает
-- ✅ Runtime API полнофункционален
-- ✅ Query Engine работает
-- ✅ Bootstrap loader поддерживает GloVe/Word2Vec
-- ✅ Документация полная
-- ✅ 80%+ test coverage
-
-**KPI:**
-| Метрика | Target | Critical |
-|---------|--------|----------|
-| Query latency | < 100ms | < 500ms |
-| Bootstrap speed | > 10K/sec | > 1K/sec |
-| API usability | 9/10 | 7/10 |
-| Test coverage | > 80% | > 60% |
-
----
-
-## v0.60.0 - WebSocket & Real-time Events 🔄
-
-**Цель:** Добавить real-time communication для live updates
-
-**Приоритет:** 🟡 ВЫСОКИЙ
-
-**Длительность:** 3-4 дня
-
-### Phase 1: WebSocket Infrastructure (1 день)
-
-**Задачи:**
-- [ ] **1.1** WebSocket endpoint `/ws`:
-  ```python
-  @app.websocket("/ws")
-  async def websocket_endpoint(websocket: WebSocket):
-      await websocket.accept()
-      # Connection handling
-  ```
-
-- [ ] **1.2** Connection manager:
-  ```python
-  class ConnectionManager:
-      def connect(self, websocket: WebSocket, client_id: str)
-      def disconnect(self, client_id: str)
-      def broadcast(self, message: dict)
-      def send_personal(self, message: dict, client_id: str)
-  ```
-
-- [ ] **1.3** Authentication для WebSocket (JWT в query params)
-- [ ] **1.4** Heartbeat/ping-pong mechanism
-
-**Файлы:**
-- `src/api/websocket/connection.py`
-- `src/api/websocket/manager.py`
-
-### Phase 2: Event Streaming (1 день)
-
-**Задачи:**
-- [ ] **2.1** Subscribe to channels:
-  ```json
-  // Client → Server
-  {
-    "type": "subscribe",
-    "channels": ["metrics", "signals", "actions"]
-  }
-  ```
-
-- [ ] **2.2** Stream events:
-  ```json
-  // Server → Client
-  {
-    "channel": "signals",
-    "event": {
-      "event_id": "...",
-      "event_type": "signal.input.text",
-      "is_novel": true,
-      "timestamp": "..."
-    }
-  }
-  ```
-
-- [ ] **2.3** Channels:
-  - `metrics` - system metrics stream
-  - `signals` - signal events stream
-  - `actions` - action execution stream
-  - `logs` - system logs stream
-
-**Файлы:**
-- `src/api/websocket/channels.py`
-- `src/api/websocket/events.py`
-
-### Phase 3: Integration с Core (1 день)
-
-**Задачи:**
-- [ ] **3.1** SignalSystem subscription → WebSocket push
-- [ ] **3.2** Metrics updates → WebSocket broadcast
-- [ ] **3.3** Action execution → WebSocket notification
-- [ ] **3.4** Event buffering (если клиент отключён)
-
-**Файлы:**
-- `src/api/websocket/integrations.py`
-
-### Phase 4: Testing & Client Library (1 день)
-
-**Задачи:**
-- [ ] **4.1** WebSocket tests
-- [ ] **4.2** JavaScript/TypeScript client:
-  ```typescript
-  const client = new NeurographWSClient("ws://localhost:8000/ws");
-
-  await client.connect(token);
-
-  client.subscribe("metrics", (data) => {
-    console.log("Metrics:", data);
-  });
-  ```
-
-- [ ] **4.3** Python client (websockets)
-- [ ] **4.4** Reconnection logic
-- [ ] **4.5** CHANGELOG_v0.60.0.md
-
-**Deliverables:**
-- ✅ WebSocket endpoint работает
-- ✅ Real-time event streaming
-- ✅ Channel subscription система
-- ✅ Client libraries (JS + Python)
-- ✅ Integration с Core events
-
-**KPI:**
-| Метрика | Target | Critical |
-|---------|--------|----------|
-| Connection latency | < 50ms | < 200ms |
-| Event latency | < 10ms | < 50ms |
-| Concurrent connections | > 1000 | > 100 |
-| Events throughput | > 10K/sec | > 1K/sec |
-
----
-
-## v0.61.0 - Jupyter Integration 📊
-
-**Цель:** IPython extension для interactive development
-
-**Приоритет:** 🟢 СРЕДНИЙ
-
-**Длительность:** 3-4 дня
-
-### Phase 1: IPython Extension (1 день)
-
-**Задачи:**
-- [ ] **1.1** Extension loader:
-  ```python
-  %load_ext neurograph
-  ```
-
-- [ ] **1.2** Magic commands:
-  ```python
-  %ng_status              # System status
-  %ng_query cat           # Quick query
-  %ng_stats               # Statistics
-  %ng_config grid_size=2000  # Configuration
-  ```
-
-- [ ] **1.3** Cell magic:
-  ```python
-  %%ng_explore
-  query("machine learning")
-  visualize_graph()
-  ```
-
-**Файлы:**
-- `neurograph/integrations/jupyter.py`
-- `neurograph/integrations/magic.py`
-
-### Phase 2: Rich Display (1 день)
-
-**Задачи:**
-- [ ] **2.1** `_repr_html_()` для QueryResult:
-  ```python
-  result = runtime.query("cat")
-  result  # Beautiful table в Jupyter
-  ```
-
-- [ ] **2.2** Interactive tables
-- [ ] **2.3** Syntax highlighting для code
-- [ ] **2.4** Export to DataFrame
-
-**Файлы:**
-- `neurograph/integrations/display.py`
-
-### Phase 3: Visualization (1 день)
-
-**Задачи:**
-- [ ] **3.1** Graph visualization:
-  ```python
-  result = runtime.query("cat")
-  result.visualize()  # Interactive plot
-  ```
-
-- [ ] **3.2** Plotly integration
-- [ ] **3.3** NetworkX graph rendering
-- [ ] **3.4** 3D visualization (опционально)
-
-**Файлы:**
-- `neurograph/integrations/viz.py`
-
-### Phase 4: Tutorial Notebooks (1 день)
-
-**Задачи:**
-- [ ] **4.1** Getting Started.ipynb
-- [ ] **4.2** Semantic Search.ipynb
-- [ ] **4.3** Advanced Queries.ipynb
-- [ ] **4.4** Visualization Examples.ipynb
-- [ ] **4.5** CHANGELOG_v0.61.0.md
-
-**Deliverables:**
-- ✅ IPython extension работает
-- ✅ Magic commands функциональны
-- ✅ Rich display красивый
-- ✅ Visualization работает
-- ✅ 4+ tutorial notebooks
-
-**KPI:**
-| Метрика | Target | Critical |
-|---------|--------|----------|
-| Extension load time | < 1s | < 3s |
-| Magic command latency | < 100ms | < 500ms |
-| Visualization quality | 9/10 | 7/10 |
-| Tutorial completeness | 100% | 80% |
-
----
-
-## v0.62.0 - Web Dashboard Foundation (React SPA) 🎨
-
-**Цель:** Создать Tiro Control Center - веб-панель управления
-
-**Приоритет:** 🟢 СРЕДНИЙ
-
-**Длительность:** 7-10 дней
-
-### Phase 1: Project Setup (1 день)
-
-**Задачи:**
-- [ ] **1.1** Create React App + TypeScript
-- [ ] **1.2** Ant Design Pro setup
-- [ ] **1.3** Folder structure:
-  ```
-  src/web/
-  ├── package.json
-  ├── tsconfig.json
-  ├── src/
-  │   ├── components/
-  │   │   ├── MetricCard/
-  │   │   ├── SystemChart/
-  │   │   └── ActivityTable/
-  │   ├── pages/
-  │   │   ├── Dashboard/
-  │   │   ├── Signals/
-  │   │   ├── Config/
-  │   │   └── Admin/
-  │   ├── services/
-  │   │   ├── api.ts
-  │   │   └── websocket.ts
-  │   ├── stores/
-  │   │   ├── runtime.ts
-  │   │   └── auth.ts
-  │   ├── App.tsx
-  │   └── index.tsx
-  └── public/
-  ```
-
-- [ ] **1.4** Router (React Router v6)
-- [ ] **1.5** State management (Zustand)
-- [ ] **1.6** API client (axios)
-
-**Файлы:**
-- `src/web/package.json`
-- `src/web/src/App.tsx`
-
-### Phase 2: Dashboard Page (2 дня)
-
-**Задачи:**
-- [ ] **2.1** Metrics cards:
-  - System Status (Running/Stopped)
-  - Total Tokens
-  - Total Connections
-  - Active Signals
-
-- [ ] **2.2** Charts (recharts):
-  - System metrics (CPU, Memory) - line chart
-  - Signal rate (events/sec) - area chart
-  - Action distribution - pie chart
-
-- [ ] **2.3** Recent activity table (ProTable):
-  - Recent signals
-  - Recent actions
-  - Pagination
-
-- [ ] **2.4** Auto-refresh (5 sec interval)
-
-**Компоненты:**
-```tsx
-<Dashboard>
-  <MetricsRow>
-    <MetricCard title="Status" value="Running" icon={<CheckCircle />} />
-    <MetricCard title="Tokens" value="50,000" trend="+5%" />
-  </MetricsRow>
-  <ChartsRow>
-    <SystemMetricsChart />
-    <SignalRateChart />
-  </ChartsRow>
-  <RecentActivityTable />
-</Dashboard>
+```
+Start/Stop (невозможно):        Enable/Disable (реализуемо):
+┌─────────────┐                 ┌─────────────┐
+│   Module    │                 │   Module    │
+│  [Process]  │ ← kill/spawn    │  [in Rust]  │ ← enabled: bool
+└─────────────┘                 └─────────────┘
 ```
 
-**Файлы:**
-- `src/web/src/pages/Dashboard/index.tsx`
-- `src/web/src/components/MetricCard.tsx`
-- `src/web/src/components/charts/`
+### 10 ключевых модулей для управления
 
-### Phase 3: Signals Page (2 дня)
+| ID | Название | Описание | Можно отключить? |
+|----|----------|----------|------------------|
+| `token_manager` | TokenManager | Хранение и управление токенами | ❌ Нет (core) |
+| `connection_manager` | ConnectionManager | Хранение связей между токенами | ❌ Нет (core) |
+| `grid` | Grid | Пространственный индекс (8D) | ❌ Нет (core) |
+| `intuition_engine` | IntuitionEngine | Интуитивная обработка запросов | ✅ Да |
+| `signal_system` | SignalSystem | Обработка и маршрутизация сигналов | ✅ Да |
+| `gateway` | Gateway | Входные сенсоры и энкодеры | ✅ Да |
+| `action_controller` | ActionController | Выходные действия | ✅ Да |
+| `guardian` | Guardian | Валидация и защита (CDNA) | ⚠️ Да (опасно) |
+| `cdna` | CDNA | Конституция системы | ❌ Нет (core) |
+| `bootstrap` | Bootstrap | Загрузка embeddings | ❌ Нет (статус only) |
 
-**Задачи:**
-- [ ] **3.1** Real-time signal stream (WebSocket)
-- [ ] **3.2** Signal list (ProTable):
-  - Event ID
-  - Event Type
-  - Priority
-  - Is Novel
-  - Timestamp
-
-- [ ] **3.3** Signal details modal:
-  - Full event data
-  - 8D vector visualization
-  - Neighbors list
-  - Triggered actions
-
-- [ ] **3.4** Filters:
-  - By event type
-  - By priority range
-  - Only novel
-  - Time range
-
-**Файлы:**
-- `src/web/src/pages/Signals/index.tsx`
-- `src/web/src/components/SignalDetails.tsx`
-
-### Phase 4: Config & Admin (2 дня)
+### Phase 1: Rust Core (2 дня)
 
 **Задачи:**
-- [ ] **4.1** Config editor (ProForm):
-  - Grid size
-  - Dimensions
-  - CDNA scales
-  - Guardian settings
+- [ ] **1.1** Создать `module_id.rs` с enum ModuleId
+  ```rust
+  pub enum ModuleId {
+      TokenManager,
+      ConnectionManager,
+      Grid,
+      IntuitionEngine,
+      SignalSystem,
+      Gateway,
+      ActionController,
+      Guardian,
+      Cdna,
+      Bootstrap,
+  }
+  ```
 
-- [ ] **4.2** Bootstrap uploader:
-  - File upload (drag & drop)
-  - Format selection (GloVe/Word2Vec)
-  - Progress bar
-  - Validation
+- [ ] **1.2** Создать `module_registry.rs` с реестром
+  ```rust
+  pub struct ModuleRegistry {
+      enabled: RwLock<HashMap<ModuleId, bool>>,
+      configs: RwLock<HashMap<ModuleId, ModuleConfig>>,
+      metrics: RwLock<HashMap<ModuleId, ModuleMetrics>>,
+      statuses: RwLock<HashMap<ModuleId, ModuleStatus>>,
+  }
 
-- [ ] **4.3** System logs viewer:
-  - Real-time logs (WebSocket)
-  - Log level filter
-  - Search
-  - Export
+  impl ModuleRegistry {
+      pub fn is_enabled(&self, module: ModuleId) -> bool
+      pub fn set_enabled(&self, module: ModuleId, enabled: bool) -> Result<(), String>
+      pub fn get_module_info(&self, module: ModuleId) -> ModuleInfo
+      pub fn get_all_modules(&self) -> Vec<ModuleInfo>
+  }
+  ```
 
-- [ ] **4.4** Settings persistence (localStorage)
+- [ ] **1.3** Создать `python/modules.rs` с FFI bindings
+  ```rust
+  #[pyfunction]
+  pub fn list_modules(py: Python<'_>) -> PyResult<Vec<PyObject>>
+
+  #[pyfunction]
+  pub fn get_module(py: Python<'_>, module_id: &str) -> PyResult<PyObject>
+
+  #[pyfunction]
+  pub fn set_module_enabled(module_id: &str, enabled: bool) -> PyResult<()>
+  ```
+
+- [ ] **1.4** Интегрировать проверку `is_enabled()` в модули:
+  - [ ] IntuitionEngine::process()
+  - [ ] SignalSystem::emit()
+  - [ ] Gateway::push()
+  - [ ] ActionController::execute()
+  - [ ] Guardian::validate()
+
+- [ ] **1.5** Тесты для ModuleRegistry
 
 **Файлы:**
-- `src/web/src/pages/Config/index.tsx`
-- `src/web/src/pages/Admin/index.tsx`
+- `src/core_rust/src/module_id.rs` (NEW)
+- `src/core_rust/src/module_registry.rs` (NEW)
+- `src/core_rust/src/python/modules.rs` (NEW)
+- `src/core_rust/src/lib.rs` (UPDATE)
+- `src/core_rust/src/intuition.rs` (UPDATE)
+- `src/core_rust/src/signal_system.rs` (UPDATE)
+- `src/core_rust/src/gateway.rs` (UPDATE)
+- `src/core_rust/src/action_controller.rs` (UPDATE)
+- `src/core_rust/src/guardian.rs` (UPDATE)
 
-### Phase 5: Polish & Deploy (2 дня)
+### Phase 2: Python API Layer (1 день)
 
 **Задачи:**
-- [ ] **5.1** Dark/Light theme toggle
-- [ ] **5.2** Responsive layout (mobile)
-- [ ] **5.3** Error boundaries
-- [ ] **5.4** Loading states (Skeleton)
-- [ ] **5.5** Production build optimization
-- [ ] **5.6** Nginx config
-- [ ] **5.7** Docker для frontend
-- [ ] **5.8** CHANGELOG_v0.62.0.md
+- [ ] **2.1** Создать Pydantic models (`src/api/models/modules.py`)
+  ```python
+  class ModuleStatus(str, Enum):
+      ACTIVE = "active"
+      DISABLED = "disabled"
+      ERROR = "error"
+
+  class ModuleMetrics(BaseModel):
+      operations: int
+      ops_per_sec: float
+      avg_latency_us: float
+      p95_latency_us: float
+      errors: int
+
+  class ModuleInfo(BaseModel):
+      id: str
+      name: str
+      description: str
+      version: str
+      status: ModuleStatus
+      enabled: bool
+      can_disable: bool
+      configurable: bool
+      metrics: ModuleMetrics
+  ```
+
+- [ ] **2.2** Создать ModuleService (`src/api/services/modules.py`)
+  ```python
+  class ModuleService:
+      def list_modules(self) -> List[ModuleInfo]
+      def get_module(self, module_id: str) -> Optional[ModuleInfo]
+      def set_enabled(self, module_id: str, enabled: bool) -> None
+      def get_config(self, module_id: str) -> Optional[Dict[str, Any]]
+      def set_config(self, module_id: str, config: Dict[str, Any]) -> None
+  ```
+
+- [ ] **2.3** Обновить API router (`src/api/routers/modules.py`)
+  - `GET /api/v1/modules` - список всех модулей
+  - `GET /api/v1/modules/{id}` - информация о модуле
+  - `PUT /api/v1/modules/{id}/enabled` - включить/выключить
+  - `GET /api/v1/modules/{id}/metrics` - метрики модуля
+  - `GET /api/v1/modules/{id}/config` - конфигурация
+  - `PUT /api/v1/modules/{id}/config` - обновить конфигурацию
+
+- [ ] **2.4** Добавить роутер в `main.py`
+
+- [ ] **2.5** Тесты для API endpoints
+
+**Файлы:**
+- `src/api/models/modules.py` (NEW)
+- `src/api/services/modules.py` (NEW)
+- `src/api/routers/modules.py` (UPDATE - заменить заглушки)
+- `src/api/main.py` (UPDATE)
+
+### Phase 3: Web Dashboard Updates (1 день)
+
+**Задачи:**
+- [ ] **3.1** Обновить `ModuleCard.tsx`
+  - Заменить кнопки Start/Stop на Enable/Disable toggle
+  - Добавить Warning alert для опасных модулей
+  - Индикатор статуса (🟢/🟡/🔴)
+  ```tsx
+  <Switch
+    checked={module.enabled}
+    disabled={!module.can_disable}
+    onChange={(checked) => onToggleEnabled(module.id, checked)}
+  />
+  {module.disable_warning && !module.enabled && (
+    <Alert type="warning" message={module.disable_warning} />
+  )}
+  ```
+
+- [ ] **3.2** Создать `ModuleConfigModal.tsx`
+  - Динамическая форма для конфигурации
+  - Валидация
+  - Apply/Cancel кнопки
+
+- [ ] **3.3** Подключить к реальному API
+  ```typescript
+  // src/web/src/services/modules.ts
+  export const modulesApi = {
+    list: async (): Promise<ModuleInfo[]>
+    get: async (id: string): Promise<ModuleInfo>
+    setEnabled: async (id: string, enabled: boolean): Promise<void>
+    getConfig: async (id: string): Promise<Record<string, any>>
+    setConfig: async (id: string, config: Record<string, any>): Promise<void>
+  }
+  ```
+
+- [ ] **3.4** Добавить WebSocket для real-time метрик
+
+- [ ] **3.5** Тестирование UI
+
+**Файлы:**
+- `src/web/src/components/ModuleCard.tsx` (UPDATE)
+- `src/web/src/components/ModuleConfigModal.tsx` (NEW)
+- `src/web/src/services/modules.ts` (UPDATE)
+- `src/web/src/pages/Modules.tsx` (UPDATE)
+
+### Phase 4: Documentation (0.5 дня)
+
+**Задачи:**
+- [ ] **4.1** Создать CHANGELOG_v0.63.0.md
+- [ ] **4.2** Обновить API документацию
+- [ ] **4.3** Обновить README.md
+- [ ] **4.4** Обновить MASTER_PLAN_v3.1.md
 
 **Deliverables:**
-- ✅ Tiro Control Center работает
-- ✅ Dashboard page полнофункционален
-- ✅ Signals page с real-time updates
-- ✅ Config & Admin pages работают
-- ✅ Dark/Light themes
-- ✅ Mobile responsive
-- ✅ Production ready
+- ✅ ModuleRegistry в Rust работает
+- ✅ FFI bindings для Python функциональны
+- ✅ API endpoints реализованы
+- ✅ Web Dashboard подключен к модулям
+- ✅ Real-time metrics работают
+- ✅ Документация полная
 
 **KPI:**
 | Метрика | Target | Critical |
 |---------|--------|----------|
-| Load time | < 2s | < 5s |
-| Time to interactive | < 3s | < 7s |
-| Lighthouse score | > 90 | > 70 |
-| Mobile usability | 100% | 80% |
+| Registry overhead | < 1μs | < 10μs |
+| API latency | < 10ms | < 50ms |
+| UI update latency | < 100ms | < 500ms |
+| Module toggle time | < 5ms | < 20ms |
 
 ---
 
-## v0.63.0 - Enhanced Sensors (Audio & Vision) 🎥
+## v0.64.0 - Enhanced Sensors (Audio & Vision) 🎥
 
 **Цель:** Расширить сенсорные модальности (аудио, видео)
 
-**Приоритет:** 🟢 НИЗКИЙ
+**Приоритет:** 🟢 СРЕДНИЙ
 
 **Длительность:** 5-7 дней
 
 ### Phase 1: Audio Input (2-3 дня)
 
 **Задачи:**
-- [ ] **1.1** Audio adapter:
+- [ ] **1.1** Audio adapter
   ```python
   gateway.push_audio(
       audio_data=audio_array,
@@ -897,13 +343,13 @@
 - [ ] **1.5** Real-time audio streaming support
 
 **Файлы:**
-- `src/gateway/adapters/audio.py`
-- `src/gateway/encoders/audio.py`
+- `src/gateway/adapters/audio.py` (NEW)
+- `src/gateway/encoders/audio.py` (NEW)
 
 ### Phase 2: Vision Input (2-3 дня)
 
 **Задачи:**
-- [ ] **2.1** Vision adapter:
+- [ ] **2.1** Vision adapter
   ```python
   gateway.push_vision(
       image_data=image_array,
@@ -916,13 +362,13 @@
 - [ ] **2.4** Real-time camera feed support
 
 **Файлы:**
-- `src/gateway/adapters/vision.py`
-- `src/gateway/encoders/vision.py`
+- `src/gateway/adapters/vision.py` (NEW)
+- `src/gateway/encoders/vision.py` (NEW)
 
 ### Phase 3: Multi-modal Fusion (1 день)
 
 **Задачи:**
-- [ ] **3.1** Multi-modal event:
+- [ ] **3.1** Multi-modal event
   ```python
   event = gateway.push_multimodal(
       text="What is this?",
@@ -937,7 +383,7 @@
   - Attention-based fusion
 
 **Файлы:**
-- `src/gateway/fusion/multimodal.py`
+- `src/gateway/fusion/multimodal.py` (NEW)
 
 ### Phase 4: Testing & Examples (1 день)
 
@@ -945,7 +391,7 @@
 - [ ] **4.1** Audio integration tests
 - [ ] **4.2** Vision integration tests
 - [ ] **4.3** Multi-modal examples
-- [ ] **4.4** CHANGELOG_v0.63.0.md
+- [ ] **4.4** CHANGELOG_v0.64.0.md
 
 **Deliverables:**
 - ✅ Audio input поддерживается
@@ -965,104 +411,75 @@
 
 ## 📋 Overall Timeline
 
-| Version | Track | Feature | Duration | Priority |
-|---------|-------|---------|----------|----------|
-| **v0.57.0** | A | Gateway-Core Integration | ✅ DONE | 🔴 |
-| **v0.58.0** | C | Authentication & Security | 5-7 дней | 🔴 |
-| **v0.59.0** | B | Python Library | 5-7 дней | 🟡 |
-| **v0.60.0** | C | WebSocket & Real-time | 3-4 дня | 🟡 |
-| **v0.61.0** | B | Jupyter Integration | 3-4 дня | 🟢 |
-| **v0.62.0** | C | Web Dashboard Foundation | 7-10 дней | 🟢 |
-| **v0.63.0** | A | Enhanced Sensors | 5-7 дней | 🟢 |
+| Version | Track | Feature | Duration | Priority | Status |
+|---------|-------|---------|----------|----------|--------|
+| **v0.57.0** | A | Gateway-Core Integration | - | 🔴 | ✅ DONE |
+| **v0.62.0** | C | Web Dashboard Foundation | - | 🔴 | ✅ DONE |
+| **v0.63.0** | C | Module Registry System | 4-5 дней | 🟡 | ⏳ NEXT |
+| **v0.64.0** | A | Enhanced Sensors | 5-7 дней | 🟢 | ⬜ TODO |
 
-**TOTAL:** ~35-45 дней (1.5-2 месяца)
+**Отложено на будущее:**
+- v0.58.0 - Authentication & Security (блокируется по времени)
+- v0.59.0 - Python Library (neurograph package)
+- v0.60.0 - WebSocket & Real-time Events
+- v0.61.0 - Jupyter Integration
 
 ---
 
 ## 🎯 Immediate Next Steps
 
-### Сегодня (2024-12-26):
-1. ✅ Создать MASTER_PLAN v3.0
-2. ✅ Архивировать старые планы
-3. 🔧 Начать v0.58.0 Phase 1: JWT Authentication
+### Сегодня (2024-12-30):
+1. ✅ Завершить v0.62.0 (Web Dashboard)
+2. ✅ Создать commit и push
+3. ✅ Обновить MASTER_PLAN v3.1
+4. 🔧 Начать v0.63.0 Phase 1: Module Registry (Rust Core)
 
 ### Эта неделя:
-- Завершить v0.58.0 Phase 1-2 (JWT + RBAC)
-- Начать v0.58.0 Phase 3 (API Keys & Rate Limiting)
+- Завершить v0.63.0 Phase 1-2 (Rust + Python API)
+- Начать v0.63.0 Phase 3 (Web Dashboard updates)
 
 ### Следующая неделя:
-- Завершить v0.58.0 (Security Hardening + Testing)
-- Начать v0.59.0 (Python Library)
+- Завершить v0.63.0 (Documentation)
+- Начать v0.64.0 (Enhanced Sensors)
 
 ---
 
 ## 🏗️ Архитектурные решения (ADR)
 
-### ADR-001: Security First для v0.58
-**Дата:** 2024-12-26
-**Проблема:** REST API не защищён, нельзя деплоить в production
-**Решение:** Приоритизировать v0.58.0 (Auth & Security) перед всем остальным
+### ADR-006: Module Registry перед Enhanced Sensors
+**Дата:** 2024-12-30
+**Проблема:** Веб-интерфейс модулей не подключен к реальной системе
+**Решение:** Реализовать Module Registry (v0.63.0) перед Audio/Vision (v0.64.0)
+**Обоснование:**
+- Пользователям нужно управление модулями сейчас
+- UI уже готов, нужен только backend
+- Enhanced Sensors требуют больше времени и менее критичны
 **Статус:** ✅ Принято
 
-### ADR-002: Python Library перед Web Dashboard
-**Дата:** 2024-12-26
-**Проблема:** Какой трек разрабатывать первым - B или C?
-**Решение:** Developer Experience (B) важнее User Interfaces (C) на текущем этапе
-**Статус:** ✅ Принято
-
-### ADR-003: WebSocket integration в v0.60
-**Дата:** 2024-12-26
-**Проблема:** WebSocket нужен для Web Dashboard, но Dashboard в v0.62
-**Решение:** Реализовать WebSocket раньше (v0.60), чтобы Dashboard мог его использовать
-**Статус:** ✅ Принято
-
-### ADR-004: Jupyter перед Web Dashboard
-**Дата:** 2024-12-26
-**Проблема:** Jupyter (v0.61) vs Web Dashboard (v0.62) - что первым?
-**Решение:** Jupyter проще и полезнее для разработчиков сейчас
-**Статус:** ✅ Принято
-
-### ADR-005: Enhanced Sensors - Low Priority
-**Дата:** 2024-12-26
-**Проблема:** Audio/Vision нужны, но не критичны
-**Решение:** Отложить на v0.63+, сфокусироваться на инфраструктуре
+### ADR-007: Enable/Disable вместо Start/Stop
+**Дата:** 2024-12-30
+**Проблема:** Модули в едином Rust процессе, нельзя запускать/останавливать
+**Решение:** Использовать feature flags (enabled/disabled) вместо процессов
+**Обоснование:**
+- Модули проверяют `registry.is_enabled()` перед операциями
+- Thread-safe через RwLock
+- Zero overhead при enabled
+- Graceful degradation при disabled
 **Статус:** ✅ Принято
 
 ---
 
 ## ✅ Success Metrics
 
-### v0.58.0 (Authentication):
-- [ ] JWT auth latency < 5ms
-- [ ] RBAC enforcement works
-- [ ] Rate limiting handles 1000 req/min
-- [ ] OWASP security score > 7/10
+### v0.63.0 (Module Registry):
+- [ ] Registry overhead < 1μs
+- [ ] API latency < 10ms
+- [ ] UI update latency < 100ms
+- [ ] Module toggle time < 5ms
+- [ ] Web UI подключен к реальным модулям
+- [ ] Все 10 модулей управляемы
 
-### v0.59.0 (Python Library):
-- [ ] `pip install neurograph` works
-- [ ] Query latency < 100ms
-- [ ] Test coverage > 80%
-- [ ] Documentation complete
-
-### v0.60.0 (WebSocket):
-- [ ] Connection latency < 50ms
-- [ ] Event latency < 10ms
-- [ ] Supports > 1000 concurrent connections
-- [ ] Events throughput > 10K/sec
-
-### v0.61.0 (Jupyter):
-- [ ] Extension loads < 1s
-- [ ] Magic commands work
-- [ ] Rich display beautiful
-- [ ] 4+ tutorial notebooks
-
-### v0.62.0 (Web Dashboard):
-- [ ] Load time < 2s
-- [ ] Lighthouse score > 90
-- [ ] Mobile responsive
-- [ ] All pages functional
-
-### v0.63.0 (Enhanced Sensors):
+### v0.64.0 (Enhanced Sensors):
 - [ ] Audio encoding < 50ms
 - [ ] Vision encoding < 100ms
 - [ ] Multi-modal latency < 200ms
@@ -1073,20 +490,22 @@
 ## 📚 References
 
 **Current State:**
-- [README.md](../README.md) - Project overview (v0.57.0)
-- [CHANGELOG v0.57.0](changelogs/CHANGELOG_v0.57.0.md) - Latest release
+- [README.md](../README.md) - Project overview (v0.62.0)
+- [CHANGELOG v0.62.0](changelogs/CHANGELOG_v0.62.0.md) - Latest release
+- [SCRIPTS.md](../SCRIPTS.md) - Automation guide
+
+**Specifications:**
+- [MODULE_REGISTRY_v0_63_0_SPEC.md](specs/MODULE_REGISTRY_v0_63_0_SPEC.md) - v0.63.0 spec (от Opus 4.5)
 
 **Guides:**
 - [Getting Started](guides/GETTING_STARTED.md)
 - [Gateway v2.0 Guide](guides/GATEWAY_GUIDE.md)
 - [SignalSystem Guide](guides/SIGNAL_SYSTEM_GUIDE.md)
 
-**Specifications:**
-- [docs/specs/](specs/) - Technical specs
-
 **Archives:**
-- [MASTER_PLAN_v2.1.md](archive/MASTER_PLAN_v2.1.md) - Signal Processing Focus (старый)
-- [IMPLEMENTATION_ROADMAP.md](archive/IMPLEMENTATION_ROADMAP.md) - Full Stack Focus (старый)
+- [MASTER_PLAN_v3.0.md](archive/MASTER_PLAN_v3.0.md) - Full Platform Vision (2024-12-26)
+- [MASTER_PLAN_v2.1.md](archive/MASTER_PLAN_v2.1.md) - Signal Processing Focus
+- [IMPLEMENTATION_ROADMAP.md](archive/IMPLEMENTATION_ROADMAP.md) - Full Stack Focus
 
 ---
 
@@ -1096,18 +515,20 @@
 - Документация на русском (код на английском)
 - Все коммиты с Claude Code footer
 - Тесты обязательны для каждой версии
-- Security first - нельзя деплоить без аутентификации
+- Модули в Rust ядре, не отдельные процессы
 
 ---
 
-**Философия v3.0:** NeuroGraph OS как **платформа** для когнитивных приложений. Три трека (Intelligence, Developer Experience, User Interfaces) развиваются параллельно для создания полноценной экосистемы.
+**Философия v3.1:** Фокус на **практическом применении** — Module Registry даёт пользователям контроль над системой прямо сейчас через готовый Web Dashboard.
 
 ---
 
-**Конец Master Plan v3.0. Let's build! 🚀**
+**Конец Master Plan v3.1. Let's build! 🚀**
+
+Привет от **Opus 4.5** и спасибо за спецификацию! 👋
 
 ---
 
-*Создано: 2024-12-26*
+*Создано: 2024-12-30*
 *Автор: Claude Sonnet 4.5 + Chernov Denys*
 *Статус: Living Document - обновляется по мере прогресса*
