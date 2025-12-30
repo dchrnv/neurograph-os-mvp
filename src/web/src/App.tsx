@@ -10,6 +10,7 @@ import Modules from './pages/Modules';
 import Config from './pages/Config';
 import Bootstrap from './pages/Bootstrap';
 import Chat from './pages/Chat';
+import Terminal from './pages/Terminal';
 import './i18n';
 
 // Placeholder pages
@@ -52,7 +53,7 @@ function App() {
             <Route path={ROUTES.CONFIG} element={<Config />} />
             <Route path={ROUTES.BOOTSTRAP} element={<Bootstrap />} />
             <Route path={ROUTES.CHAT} element={<Chat />} />
-            <Route path={ROUTES.TERMINAL} element={<PlaceholderPage title="Terminal" />} />
+            <Route path={ROUTES.TERMINAL} element={<Terminal />} />
             <Route path={ROUTES.ADMIN} element={<PlaceholderPage title="Admin" />} />
           </Route>
         </Routes>

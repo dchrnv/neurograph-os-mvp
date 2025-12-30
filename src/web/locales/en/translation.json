@@ -90,6 +90,17 @@
     "noMessages": "No messages yet. Start a conversation!",
     "messageCount": "messages"
   },
+  "terminal": {
+    "title": "Terminal",
+    "clear": "Clear Terminal",
+    "reset": "Reset Terminal",
+    "download": "Download Log",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "downloadSuccess": "Terminal log downloaded successfully"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",

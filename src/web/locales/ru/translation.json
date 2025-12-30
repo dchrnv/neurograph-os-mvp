@@ -90,6 +90,17 @@
     "noMessages": "Пока нет сообщений. Начните разговор!",
     "messageCount": "сообщений"
   },
+  "terminal": {
+    "title": "Терминал",
+    "clear": "Очистить Терминал",
+    "reset": "Сбросить Терминал",
+    "download": "Скачать Лог",
+    "fullscreen": "Полный Экран",
+    "exitFullscreen": "Выйти из Полного Экрана",
+    "themeDark": "Темная",
+    "themeLight": "Светлая",
+    "downloadSuccess": "Лог терминала успешно скачан"
+  },
   "common": {
     "loading": "Загрузка...",
     "error": "Ошибка",
