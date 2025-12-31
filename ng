@@ -1,0 +1,84 @@
+#!/bin/bash
+# NeuroGraph CLI - Convenient wrapper for all commands
+# Usage: ./ng <command> [args]
+
+set -e
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Show help if no command provided
+if [ $# -eq 0 ]; then
+    cat << 'EOF'
+🧠 NeuroGraph CLI
+
+Usage: ./ng <command> [args]
+
+Commands:
+  setup         Install all dependencies
+  start         Start full stack (frontend + backend)
+  start-backend Start only backend
+  start-frontend Start only frontend
+  stop          Stop all services
+  config        Show current configuration
+
+  test          Run tests
+  clean         Clean temporary files
+  help          Show this help
+
+Examples:
+  ./ng setup              # First time setup
+  ./ng start              # Start everything
+  ./ng config             # Show config
+  ./ng stop               # Stop all services
+
+Documentation:
+  README.md               Main documentation
+  docs/INDEX.md           Quick navigation
+  docs/CONFIGURATION.md   Configuration guide
+
+EOF
+    exit 0
+fi
+
+COMMAND=$1
+shift
+
+case "$COMMAND" in
+    setup)
+        exec "$PROJECT_ROOT/scripts/setup-dependencies.sh" "$@"
+        ;;
+    start)
+        exec "$PROJECT_ROOT/scripts/start-all.sh" "$@"
+        ;;
+    start-backend)
+        exec "$PROJECT_ROOT/scripts/start-backend.sh" "$@"
+        ;;
+    start-frontend)
+        exec "$PROJECT_ROOT/scripts/start-frontend.sh" "$@"
+        ;;
+    stop)
+        exec "$PROJECT_ROOT/scripts/stop-all.sh" "$@"
+        ;;
+    config)
+        exec "$PROJECT_ROOT/scripts/show-config.sh" "$@"
+        ;;
+    test)
+        source "$PROJECT_ROOT/.config.sh"
+        activate_venv
+        exec pytest tests/ "$@"
+        ;;
+    clean)
+        echo "🧹 Cleaning temporary files..."
+        rm -f "$PROJECT_ROOT"/*.log
+        rm -f "$PROJECT_ROOT"/.*.pid
+        echo "✅ Cleaned"
+        ;;
+    help|--help|-h)
+        exec "$0"
+        ;;
+    *)
+        echo "❌ Unknown command: $COMMAND"
+        echo "Run './ng help' to see available commands"
+        exit 1
+        ;;
+esac

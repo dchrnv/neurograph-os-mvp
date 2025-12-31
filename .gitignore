@@ -19,6 +19,11 @@ venv.bak/
 .env.local
 .env.*.local
 
+# Process IDs and runtime files
+*.pid
+.backend.pid
+.frontend.pid
+
 # IDE
 .vscode/
 .idea/
@@ -28,6 +33,10 @@ venv.bak/
 # Logs
 logs/
 *.log
+backend.log
+frontend.log
+setup.log
+startup.log
 
 # Data
 data/
@@ -54,11 +63,20 @@ dist/
 target/
 Cargo.lock
 
-# Architecture archive (internal development specs)
+# Internal documentation (development history and specs)
 docs/arch/
+docs/archive/
+docs/changelogs/
+docs/performance/
+docs/specs/
+docs/benchmarks/
+docs/api/
+docs/client-libraries/
+docs/completion/
+docs/examples/
+docs/jupyter/
+docs/legal/
 
-# Reference map (internal development navigation)
+# Internal development files
 reference-map.md
-
-# Roadmap (internal planning)
 ROADMAP.md

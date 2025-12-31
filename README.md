@@ -88,29 +88,37 @@ WebSocket Client ←→ /ws Endpoint ←→ [ Metrics | Rate Limit | Permissions
 
 ---
 
-## Быстрый старт
+## 🚀 Быстрый старт
 
-### 0. Web Dashboard (NEW in v0.62.0) - Рекомендуется
-
-Полноценный React UI с real-time мониторингом:
+### Установка и запуск (1 минута)
 
 ```bash
-# Первый раз - установить зависимости
-./setup-dependencies.sh
+# 1. Установить зависимости (первый раз)
+./ng setup
 
-# Запустить Frontend + Backend
-./start-all.sh
+# 2. Запустить всё (Frontend + Backend)
+./ng start
 
-# Доступ к приложению:
+# 3. Открыть в браузере
 # - Dashboard: http://localhost:5173
-# - API:       http://localhost:8000/docs
+# - API Docs:  http://localhost:8000/docs
 # - WebSocket: ws://localhost:8000/ws
-
-# Остановить все сервисы
-./stop-all.sh
 ```
 
-📚 **Подробнее:** [SCRIPTS.md](SCRIPTS.md) | [src/web/README.md](src/web/README.md)
+### Управление
+
+```bash
+./ng start          # Запустить всё
+./ng stop           # Остановить всё
+./ng config         # Показать конфигурацию
+./ng clean          # Очистить временные файлы
+./ng help           # Справка
+```
+
+📚 **Документация:**
+- [docs/INDEX.md](docs/INDEX.md) - Быстрая навигация
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Подробный быстрый старт
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Настройка проекта
 
 ### 1. Jupyter Notebook (рекомендуется для исследований)
 
@@ -373,33 +381,37 @@ compressed, was_compressed = default_compressor.compress_json(large_data)
 
 ---
 
-## Документация
+## 📚 Документация
+
+### Начало работы
+
+- **[docs/INDEX.md](docs/INDEX.md)** - Быстрая навигация (начните отсюда!)
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Подробное руководство для начинающих
+- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - Конфигурация проекта
+- **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)** - Структура проекта
 
 ### Руководства
 
-- **[Getting Started](docs/guides/GETTING_STARTED.md)** - Подробное руководство для начинающих
 - **[Gateway v2.0 Guide](docs/guides/GATEWAY_GUIDE.md)** - Работа с сенсорным слоем
 - **[SignalSystem Guide](docs/guides/SIGNAL_SYSTEM_GUIDE.md)** - Rust Core API
 - **[REST API Guide](docs/guides/REST_API_GUIDE.md)** - HTTP API documentation
 - **[Python Library Guide](docs/guides/PYTHON_LIBRARY_GUIDE.md)** - FFI bindings
 
-### Changelogs
+### Разработка
 
-- **[CHANGELOG v0.60.1](docs/changelogs/CHANGELOG_v0.60.1.md)** - WebSocket Advanced Features ← **LATEST**
-- **[CHANGELOG v0.60.0](docs/changelogs/CHANGELOG_v0.60.0.md)** - WebSocket & Real-time Events
-- **[CHANGELOG v0.58.0](docs/changelogs/CHANGELOG_v0.58.0.md)** - Authentication & Security
-- **[CHANGELOG v0.57.0](docs/changelogs/CHANGELOG_v0.57.0.md)** - Gateway-Core Integration
-- **[CHANGELOG v0.56.0](docs/changelogs/CHANGELOG_v0.56.0.md)** - ActionController Foundation
-- **[All Changelogs](docs/changelogs/)** - Полная история версий
+- **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Как помочь проекту
+- **[docs/SCRIPTS.md](docs/SCRIPTS.md)** - Описание скриптов
+- **[docs/DOCKER.md](docs/DOCKER.md)** - Docker деплой
+
+### История изменений
+
+- **[CHANGELOG v0.60.1](docs/changelogs/CHANGELOG_v0.60.1.md)** - WebSocket Advanced Features
+- **[Все изменения](docs/changelogs/)** - Полная история версий
 
 ### Спецификации
 
 - **[docs/specs/](docs/specs/)** - Технические спецификации
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Как помочь проекту
-
-### Архив
-
-- **[docs/archive/](docs/archive/)** - Документация старых версий
+- **[docs/archive/](docs/archive/)** - Архив старых версий
 
 ---
 
