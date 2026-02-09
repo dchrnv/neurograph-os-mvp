@@ -4,8 +4,11 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/dchrnv/neurograph)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/)
-[![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-core-orange.svg)](https://www.rust-lang.org/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Weights License: CC BY-NC-SA 4.0](https://img.shields.io/badge/Weights_License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![License: Commercial](https://img.shields.io/badge/License-Commercial_Available-purple.svg)](#licensing)
+
 
 ## What is NeuroGraph?
 
