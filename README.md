@@ -143,6 +143,10 @@ See [ROADMAP.md](ROADMAP.md) and [CHANGELOG.md](CHANGELOG.md) for details.
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
 
+<a href="https://buymeacoffee.com/dreeftwood" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;">
+</a>
+
 ## License
 
 AGPL-3.0 - See [LICENSE](LICENSE) file for details.
@@ -155,6 +159,4 @@ AGPL-3.0 - See [LICENSE](LICENSE) file for details.
 
 Research and creation of NeuroGraph.
 
-<a href="https://buymeacoffee.com/dreeftwood" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;">
-</a>
+
