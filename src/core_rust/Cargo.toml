@@ -54,7 +54,7 @@ dotenv = { version = "0.15", optional = true }
 # Bootstrap Library v1.2 dependencies
 # Linear algebra and ML
 ndarray = "0.15"
-linfa = "0.7"
+linfa = "0.8"
 linfa-reduction = "0.7"  # For PCA
 
 # Fast deterministic hashing
