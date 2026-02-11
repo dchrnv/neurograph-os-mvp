@@ -169,19 +169,19 @@ jobs:
 
     steps:
       - name: Download Bandit Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: bandit-report
         continue-on-error: true
 
       - name: Download Safety Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: safety-report
         continue-on-error: true
 
       - name: Download Cargo Audit Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: cargo-audit-report
         continue-on-error: true
