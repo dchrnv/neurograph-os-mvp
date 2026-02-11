@@ -46,7 +46,7 @@ dashmap = "6.1"
 smallvec = "1.13"
 
 # PostgreSQL async driver (optional, for persistence)
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "json"], optional = true }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "uuid", "chrono", "json"], optional = true }
 
 # For .env support in persistence
 dotenv = { version = "0.15", optional = true }
