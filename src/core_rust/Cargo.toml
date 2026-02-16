@@ -14,7 +14,7 @@ categories = ["science", "simulation", "web-programming::websocket"]
 
 [dependencies]
 # PyO3 for Python FFI bindings (v0.40.0)
-pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+pyo3 = { version = "0.27", features = ["extension-module"], optional = true }
 numpy = { version = "0.22", optional = true }
 
 # Parking lot for efficient RwLock
