@@ -53,7 +53,7 @@ dotenv = { version = "0.15", optional = true }
 
 # Bootstrap Library v1.2 dependencies
 # Linear algebra and ML
-ndarray = "0.15"
+ndarray = "0.17"
 linfa = "0.7"
 linfa-reduction = "0.7"  # For PCA
 
